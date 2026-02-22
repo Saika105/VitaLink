@@ -1,2 +1,2 @@
-# VitaLink-Universal-Patient-Health-Companion
+# VitaLink
 VitaLink — Your complete health record, in one place
