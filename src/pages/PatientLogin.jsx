@@ -65,7 +65,7 @@ const LoginPatient = () => {
           </form>
 
           <div className='mt-8 pt-6 border-t border-slate-50 text-center font-inter'>
-            <p className='text-[10px] text-black font-bold uppercase tracking-tight'>
+            <p className='text-[12px] text-black font-bold uppercase tracking-tight'>
               New to VitaLink?
               <button
                 className='text-[#3B82F6] font-black hover:text-[#1E40AF] hover:underline ml-2 uppercase tracking-widest transition-colors font-inter'
