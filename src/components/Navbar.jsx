@@ -18,7 +18,7 @@ const Navbar = () => {
         />
       </div>
 
-      <div className='space-x-8 text-white text-sm font-bold uppercase tracking-wide'>
+      <div className='space-x-8 text-white text-sm font-inter font-bold uppercase tracking-wide'>
         <button
           onClick={() => navigate('/')}
           className='hover:text-blue-200 transition-colors'
