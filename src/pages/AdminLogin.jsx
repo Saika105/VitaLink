@@ -43,32 +43,32 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className='min-h-screen bg-[#F0F7FF] flex items-center justify-center p-6 font-sans'>
+    <div className='min-h-screen bg-[#F0F7FF] flex items-center justify-center p-6 font-inter'>
       <div className='flex flex-col md:flex-row w-full max-w-4xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200'>
         <div className='w-full md:w-1/2 p-12 flex flex-col justify-center bg-white'>
           <div className='mb-10 text-center md:text-left'>
-            <h2 className='text-3xl font-black text-slate-900 tracking-tight uppercase'>
+            <h2 className='text-3xl font-inter font-black text-slate-900 tracking-tight uppercase'>
               Admin Portal
             </h2>
-            <p className='text-[10px] font-bold text-[#4486F6] uppercase tracking-[0.3em] mt-2 ml-1'>
+            <p className='text-[10px] font-inter font-bold text-[#4486F6] uppercase tracking-[0.3em] mt-2 ml-1'>
               System Root Access
             </p>
           </div>
 
           {error && (
-            <div className='mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-[10px] font-black uppercase tracking-widest text-center'>
+            <div className='mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-[10px] font-inter font-black uppercase tracking-widest text-center'>
               {error}
             </div>
           )}
 
           <form onSubmit={handleLogin} className='space-y-6'>
             <div className='flex flex-col gap-2'>
-              <label className='text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1'>
+              <label className='text-[10px] font-inter font-black text-slate-400 uppercase tracking-widest ml-1'>
                 Administrator Email
               </label>
               <input
                 type='email'
-                className='border border-slate-200 bg-slate-50/50 rounded-xl p-4 text-sm outline-none focus:bg-white focus:border-[#4486F6] transition-all shadow-inner'
+                className='border border-slate-200 bg-slate-50/50 rounded-xl p-4 text-sm outline-none focus:bg-white focus:border-[#4486F6] transition-all shadow-inner font-inter'
                 placeholder='admin@vitalink.com'
                 onChange={e =>
                   setLoginData({ ...loginData, email: e.target.value })
@@ -78,12 +78,12 @@ const AdminLogin = () => {
             </div>
 
             <div className='flex flex-col gap-2'>
-              <label className='text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1'>
+              <label className='text-[10px] font-inter font-black text-slate-400 uppercase tracking-widest ml-1'>
                 Master Password
               </label>
               <input
                 type='password'
-                className='border border-slate-200 bg-slate-50/50 rounded-xl p-4 text-sm outline-none focus:bg-white focus:border-[#4486F6] transition-all shadow-inner'
+                className='border border-slate-200 bg-slate-50/50 rounded-xl p-4 text-sm outline-none focus:bg-white focus:border-[#4486F6] transition-all shadow-inner font-inter'
                 placeholder='********'
                 onChange={e =>
                   setLoginData({ ...loginData, password: e.target.value })
@@ -95,7 +95,7 @@ const AdminLogin = () => {
             <button
               type='submit'
               disabled={loading}
-              className={`w-full bg-[#4486F6] hover:bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-[0.97] transition-all text-xs uppercase tracking-[0.25em] mt-4 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`w-full bg-[#4486F6] hover:bg-blue-600 text-white font-inter font-bold py-4 rounded-2xl shadow-lg active:scale-[0.97] transition-all text-xs uppercase tracking-[0.25em] mt-4 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {loading ? 'Verifying...' : 'Authorize Login'}
             </button>
@@ -111,27 +111,25 @@ const AdminLogin = () => {
             />
           </div>
 
-          <div className='max-w-xs space-y-4'>
+          <div className='max-w-xs space-y-4 font-inter'>
             <h3 className='text-xl font-bold text-slate-800 tracking-tight uppercase'>
               Security Protocol
             </h3>
-            <li>
-              <ul>
+            <ul className='list-none space-y-4'>
+              <li>
                 <p className='text-slate-500 leading-relaxed text-xs font-medium opacity-80'>
                   Access the root management system to oversee medical staff,
                   verify hospital credentials, and audit security logs.
                 </p>
-              </ul>
-            </li>
-            <li>
-              <ul>
+              </li>
+              <li>
                 <p className='text-slate-500 leading-relaxed text-xs font-medium opacity-80'>
                   Maintain the integrity of the network by managing system
                   permissions and reviewing all high-level administrative
                   activity.
                 </p>
-              </ul>
-            </li>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
