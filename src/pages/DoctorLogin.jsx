@@ -2,20 +2,20 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo black.png';
 
-const LoginPatient = () => {
+const DoctorLogin = () => {
   const navigate = useNavigate();
-  const [loginData, setLoginData] = useState({ uniqueId: '', password: '' });
+  const [loginData, setLoginData] = useState({ doctorId: '', password: '' });
   const apiUrl = import.meta.env.VITE_API_URL;
 
   const handleLogin = async e => {
     e.preventDefault();
 
     try {
-      const response = await fetch(`${apiUrl}/patients/login`, {
+      const response = await fetch(`${apiUrl}/doctors/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          uniqueId: loginData.uniqueId,
+          doctorId: loginData.doctorId,
           password: loginData.password,
         }),
       });
@@ -24,10 +24,10 @@ const LoginPatient = () => {
 
       if (response.ok) {
         localStorage.setItem('token', data.token);
-        localStorage.setItem('role', 'patient');
-        navigate('/patient-dashboard');
+        localStorage.setItem('role', 'doctor');
+        navigate('/doctor-dashboard');
       } else {
-        alert(data.message || 'Invalid Vault Credentials');
+        alert(data.message || 'Invalid Practitioner Credentials');
       }
     } catch (error) {
       console.error('Login Error:', error);
@@ -41,24 +41,24 @@ const LoginPatient = () => {
         <div className='w-full md:w-1/2 p-10 md:p-12 flex flex-col justify-center bg-white'>
           <div className='mb-8 text-center md:text-left'>
             <h2 className='text-3xl font-black text-slate-900 tracking-tighter uppercase font-inter'>
-              Patient Login
+              Doctor Login
             </h2>
             <p className='text-[10px] font-black text-[#3B82F6] uppercase tracking-[0.2em] mt-1 font-inter'>
-              Access your digital medical vault
+              Practitioner Portal Access
             </p>
           </div>
 
           <form onSubmit={handleLogin} className='space-y-4'>
             <div className='flex flex-col gap-1.5'>
               <label className='text-[10px] font-black text-black uppercase tracking-widest ml-1 font-inter'>
-                Unique Patient ID
+                Medical Registration ID
               </label>
               <input
                 type='text'
                 className='border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all font-mono placeholder-slate-300 bg-slate-50/50'
-                placeholder='VL-XXXXXX'
+                placeholder='DOC-XXXXXX'
                 onChange={e =>
-                  setLoginData({ ...loginData, uniqueId: e.target.value })
+                  setLoginData({ ...loginData, doctorId: e.target.value })
                 }
                 required
               />
@@ -83,18 +83,18 @@ const LoginPatient = () => {
               type='submit'
               className='w-full bg-[#3B82F6] hover:bg-[#1E40AF] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-200 active:scale-[0.98] transition-all text-xs uppercase tracking-[0.2em] mt-2 font-inter'
             >
-              Enter My Vault
+              Secure Login
             </button>
           </form>
 
-          <div className='mt-8 pt-6 border-t border-slate-50 text-center font-inter'>
-            <p className='text-[10px] text-black font-bold uppercase tracking-tight'>
-              New to VitaLink?
+          <div className='mt-8 pt-6 border-t border-slate-50 text-center'>
+            <p className='text-[10px] text-black font-bold uppercase tracking-tight font-inter'>
+              Need assistance?
               <button
                 className='text-[#3B82F6] font-black hover:text-[#1E40AF] hover:underline ml-2 uppercase tracking-widest transition-colors font-inter'
-                onClick={() => navigate('/signup-patient')}
+                onClick={() => navigate('/')}
               >
-                Create Account
+                Contact Support
               </button>
             </p>
           </div>
@@ -110,24 +110,24 @@ const LoginPatient = () => {
             />
           </div>
           <div className='max-w-85 w-full space-y-8 relative z-10 font-inter'>
-            <div className='border-y border-blue-100 py-3 font-inter'>
-              <h4 className='text-[11px] font-black text-[#3B82F6] tracking-[0.25em] uppercase text-center'>
+            <div className='border-y border-blue-100 py-3'>
+              <h4 className='text-[11px] font-black text-[#3B82F6] tracking-[0.25em] uppercase text-center font-inter'>
                 Universal Patient Healthcare Companion
               </h4>
             </div>
             <ul className='space-y-6 text-left font-inter'>
               <li className='flex gap-4'>
                 <div className='mt-2 w-1.5 h-1.5 rounded-full bg-[#3B82F6] shrink-0' />
-                <p className='text-black leading-relaxed text-[13px] font-semibold'>
-                  Access prescriptions, scans, and bills in a single secure
-                  digital timeline.
+                <p className='text-black leading-relaxed text-[13px] font-semibold font-inter'>
+                  Access medical timelines and diagnostic records in one secure
+                  workspace.
                 </p>
               </li>
               <li className='flex gap-4'>
                 <div className='mt-2 w-1.5 h-1.5 rounded-full bg-[#3B82F6] shrink-0' />
-                <p className='text-black leading-relaxed text-[13px] font-semibold'>
-                  Secure and private. End-to-end encryption keeps records
-                  between you and your doctor.
+                <p className='text-black leading-relaxed text-[13px] font-semibold font-inter'>
+                  Issue verified digital prescriptions and manage clinical
+                  orders instantly.
                 </p>
               </li>
             </ul>
@@ -138,4 +138,4 @@ const LoginPatient = () => {
   );
 };
 
-export default LoginPatient;
+export default DoctorLogin;
