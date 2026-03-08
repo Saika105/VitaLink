@@ -10,7 +10,7 @@ const FormInput = ({
 }) => {
   return (
     <div className='flex flex-col w-full gap-2'>
-      <label className='text-xs font-inter font-bold text-slate-500 uppercase tracking-widest ml-1'>
+      <label className='text-xs font-inter font-bold text-black uppercase tracking-widest ml-1'>
         {label}
       </label>
       <input

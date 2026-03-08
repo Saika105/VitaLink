@@ -27,7 +27,7 @@ const LoginPatient = () => {
 
           <form onSubmit={handleLogin} className='space-y-4'>
             <div className='flex flex-col gap-1.5'>
-              <label className='text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 font-inter'>
+              <label className='text-[10px] font-black text-black uppercase tracking-widest ml-1 font-inter'>
                 Unique Patient ID
               </label>
               <input
@@ -42,7 +42,7 @@ const LoginPatient = () => {
             </div>
 
             <div className='flex flex-col gap-1.5'>
-              <label className='text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 font-inter'>
+              <label className='text-[10px] font-black text-black uppercase tracking-widest ml-1 font-inter'>
                 Password
               </label>
               <input
@@ -65,7 +65,7 @@ const LoginPatient = () => {
           </form>
 
           <div className='mt-8 pt-6 border-t border-slate-50 text-center font-inter'>
-            <p className='text-[10px] text-slate-400 font-bold uppercase tracking-tight'>
+            <p className='text-[10px] text-black font-bold uppercase tracking-tight'>
               New to VitaLink?
               <button
                 className='text-[#3B82F6] font-black hover:text-[#1E40AF] hover:underline ml-2 uppercase tracking-widest transition-colors font-inter'
@@ -98,14 +98,14 @@ const LoginPatient = () => {
             <ul className='space-y-6 text-left font-inter'>
               <li className='flex gap-4'>
                 <div className='mt-2 w-1.5 h-1.5 rounded-full bg-[#3B82F6] shrink-0' />
-                <p className='text-slate-600 leading-relaxed text-[13px] font-semibold font-inter'>
+                <p className='text-black leading-relaxed text-[13px] font-semibold font-inter'>
                   Access prescriptions, scans, and bills in a single secure
                   digital timeline.
                 </p>
               </li>
               <li className='flex gap-4'>
                 <div className='mt-2 w-1.5 h-1.5 rounded-full bg-[#3B82F6] shrink-0' />
-                <p className='text-slate-600 leading-relaxed text-[13px] font-semibold font-inter'>
+                <p className='text-black leading-relaxed text-[13px] font-semibold font-inter'>
                   Secure and private. End-to-end encryption keeps records
                   between you and your doctor.
                 </p>
