@@ -110,32 +110,32 @@ const AdminStaffManagement = () => {
     <div className='min-h-screen bg-[#F0F7FF] flex flex-col font-inter text-slate-800'>
       <Navbar />
 
-      <main className='flex-grow p-6 md:p-10 max-w-[1600px] mx-auto w-full space-y-8'>
+      <main className='grow p-6 md:p-10 max-w-7xl mx-auto w-full space-y-8'>
         <div className='flex flex-col md:flex-row justify-between items-center gap-6'>
           <div>
-            <h2 className='text-4xl font-black text-slate-900 uppercase tracking-tighter'>
+            <h2 className='text-4xl font-black text-slate-900 uppercase tracking-tighter font-inter'>
               Staff Directory
             </h2>
-            <p className='text-slate-500 font-medium italic'>
+            <p className='text-slate-500 font-medium italic font-inter'>
               Manage hospital personnel records
             </p>
           </div>
           <button
             onClick={() => setShowModal(true)}
-            className='bg-[#4486F6] text-white px-10 py-4 rounded-2xl font-bold shadow-xl hover:bg-blue-600 transition-all uppercase text-xs tracking-widest active:scale-95'
+            className='bg-[#4486F6] text-white px-10 py-4 rounded-2xl font-bold shadow-xl hover:bg-blue-600 transition-all uppercase text-xs tracking-widest active:scale-95 font-inter'
           >
             + Add New Member
           </button>
         </div>
 
         <div className='flex items-center gap-4 bg-white w-fit p-2 rounded-2xl border border-slate-200 shadow-sm'>
-          <span className='pl-4 text-[10px] uppercase font-black text-slate-400 tracking-widest'>
+          <span className='pl-4 text-[10px] uppercase font-black text-slate-400 tracking-widest font-inter'>
             Showing:
           </span>
           <select
             value={activeTableTab}
             onChange={e => setActiveTableTab(e.target.value)}
-            className='bg-slate-50 border-none rounded-xl px-4 py-2 font-bold text-[#4486F6] outline-none cursor-pointer uppercase text-xs'
+            className='bg-slate-50 border-none rounded-xl px-4 py-2 font-bold text-[#4486F6] outline-none cursor-pointer uppercase text-xs font-inter'
           >
             <option value='doctor'>Doctors</option>
             <option value='assistant'>Assistants</option>
@@ -145,22 +145,22 @@ const AdminStaffManagement = () => {
         </div>
 
         <div className='bg-white rounded-[2.5rem] shadow-2xl overflow-x-auto border border-slate-200'>
-          <table className='w-full text-left border-collapse min-w-[1100px]'>
+          <table className='w-full text-left border-collapse min-w-full'>
             <thead>
               <tr className='bg-slate-50 border-b border-slate-100'>
-                <th className='p-6 text-[10px] uppercase font-black text-slate-400 tracking-widest'>
+                <th className='p-6 text-[10px] uppercase font-black text-slate-400 tracking-widest font-inter'>
                   Identity
                 </th>
-                <th className='p-6 text-[10px] uppercase font-black text-slate-400 tracking-widest'>
+                <th className='p-6 text-[10px] uppercase font-black text-slate-400 tracking-widest font-inter'>
                   Personal & Contact
                 </th>
-                <th className='p-6 text-[10px] uppercase font-black text-slate-400 tracking-widest'>
+                <th className='p-6 text-[10px] uppercase font-black text-slate-400 tracking-widest font-inter'>
                   Address & SOS
                 </th>
-                <th className='p-6 text-[10px] uppercase font-black text-slate-400 tracking-widest'>
+                <th className='p-6 text-[10px] uppercase font-black text-slate-400 tracking-widest font-inter'>
                   Role Specifics
                 </th>
-                <th className='p-6 text-[10px] uppercase font-black text-slate-400 tracking-widest text-center'>
+                <th className='p-6 text-[10px] uppercase font-black text-slate-400 tracking-widest text-center font-inter'>
                   Manage
                 </th>
               </tr>
@@ -173,7 +173,7 @@ const AdminStaffManagement = () => {
                     className='hover:bg-blue-50/30 transition-colors group'
                   >
                     <td className='p-6'>
-                      <div className='font-bold text-slate-800'>
+                      <div className='font-bold text-slate-800 font-inter'>
                         {staff.name}
                       </div>
                       <div className='text-[10px] text-[#4486F6] font-mono font-bold uppercase'>
@@ -181,60 +181,60 @@ const AdminStaffManagement = () => {
                       </div>
                     </td>
                     <td className='p-6'>
-                      <div className='text-xs font-bold text-slate-600'>
+                      <div className='text-xs font-bold text-slate-600 font-inter'>
                         NID: {staff.nid}
                       </div>
-                      <div className='text-[10px] text-slate-400'>
+                      <div className='text-[10px] text-slate-400 font-inter'>
                         {staff.phone} | {staff.gender}
                       </div>
-                      <div className='text-[10px] text-slate-400 italic'>
+                      <div className='text-[10px] text-slate-400 italic font-inter'>
                         {staff.email}
                       </div>
                     </td>
                     <td className='p-6'>
                       <div
-                        className='text-[10px] text-slate-500 truncate w-56'
+                        className='text-[10px] text-slate-500 truncate w-56 font-inter'
                         title={staff.address}
                       >
                         {staff.address}
                       </div>
-                      <div className='text-[9px] font-black text-red-400 uppercase mt-1'>
+                      <div className='text-[9px] font-black text-red-400 uppercase mt-1 font-inter'>
                         SOS: {staff.emergencyContact}
                       </div>
                     </td>
                     <td className='p-6'>
                       {activeTableTab === 'doctor' && (
                         <>
-                          <div className='text-xs font-bold text-[#4486F6]'>
+                          <div className='text-xs font-bold text-[#4486F6] font-inter'>
                             {staff.specialization}
                           </div>
-                          <div className='text-[10px] text-slate-400'>
+                          <div className='text-[10px] text-slate-400 font-inter'>
                             {staff.hospitalName} | {staff.sittingTime}
                           </div>
                         </>
                       )}
                       {activeTableTab === 'assistant' && (
-                        <div className='text-xs font-bold text-slate-600 italic'>
+                        <div className='text-xs font-bold text-slate-600 italic font-inter'>
                           Dr. ID: {staff.assignedDoctorId}
                         </div>
                       )}
                       {activeTableTab === 'lab' && (
-                        <span className='bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase'>
+                        <span className='bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase font-inter'>
                           {staff.labDepartment}
                         </span>
                       )}
                       {activeTableTab === 'receptionist' && (
-                        <span className='text-[10px] font-bold text-green-500 uppercase tracking-widest'>
+                        <span className='text-[10px] font-bold text-green-500 uppercase tracking-widest font-inter'>
                           Active Access
                         </span>
                       )}
                     </td>
                     <td className='p-6'>
                       <div className='flex justify-center gap-3'>
-                        <button className='bg-blue-50 text-[#4486F6] px-3 py-1.5 rounded-lg text-[9px] font-black uppercase hover:bg-[#4486F6] hover:text-white transition-all'>
+                        <button className='bg-blue-50 text-[#4486F6] px-3 py-1.5 rounded-lg text-[9px] font-black uppercase hover:bg-[#4486F6] hover:text-white transition-all font-inter'>
                           Edit
                         </button>
-                        <button className='bg-red-50 text-red-400 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase hover:bg-red-400 hover:text-white transition-all'>
+                        <button className='bg-red-50 text-red-400 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase hover:bg-red-400 hover:text-white transition-all font-inter'>
                           Delete
                         </button>
                       </div>
@@ -245,7 +245,7 @@ const AdminStaffManagement = () => {
                 <tr>
                   <td
                     colSpan='5'
-                    className='p-20 text-center text-slate-300 italic font-medium'
+                    className='p-20 text-center text-slate-300 italic font-medium font-inter'
                   >
                     No records found for this role.
                   </td>
@@ -258,7 +258,7 @@ const AdminStaffManagement = () => {
         {showModal && (
           <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
             <div className='bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]'>
-              <div className='p-8 bg-slate-50 border-b border-slate-100 flex justify-between items-center'>
+              <div className='p-8 bg-slate-50 border-b border-slate-100 flex justify-between items-center font-inter'>
                 <div>
                   <h3 className='text-2xl font-bold text-slate-800 uppercase tracking-tight'>
                     Onboard New Staff
@@ -271,7 +271,7 @@ const AdminStaffManagement = () => {
                   name='role'
                   value={formData.role}
                   onChange={handleInputChange}
-                  className='bg-white border border-slate-200 rounded-xl px-4 py-2 font-bold text-slate-600 text-sm outline-none focus:ring-2 ring-blue-500'
+                  className='bg-white border border-slate-200 rounded-xl px-4 py-2 font-bold text-slate-600 text-sm outline-none focus:ring-2 ring-blue-500 font-inter'
                 >
                   <option value='doctor'>Doctor</option>
                   <option value='assistant'>Doctor's Assistant</option>
@@ -285,12 +285,12 @@ const AdminStaffManagement = () => {
                 className='p-8 overflow-y-auto space-y-8'
               >
                 <div className='bg-blue-50/50 p-6 rounded-3xl border border-blue-100 space-y-4'>
-                  <p className='text-xs font-black text-[#4486F6] uppercase tracking-widest'>
+                  <p className='text-xs font-black text-[#4486F6] uppercase tracking-widest font-inter'>
                     System Access
                   </p>
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                     <div className='space-y-1'>
-                      <label className='text-[10px] uppercase font-black text-slate-400 ml-1'>
+                      <label className='text-[10px] uppercase font-black text-slate-400 ml-1 font-inter'>
                         Unique Staff ID (UPID)
                       </label>
                       <input
@@ -302,14 +302,14 @@ const AdminStaffManagement = () => {
                       />
                     </div>
                     <div className='space-y-1'>
-                      <label className='text-[10px] uppercase font-black text-slate-400 ml-1'>
+                      <label className='text-[10px] uppercase font-black text-slate-400 ml-1 font-inter'>
                         Account Password
                       </label>
                       <input
                         type='password'
                         name='password'
                         onChange={handleInputChange}
-                        className='w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-[#4486F6] transition-all'
+                        className='w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-[#4486F6] transition-all font-inter'
                         required
                       />
                     </div>
@@ -319,106 +319,106 @@ const AdminStaffManagement = () => {
                 <div className='bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm space-y-6'>
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6'>
                     <div className='space-y-1'>
-                      <label className='text-sm font-bold text-slate-700'>
+                      <label className='text-sm font-bold text-slate-700 font-inter'>
                         Full Name:
                       </label>
                       <input
                         name='name'
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
                         required
                       />
                     </div>
                     <div className='space-y-1'>
-                      <label className='text-sm font-bold text-slate-700'>
+                      <label className='text-sm font-bold text-slate-700 font-inter'>
                         NID Number:
                       </label>
                       <input
                         name='nid'
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
                         required
                       />
                     </div>
                     <div className='space-y-1'>
-                      <label className='text-sm font-bold text-slate-700'>
+                      <label className='text-sm font-bold text-slate-700 font-inter'>
                         Date of Birth:
                       </label>
                       <input
                         type='date'
                         name='dateOfBirth'
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
                         required
                       />
                     </div>
                     <div className='space-y-1'>
-                      <label className='text-sm font-bold text-slate-700'>
+                      <label className='text-sm font-bold text-slate-700 font-inter'>
                         Phone Number:
                       </label>
                       <input
                         name='phone'
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
                         required
                       />
                     </div>
                     <div className='space-y-1'>
-                      <label className='text-sm font-bold text-slate-700'>
+                      <label className='text-sm font-bold text-slate-700 font-inter'>
                         Gender:
                       </label>
                       <select
                         name='gender'
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
                       >
                         <option value='male'>Male</option>
                         <option value='female'>Female</option>
                       </select>
                     </div>
                     <div className='space-y-1'>
-                      <label className='text-sm font-bold text-slate-700'>
+                      <label className='text-sm font-bold text-slate-700 font-inter'>
                         Address:
                       </label>
                       <input
                         name='address'
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
                         required
                       />
                     </div>
                     <div className='space-y-1'>
-                      <label className='text-sm font-bold text-slate-700'>
+                      <label className='text-sm font-bold text-slate-700 font-inter'>
                         License (Docs only):
                       </label>
                       <input
                         name='licenseNumber'
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
                         disabled={formData.role !== 'doctor'}
                       />
                     </div>
                     <div className='space-y-1'>
-                      <label className='text-sm font-bold text-slate-700'>
+                      <label className='text-sm font-bold text-slate-700 font-inter'>
                         Emergency SOS:
                       </label>
                       <input
                         name='emergencyContact'
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
                         required
                       />
                     </div>
                   </div>
                   <div className='space-y-1'>
-                    <label className='text-sm font-bold text-slate-700'>
+                    <label className='text-sm font-bold text-slate-700 font-inter'>
                       System Email (Username):
                     </label>
                     <input
                       type='email'
                       name='email'
                       onChange={handleInputChange}
-                      className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                      className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
                       required
                     />
                   </div>
@@ -426,7 +426,7 @@ const AdminStaffManagement = () => {
 
                 {formData.role === 'doctor' && (
                   <div className='bg-slate-50 p-8 rounded-3xl border border-slate-200 space-y-6'>
-                    <p className='text-xs font-black text-[#4486F6] uppercase tracking-widest'>
+                    <p className='text-xs font-black text-[#4486F6] uppercase tracking-widest font-inter'>
                       Hospital Availability & Specialization
                     </p>
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
@@ -435,26 +435,26 @@ const AdminStaffManagement = () => {
                           name='specialization'
                           placeholder='Specialized In (e.g. Cardiologist)'
                           onChange={handleInputChange}
-                          className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 bg-white'
+                          className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 bg-white font-inter'
                         />
                         <input
                           name='hospitalName'
                           placeholder='Hospital Name'
                           onChange={handleInputChange}
-                          className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 bg-white'
+                          className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 bg-white font-inter'
                         />
                         <input
                           name='sittingTime'
                           placeholder='Sitting Time (e.g. 5-9 PM)'
                           onChange={handleInputChange}
-                          className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 bg-white'
+                          className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 bg-white font-inter'
                         />
                       </div>
                       <div className='space-y-2'>
-                        <label className='text-[10px] uppercase font-black text-slate-400 ml-1'>
+                        <label className='text-[10px] uppercase font-black text-slate-400 ml-1 font-inter'>
                           Available Days
                         </label>
-                        <div className='flex flex-wrap gap-2'>
+                        <div className='flex flex-wrap gap-2 font-inter'>
                           {[
                             'Sat',
                             'Sun',
@@ -480,7 +480,7 @@ const AdminStaffManagement = () => {
                 )}
 
                 {formData.role === 'assistant' && (
-                  <div className='bg-slate-50 p-6 rounded-3xl border border-slate-200'>
+                  <div className='bg-slate-50 p-6 rounded-3xl border border-slate-200 font-inter'>
                     <label className='text-[10px] uppercase font-black text-slate-400 ml-1'>
                       Assign to Doctor
                     </label>
@@ -501,7 +501,7 @@ const AdminStaffManagement = () => {
                 )}
 
                 {formData.role === 'lab' && (
-                  <div className='bg-slate-50 p-6 rounded-3xl border border-slate-200'>
+                  <div className='bg-slate-50 p-6 rounded-3xl border border-slate-200 font-inter'>
                     <label className='text-[10px] uppercase font-black text-slate-400 ml-1'>
                       Lab Department
                     </label>
@@ -522,14 +522,14 @@ const AdminStaffManagement = () => {
                 <div className='flex flex-col items-center gap-4 pt-4 bottom-0 bg-white'>
                   <button
                     type='submit'
-                    className='w-full max-md bg-[#4486F6] text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-blue-600 transition-all uppercase text-sm tracking-widest active:scale-95'
+                    className='w-full max-md bg-[#3B82F6] hover:bg-[#1E40AF] text-white py-4 rounded-2xl font-bold shadow-lg  transition-all uppercase text-sm tracking-widest active:scale-95 font-inter'
                   >
                     SignUp
                   </button>
                   <button
                     type='button'
                     onClick={() => setShowModal(false)}
-                    className='text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600'
+                    className='text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 font-inter'
                   >
                     Close Window
                   </button>
