@@ -55,7 +55,7 @@ const LandingPage = () => {
             <h4 className='text-2xl font-inter font-bold text-[#000000] mb-2 tracking-tight'>
               Patient Portal
             </h4>
-            <p className='text-slate-500 text-sm mb-8 leading-relaxed font-inter font-medium'>
+            <p className='text-slate-700 text-sm mb-8 leading-relaxed font-inter font-medium'>
               Access your personal vault, medical history, and digital
               prescriptions securely.
             </p>
@@ -80,7 +80,7 @@ const LandingPage = () => {
             <h4 className='text-2xl font-inter font-bold text-[#000000] mb-2 tracking-tight'>
               Doctor Portal
             </h4>
-            <p className='text-slate-500 text-sm mb-8 leading-relaxed font-inter font-medium'>
+            <p className='text-slate-700 text-sm mb-8 leading-relaxed font-inter font-medium'>
               Securely access your patients' medical timelines and issue
               verified digital orders instantly.
             </p>
@@ -105,7 +105,7 @@ const LandingPage = () => {
             <h4 className='text-2xl font-inter font-bold text-[#000000] mb-2 tracking-tight'>
               Staff Portal
             </h4>
-            <p className='text-slate-500 text-sm mb-8 leading-relaxed font-inter font-medium'>
+            <p className='text-slate-700 text-sm mb-8 leading-relaxed font-inter font-medium'>
               Oversee clinical workflows and manage billing records to ensure
               seamless synchronization across your departments.
             </p>
