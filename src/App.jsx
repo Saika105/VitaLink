@@ -7,6 +7,8 @@ import LoginPatient from './pages/PatientLogin.jsx';
 import PatientSignUp from './pages/PatientSignUp.jsx';
 import DoctorLogin from './pages/DoctorLogin.jsx';
 import StaffLogin from './pages/StaffLogin.jsx';
+import PatientDashboard from './pages/PatientDashboard.jsx';
+import EditProfile from './pages/EditProfile.jsx';
 const App = () => {
   return (
     <Router>
@@ -19,6 +21,8 @@ const App = () => {
           <Route path='/signup-patient' element={<PatientSignUp />} />
           <Route path='/login-doctor' element={<DoctorLogin />} />
           <Route path='/login-staff' element={<StaffLogin />} />
+          <Route path='/patient-dashboard' element={<PatientDashboard />} />
+          <Route path='/edit-profile' element={<EditProfile />} />
         </Routes>
       </div>
     </Router>
