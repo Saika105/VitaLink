@@ -7,9 +7,10 @@ const FormInput = ({
   value,
   onChange,
   placeholder,
+  required = true,
 }) => {
   return (
-    <div className='flex flex-col w-full gap-2'>
+    <div className='flex flex-col w-full gap-2 font-inter'>
       <label className='text-xs font-inter font-bold text-black uppercase tracking-widest ml-1'>
         {label}
       </label>
@@ -19,8 +20,8 @@ const FormInput = ({
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className='border border-slate-300 rounded-xl p-3.5 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#4486F6] transition-all placeholder-slate-300 bg-white font-inter font-medium'
-        required
+        className='border border-slate-300 rounded-xl p-3.5 text-sm text-black outline-none focus:ring-4 focus:ring-slate-100 focus:border-black transition-all placeholder-slate-300 bg-white font-inter font-medium'
+        required={required}
       />
     </div>
   );

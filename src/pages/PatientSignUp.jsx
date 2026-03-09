@@ -10,6 +10,7 @@ const PatientSignUp = () => {
 
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     nid: '',
     dob: '',
     phone: '',
@@ -111,6 +112,14 @@ const PatientSignUp = () => {
                 placeholder='Name'
               />
               <FormInput
+                label='Email Address'
+                type='email'
+                name='email'
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder='email@example.com'
+              />
+              <FormInput
                 label='Date of Birth'
                 type='date'
                 name='dob'
@@ -123,13 +132,6 @@ const PatientSignUp = () => {
                 value={formData.gender}
                 onChange={handleInputChange}
                 placeholder='M/F/O'
-              />
-              <FormInput
-                label='Blood Group'
-                name='bloodGroup'
-                value={formData.bloodGroup}
-                onChange={handleInputChange}
-                placeholder='e.g. O+'
               />
             </div>
 
@@ -150,11 +152,11 @@ const PatientSignUp = () => {
                 placeholder='+880'
               />
               <FormInput
-                label='Address'
-                name='address'
-                value={formData.address}
+                label='Blood Group'
+                name='bloodGroup'
+                value={formData.bloodGroup}
                 onChange={handleInputChange}
-                placeholder='Address'
+                placeholder='e.g. O+'
               />
               <FormInput
                 label='Emergency Contact'
@@ -163,6 +165,16 @@ const PatientSignUp = () => {
                 value={formData.emergencyContact}
                 onChange={handleInputChange}
                 placeholder='Number'
+              />
+            </div>
+
+            <div className='md:col-span-2 space-y-4 font-inter'>
+              <FormInput
+                label='Address'
+                name='address'
+                value={formData.address}
+                onChange={handleInputChange}
+                placeholder='Full Residential Address'
               />
             </div>
 
