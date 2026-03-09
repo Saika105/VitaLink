@@ -50,7 +50,7 @@ const DoctorLogin = () => {
 
           <form onSubmit={handleLogin} className='space-y-4'>
             <div className='flex flex-col gap-1.5'>
-              <label className='text-[10px] font-black text-black uppercase tracking-widest ml-1 font-inter'>
+              <label className='text-[12px] font-bold text-black uppercase tracking-widest ml-1 font-inter'>
                 Medical Registration ID
               </label>
               <input
@@ -65,7 +65,7 @@ const DoctorLogin = () => {
             </div>
 
             <div className='flex flex-col gap-1.5'>
-              <label className='text-[10px] font-black text-black uppercase tracking-widest ml-1 font-inter'>
+              <label className='text-[12px] font-bold text-black uppercase tracking-widest ml-1 font-inter'>
                 Password
               </label>
               <input
@@ -88,7 +88,7 @@ const DoctorLogin = () => {
           </form>
 
           <div className='mt-8 pt-6 border-t border-slate-50 text-center'>
-            <p className='text-[10px] text-black font-bold uppercase tracking-tight font-inter'>
+            <p className='text-[12px] text-black font-bold uppercase tracking-tight font-inter'>
               Need assistance?
               <button
                 className='text-[#3B82F6] font-black hover:text-[#1E40AF] hover:underline ml-2 uppercase tracking-widest transition-colors font-inter'

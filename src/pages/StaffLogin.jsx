@@ -52,7 +52,7 @@ const StaffLogin = () => {
 
           <form onSubmit={handleLogin} className='space-y-4'>
             <div className='flex flex-col gap-1.5'>
-              <label className='text-[10px] font-black text-black uppercase tracking-widest ml-1 font-inter'>
+              <label className='text-[12px] font-bold text-black uppercase tracking-widest ml-1 font-inter'>
                 Staff Access Key
               </label>
               <input
@@ -67,7 +67,7 @@ const StaffLogin = () => {
             </div>
 
             <div className='flex flex-col gap-1.5'>
-              <label className='text-[10px] font-black text-black uppercase tracking-widest ml-1 font-inter'>
+              <label className='text-[12px] font-bold text-black uppercase tracking-widest ml-1 font-inter'>
                 Security PIN
               </label>
               <input
