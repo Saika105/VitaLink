@@ -56,7 +56,7 @@ const LoginPatient = () => {
               <input
                 type='text'
                 className='border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all font-mono placeholder-slate-300 bg-slate-50/50'
-                placeholder='VL-XXXXXX'
+                placeholder='PT-XXXXXX'
                 onChange={e =>
                   setLoginData({ ...loginData, uniqueId: e.target.value })
                 }
