@@ -90,7 +90,7 @@ const PatientAppointments = () => {
             Appointment Schedule
           </h2>
           <p className='text-sm font-bold text-blue-700 uppercase tracking-widest mt-0.5'>
-            Synchronized with Hospital Assistant
+            Manage all your appointments in one place
           </p>
         </div>
 
