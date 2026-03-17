@@ -67,5 +67,5 @@ labAssistantSchema.methods.generateRefreshToken = function () {
   );
 };
 
-const LabAssistant = mongoose.model("LabAssistant", labAssistantSchema);
-export default LabAssistant;
+export const LabAssistant = mongoose.model("LabAssistant", labAssistantSchema);
+

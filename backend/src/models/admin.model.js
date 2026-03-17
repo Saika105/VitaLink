@@ -62,10 +62,9 @@ const adminSchema = new mongoose.Schema(
   baseSchemaOptions
 );
 
-adminSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+adminSchema.pre("save", async function () {
+  if (!this.isModified("password")) return ;
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 adminSchema.methods.isPasswordCorrect = async function (password) {
@@ -98,5 +97,5 @@ adminSchema.methods.generateRefreshToken = function () {
   );
 };
 
-const Admin = mongoose.model("Admin", adminSchema);
-export default Admin;
+export const Admin = mongoose.model("Admin", adminSchema);
+ 

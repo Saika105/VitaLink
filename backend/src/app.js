@@ -22,12 +22,16 @@ app.use(cookieParser())
 
 //**Routes import
 import patientRouter from "./routes/patient.routes.js";
+import adminRouter from "./routes/admin.routes.js";
+
 
 
 //***routes declaration 
 app.use("/api/v1/patients", patientRouter);
+app.use("/api/v1/admins", adminRouter);
 
 // http://localhost:8000/api/v1/patients/initialize-registration
+// http://localhost:8000/api/v1/admins/
 
 
 export { app }

@@ -67,6 +67,5 @@ receptionistSchema.methods.generateRefreshToken = function () {
   );
 };
 
-// ✅ Bug fix: original file was missing this line entirely
-const Receptionist = mongoose.model("Receptionist", receptionistSchema);
-export default Receptionist;
+export const Receptionist = mongoose.model("Receptionist", receptionistSchema);
+

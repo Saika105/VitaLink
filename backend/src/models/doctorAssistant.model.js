@@ -78,5 +78,5 @@ doctorAssistantSchema.methods.generateRefreshToken = function () {
   );
 };
 
-const DoctorAssistant = mongoose.model("DoctorAssistant", doctorAssistantSchema);
-export default DoctorAssistant;
+export const DoctorAssistant = mongoose.model("DoctorAssistant", doctorAssistantSchema);
+
