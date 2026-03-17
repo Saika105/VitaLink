@@ -2,6 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { Patient } from "../models/patient.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deleteFromCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -253,10 +254,10 @@ const loginPatient = asyncHandler(async (req, res) => {
 //*********************logout patient*****************
 const logoutPatient = asyncHandler(async (req, res) => {
   // Steps:
-    // 1. Verify JWT and get patient ID from token (handled by auth middleware)
-    // 2. Clear refresh token from DB
-    // 3. Clear cookies on client side (accessToken and refreshToken)
-    // 4. Send response confirming logout
+  // 1. Verify JWT and get patient ID from token (handled by auth middleware)
+  // 2. Clear refresh token from DB
+  // 3. Clear cookies on client side (accessToken and refreshToken)
+  // 4. Send response confirming logout
   await Patient.findByIdAndUpdate(
     req.user._id, //in verify jwt it automatically assigns role as patient
     { $set: { refreshToken: undefined } },
@@ -276,38 +277,124 @@ const logoutPatient = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Logged out successfully"));
 });
 
-
 const refreshAccessToken = asyncHandler(async (req, res) => {
-    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+  const incomingRefreshToken =
+    req.cookies.refreshToken || req.body.refreshToken;
 
-    if (!incomingRefreshToken) {
-        throw new ApiError(401, "Refresh token is missing");
+  if (!incomingRefreshToken) {
+    throw new ApiError(401, "Refresh token is missing");
+  }
+
+  try {
+    const decodedToken = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET,
+    );
+    const patient = await Patient.findById(decodedToken?._id);
+
+    if (!patient || incomingRefreshToken !== patient?.refreshToken) {
+      throw new ApiError(401, "Refresh token is expired or invalid");
     }
 
-    try {
-        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
-        const patient = await Patient.findById(decodedToken?._id);
+    const { accessToken, refreshToken: newRefreshToken } =
+      await generateAccessAndRefreshToken(patient._id);
 
-        if (!patient || incomingRefreshToken !== patient?.refreshToken) {
-            throw new ApiError(401, "Refresh token is expired or invalid");
-        }
+    const options = { httpOnly: true, secure: true, sameSite: "none" };
 
-        const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshToken(patient._id);
-
-        const options = { httpOnly: true, secure: true, sameSite: "none" };
-
-        return res
-            .status(200)
-            .cookie("accessToken", accessToken, options)
-            .cookie("refreshToken", newRefreshToken, options)
-            .json(new ApiResponse(200, { accessToken, refreshToken: newRefreshToken }, "Token refreshed"));
-    } catch (error) {
-        throw new ApiError(401, error?.message || "Invalid refresh token");
-    }
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", newRefreshToken, options)
+      .json(
+        new ApiResponse(
+          200,
+          { accessToken, refreshToken: newRefreshToken },
+          "Token refreshed",
+        ),
+      );
+  } catch (error) {
+    throw new ApiError(401, error?.message || "Invalid refresh token");
+  }
 });
 
+//*********************get patient profile****************
+const getPatientProfile = asyncHandler(async (req, res) => {
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, req.user, "Patient profile fetched successfully"),
+    );
+});
 
 //DASHBOARD PROFILE EDIT PART
+//*****************update patient profile*****************
+const updatePatientProfile = asyncHandler(async (req, res) => {
+  // 1. Get text fields from request body
+  // 2. Prepare an empty update object
+  // 3. Handle Profile Photo Update
+  //    a. If new photo is uploaded, find the patient record to get existing photo URL
+  //    b. Delete existing photo from Cloudinary (if exists)
+  //    c. Upload new photo to Cloudinary and get the URL
+  //    d. Add new photo URL to update object
+  // 4. If no fields are provided for update, return an error
+  // 5. Update patient record in DB with the update object
+  // 6. Return updated patient profile in response
+
+  const { fullName, email, phone, address, emergencyContact } = req.body;
+
+  const updateData = {};
+
+  if (fullName) updateData.fullName = fullName;
+  if (email) updateData.email = email;
+  if (phone) updateData.phone = phone;
+  if (address) updateData.address = address;
+  if (emergencyContact) updateData.emergencyContact = emergencyContact;
+
+  if (req.file?.path) {
+    const patient = await Patient.findById(req.user?._id);
+
+    if (patient?.profilePhoto) {
+      await deleteFromCloudinary(patient.profilePhoto);
+    }
+
+    const photoUpload = await uploadOnCloudinary(req.file.path);
+
+    if (!photoUpload?.secure_url) {
+      throw new ApiError(400, "Failed to upload new profile photo");
+    }
+
+    updateData.profilePhoto = photoUpload.secure_url;
+  }
+
+  if (Object.keys(updateData).length === 0) {
+    throw new ApiError(400, "No changes provided for update");
+  }
+
+  const updatedPatient = await Patient.findByIdAndUpdate(
+    req.user?._id,
+    { $set: updateData },
+    {
+      returnDocument: "after",
+      runValidators: true,
+      //   new: true,
+      //   runValidators: true, // Ensures email/phone formats are still valid
+    },
+  ).select("-password -refreshToken");
+
+  if (!updatedPatient) {
+    throw new ApiError(404, "Patient record not found");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, updatedPatient, "Health Vault updated successfully"),
+    );
+});
+
+//*****************update patient password*****************
+
+
 
 export {
   initializeRegistration,
@@ -315,4 +402,6 @@ export {
   loginPatient,
   logoutPatient,
   refreshAccessToken,
+  getPatientProfile,
+  updatePatientProfile,
 };

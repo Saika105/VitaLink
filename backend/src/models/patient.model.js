@@ -91,7 +91,7 @@ const patientSchema = new mongoose.Schema(
     },
 
     profilePhoto: {
-      type: fileSchema,
+      type: String,
       default: null,
     },
 

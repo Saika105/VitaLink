@@ -5,6 +5,8 @@ import {
   loginPatient,
   logoutPatient,
   refreshAccessToken,
+  getPatientProfile,
+  updatePatientProfile,
 } from "../controllers/patient.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -19,5 +21,12 @@ router.route("/finalize-registration").post(finalizeRegistration);
 router.route("/login").post(loginPatient);
 router.route("/logout").post(verifyJWT, logoutPatient);
 router.route("/refresh-token").post(refreshAccessToken);
+router.route("/profile").get(verifyJWT, getPatientProfile);
+router.route("/update-profile").patch(
+    verifyJWT, 
+    upload.single("profilePhoto"), // 'profilePhoto' must match the frontend name
+    updatePatientProfile
+);
+
 
 export default router;
