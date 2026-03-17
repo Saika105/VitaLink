@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   initializeRegistration,
   finalizeRegistration,
+  loginPatient,
 } from "../controllers/patient.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 // import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -13,5 +14,6 @@ router
   .post(upload.none(), initializeRegistration);
 
 router.route("/finalize-registration").post(finalizeRegistration);
+router.route("/login").post(loginPatient);
 
 export default router;

@@ -129,7 +129,7 @@ const finalizeRegistration = asyncHandler(async (req, res) => {
   if (!req.body) {
     throw new ApiError(400, "Request body is missing");
   }
-  
+
   const { uniqueId, password, confirmPassword } = req.body;
 
   if (!uniqueId || !password || !confirmPassword) {
@@ -168,4 +168,77 @@ const finalizeRegistration = asyncHandler(async (req, res) => {
     );
 });
 
-export { initializeRegistration, finalizeRegistration };
+//*********************login patient*****************
+const loginPatient = asyncHandler(async (req, res) => {
+  // Steps:
+  // 1. Validation
+  // 2. Find patient by unique ID
+  // 3. Get data from req.body (using upid instead of username/email)
+  // 4. Check if password is correct (using the method we wrote in patient.model.js)
+  // 5. Generate Access and Refresh Tokens (using the methods we wrote in patient.model.js)
+  // 6. Save refresh token to DB and update last login
+  // 7. Remove sensitive fields before sending the response
+  // 8. Setup Cookie options for Vercel -> Render communication
+  // 9. Send response with cookies and JSON data
+  const { upid, password } = req.body;
+
+  if (!upid) {
+    throw new ApiError(400, "Patient Unique ID is required");
+  }
+
+  if (!password) {
+    throw new ApiError(400, "Password is required");
+  }
+
+  const patient = await Patient.findOne({ upid }).select("+password");
+
+  if (!patient) {
+    throw new ApiError(404, "Patient does not exist");
+  }
+
+  const isPasswordValid = await patient.isPasswordCorrect(password);
+
+  if (!isPasswordValid) {
+    throw new ApiError(401, "Invalid credentials");
+  }
+
+  const accessToken = patient.generateAccessToken();
+  const refreshToken = patient.generateRefreshToken();
+
+  patient.refreshToken = refreshToken;
+  patient.lastLoginAt = new Date();
+  await patient.save({ validateBeforeSave: false });
+
+  const loggedInPatient = await Patient.findById(patient._id).select(
+    "-password -refreshToken",
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true, // Must be true for Render/Vercel
+    sameSite: "none", // Must be "none" for cross-domain cookies
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          patient: loggedInPatient,
+          accessToken, // Sending this so frontend can also store it in state/localStorage if needed
+        },
+        "Patient logged in successfully",
+      ),
+    );
+});
+
+
+
+export { 
+    initializeRegistration, 
+    finalizeRegistration, 
+    loginPatient 
+};
