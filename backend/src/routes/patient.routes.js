@@ -3,9 +3,11 @@ import {
   initializeRegistration,
   finalizeRegistration,
   loginPatient,
+  logoutPatient,
+  refreshAccessToken,
 } from "../controllers/patient.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
-// import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
@@ -15,5 +17,7 @@ router
 
 router.route("/finalize-registration").post(finalizeRegistration);
 router.route("/login").post(loginPatient);
+router.route("/logout").post(verifyJWT, logoutPatient);
+router.route("/refresh-token").post(refreshAccessToken);
 
 export default router;

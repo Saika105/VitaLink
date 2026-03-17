@@ -6,6 +6,21 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
+const generateAccessAndRefreshToken = async (patientId) => {
+  try {
+    const patient = await Patient.findById(patientId);
+    const accessToken = patient.generateAccessToken();
+    const refreshToken = patient.generateRefreshToken();
+
+    patient.refreshToken = refreshToken;
+    await patient.save({ validateBeforeSave: false });
+
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw new ApiError(500, "Error generating security tokens");
+  }
+};
+
 // Utility function to generate a unique patient ID
 const generateUniquePatientId = () => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -182,32 +197,32 @@ const loginPatient = asyncHandler(async (req, res) => {
   // 9. Send response with cookies and JSON data
   const { upid, password } = req.body;
 
-  if (!upid) {
-    throw new ApiError(400, "Patient Unique ID is required");
-  }
-
-  if (!password) {
-    throw new ApiError(400, "Password is required");
+  if (!upid || !password) {
+    throw new ApiError(400, "Unique ID and password are required");
   }
 
   const patient = await Patient.findOne({ upid }).select("+password");
 
   if (!patient) {
-    throw new ApiError(404, "Patient does not exist");
+    throw new ApiError(404, "Patient record not found");
+  }
+
+  if (!patient.isActive) {
+    throw new ApiError(
+      403,
+      "Please finalize your registration before logging in.",
+    );
   }
 
   const isPasswordValid = await patient.isPasswordCorrect(password);
 
   if (!isPasswordValid) {
-    throw new ApiError(401, "Invalid credentials");
+    throw new ApiError(401, "Invalid patient credentials");
   }
 
-  const accessToken = patient.generateAccessToken();
-  const refreshToken = patient.generateRefreshToken();
-
-  patient.refreshToken = refreshToken;
-  patient.lastLoginAt = new Date();
-  await patient.save({ validateBeforeSave: false });
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    patient._id,
+  );
 
   const loggedInPatient = await Patient.findById(patient._id).select(
     "-password -refreshToken",
@@ -215,8 +230,8 @@ const loginPatient = asyncHandler(async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: true, // Must be true for Render/Vercel
-    sameSite: "none", // Must be "none" for cross-domain cookies
+    secure: true, // Must be true for HTTPS/Production
+    sameSite: "none", // Required for cross-site (Vercel to Render)
   };
 
   return res
@@ -228,17 +243,76 @@ const loginPatient = asyncHandler(async (req, res) => {
         200,
         {
           patient: loggedInPatient,
-          accessToken, // Sending this so frontend can also store it in state/localStorage if needed
+          accessToken, // Sent in body so frontend can easily store it
         },
-        "Patient logged in successfully",
+        "Login successful! Welcome to your Health Vault.",
       ),
     );
 });
 
+//*********************logout patient*****************
+const logoutPatient = asyncHandler(async (req, res) => {
+  // Steps:
+    // 1. Verify JWT and get patient ID from token (handled by auth middleware)
+    // 2. Clear refresh token from DB
+    // 3. Clear cookies on client side (accessToken and refreshToken)
+    // 4. Send response confirming logout
+  await Patient.findByIdAndUpdate(
+    req.user._id, //in verify jwt it automatically assigns role as patient
+    { $set: { refreshToken: undefined } },
+    { new: true },
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  };
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "Logged out successfully"));
+});
 
 
-export { 
-    initializeRegistration, 
-    finalizeRegistration, 
-    loginPatient 
+const refreshAccessToken = asyncHandler(async (req, res) => {
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+
+    if (!incomingRefreshToken) {
+        throw new ApiError(401, "Refresh token is missing");
+    }
+
+    try {
+        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+        const patient = await Patient.findById(decodedToken?._id);
+
+        if (!patient || incomingRefreshToken !== patient?.refreshToken) {
+            throw new ApiError(401, "Refresh token is expired or invalid");
+        }
+
+        const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshToken(patient._id);
+
+        const options = { httpOnly: true, secure: true, sameSite: "none" };
+
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", newRefreshToken, options)
+            .json(new ApiResponse(200, { accessToken, refreshToken: newRefreshToken }, "Token refreshed"));
+    } catch (error) {
+        throw new ApiError(401, error?.message || "Invalid refresh token");
+    }
+});
+
+
+//DASHBOARD PROFILE EDIT PART
+
+export {
+  initializeRegistration,
+  finalizeRegistration,
+  loginPatient,
+  logoutPatient,
+  refreshAccessToken,
 };

@@ -4,7 +4,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import jwt from "jsonwebtoken";
-import Patient from "../models/patient.model.js";
+import {Patient} from "../models/patient.model.js";
 import Doctor from "../models/doctor.model.js";
 import Admin from "../models/admin.model.js";
 import DoctorAssistant from "../models/doctorAssistant.model.js";
