@@ -393,8 +393,49 @@ const updatePatientProfile = asyncHandler(async (req, res) => {
 });
 
 //*****************update patient password*****************
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+  // Steps:
+  // 1. Get currentPassword, newPassword, confirmNewPassword from request body
+  // 2. Validate that all fields are provided and new passwords match
+  // 3. Find patient record by ID from req.user (set by auth middleware)
+  // 4. Check if currentPassword is correct using the method in patient.model.js
+  // 5. If correct, update password field with newPassword (it will be hashed by the pre-save hook)
+  // 6. Save the patient record
+  // 7. Return success response
 
+  const { oldPassword, newPassword, confirmPassword } = req.body;
 
+  if (
+    [oldPassword, newPassword, confirmPassword].some(
+      (field) => field?.trim() === "",
+    )
+  ) {
+    throw new ApiError(400, "All password fields are required");
+  }
+
+  if (newPassword !== confirmPassword) {
+    throw new ApiError(
+      400,
+      "New password and confirmation password do not match",
+    );
+  }
+
+  const patient = await Patient.findById(req.user?._id).select("+password");
+
+  const isPasswordCorrect = await patient.isPasswordCorrect(oldPassword);
+
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, "Invalid old password");
+  }
+
+  patient.password = newPassword;
+
+  await patient.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password changed successfully"));
+});
 
 export {
   initializeRegistration,
@@ -404,4 +445,5 @@ export {
   refreshAccessToken,
   getPatientProfile,
   updatePatientProfile,
+  changeCurrentPassword,
 };

@@ -7,6 +7,7 @@ import {
   refreshAccessToken,
   getPatientProfile,
   updatePatientProfile,
+  changeCurrentPassword
 } from "../controllers/patient.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -27,6 +28,7 @@ router.route("/update-profile").patch(
     upload.single("profilePhoto"), // 'profilePhoto' must match the frontend name
     updatePatientProfile
 );
+router.route("/change-password").post(verifyJWT, changeCurrentPassword);
 
 
 export default router;
