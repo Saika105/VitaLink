@@ -196,13 +196,13 @@ const loginPatient = asyncHandler(async (req, res) => {
   // 7. Remove sensitive fields before sending the response
   // 8. Setup Cookie options for Vercel -> Render communication
   // 9. Send response with cookies and JSON data
-  const { upid, password } = req.body;
+  const { uniqueId, password } = req.body;
 
-  if (!upid || !password) {
+  if (!uniqueId || !password) {
     throw new ApiError(400, "Unique ID and password are required");
   }
 
-  const patient = await Patient.findOne({ upid }).select("+password");
+  const patient = await Patient.findOne({ upid: uniqueId }).select("+password");
 
   if (!patient) {
     throw new ApiError(404, "Patient record not found");
