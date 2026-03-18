@@ -51,7 +51,7 @@ const SearchDoctor = () => {
   }, [selectedSpecialty, apiUrl]);
 
   const filteredDoctors = doctors.filter(doc =>
-    doc.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    doc.fullName?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleBookNow = doctor => {
@@ -122,30 +122,38 @@ const SearchDoctor = () => {
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6'>
             {filteredDoctors.map(doc => (
               <div
-                key={doc.id}
+                key={doc._id}
                 className='bg-white border border-slate-200 rounded-3xl p-6 shadow-lg hover:shadow-2xl transition-all border-b-4 border-b-transparent hover:border-b-blue-600 flex flex-col'
               >
-                <div className='w-full h-32 bg-slate-50 rounded-2xl mb-5 flex items-center justify-center border border-slate-100'>
-                  <svg
-                    className='w-12 h-12 text-blue-600/20'
-                    fill='currentColor'
-                    viewBox='0 0 20 20'
-                  >
-                    <path
-                      fillRule='evenodd'
-                      d='M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z'
-                      clipRule='evenodd'
+                <div className='w-full h-32 bg-slate-50 rounded-2xl mb-5 flex items-center justify-center border border-slate-100 overflow-hidden'>
+                  {doc.profilePhoto?.url ? (
+                    <img
+                      src={doc.profilePhoto.url}
+                      alt={doc.fullName}
+                      className='w-full h-full object-cover'
                     />
-                  </svg>
+                  ) : (
+                    <svg
+                      className='w-12 h-12 text-blue-600/20'
+                      fill='currentColor'
+                      viewBox='0 0 20 20'
+                    >
+                      <path
+                        fillRule='evenodd'
+                        d='M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z'
+                        clipRule='evenodd'
+                      />
+                    </svg>
+                  )}
                 </div>
 
                 <div className='space-y-4 grow'>
                   <div>
                     <h3 className='text-xl font-black text-slate-900 leading-tight'>
-                      {doc.name}
+                      {doc.fullName}
                     </h3>
                     <p className='text-blue-600 font-bold text-[10px] uppercase tracking-widest mt-1'>
-                      {doc.specialty}
+                      {doc.specialization}
                     </p>
                   </div>
 
@@ -154,21 +162,25 @@ const SearchDoctor = () => {
                       <span className='text-[10px] font-black uppercase text-slate-400'>
                         Hospital:
                       </span>
-                      <span className='text-xs font-bold'>{doc.hospital}</span>
+                      <span className='text-xs font-bold'>
+                        {doc.hospital?.fullName}
+                      </span>
                     </div>
                     <div className='flex items-center gap-2 text-slate-600'>
                       <span className='text-[10px] font-black uppercase text-slate-400'>
-                        Days:
+                        Designation:
                       </span>
                       <span className='text-xs font-medium'>
-                        {doc.availableDays}
+                        {doc.designation}
                       </span>
                     </div>
                     <div className='flex items-center gap-2 text-slate-600'>
                       <span className='text-[10px] font-black uppercase text-slate-400'>
-                        Time:
+                        Experience:
                       </span>
-                      <span className='text-xs font-medium'>{doc.time}</span>
+                      <span className='text-xs font-medium'>
+                        {doc.yearsExperience} Years
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -224,7 +236,7 @@ const SearchDoctor = () => {
               Book Slot
             </h3>
             <p className='text-slate-500 text-sm mt-2'>
-              Contact the assistant of <b>{activeDoctor.name}</b>.
+              Contact the assistant of <b>{activeDoctor.fullName}</b>.
             </p>
 
             <div className='my-8 space-y-3'>
@@ -246,7 +258,7 @@ const SearchDoctor = () => {
               </a>
 
               <a
-                href={`https://wa.me/${activeDoctor.whatsapp?.replace(/\D/g, '')}`}
+                href={`https://wa.me/${activeDoctor.phone?.replace(/\D/g, '')}`}
                 target='_blank'
                 rel='noreferrer'
                 className='flex items-center justify-between p-5 bg-green-50 rounded-2xl border border-green-100 hover:border-green-400 transition-all group'
@@ -256,7 +268,7 @@ const SearchDoctor = () => {
                     WhatsApp Chat
                   </p>
                   <p className='text-sm font-bold text-slate-900'>
-                    {activeDoctor.whatsapp}
+                    {activeDoctor.phone}
                   </p>
                 </div>
                 <div className='w-8 h-8 bg-green-500 text-white rounded-lg flex items-center justify-center'>

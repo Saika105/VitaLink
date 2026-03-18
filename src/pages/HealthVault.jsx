@@ -34,9 +34,18 @@ const HealthVault = () => {
 
         if (response.ok) {
           const data = await response.json();
-          setItems(Array.isArray(data) ? data : []);
+          // Map backend model to UI structure
+          const mappedData = data.map(item => ({
+            id: item._id,
+            title: item.diagnosis || item.reportName || 'Medical Record',
+            date: new Date(
+              item.prescribedDate || item.createdAt,
+            ).toLocaleDateString(),
+            hospital: item.hospital?.fullName || 'General Hospital',
+            fileUrl: item.prescriptionFile?.url || item.file?.url || null,
+          }));
+          setItems(mappedData);
         } else {
-          // If response fails, clear items
           setItems([]);
         }
       } catch (err) {

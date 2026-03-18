@@ -29,7 +29,20 @@ const PatientAppointments = () => {
 
         if (response.ok) {
           const data = await response.json();
-          setAppointments(Array.isArray(data) ? data : []);
+          // Map backend nested objects to table format
+          const mappedData = data.map(apt => ({
+            id: apt._id,
+            hospital: apt.hospital?.fullName,
+            doctor: apt.doctor?.fullName,
+            specialization: apt.doctor?.specialization,
+            date: new Date(apt.appointmentDate).toLocaleDateString(),
+            time: `${apt.timeSlot?.startTime} - ${apt.timeSlot?.endTime}`,
+            phone: apt.doctor?.phone,
+            followUpDate: apt.followUpDate
+              ? new Date(apt.followUpDate).toLocaleDateString()
+              : null,
+          }));
+          setAppointments(mappedData);
         } else {
           setAppointments([]);
         }
@@ -44,7 +57,7 @@ const PatientAppointments = () => {
     setActiveAssistant({
       name: apt.doctor,
       phone: apt.phone,
-      whatsapp: apt.whatsapp,
+      whatsapp: apt.phone,
     });
     setShowPopup(true);
   };
@@ -261,7 +274,7 @@ const PatientAppointments = () => {
               </a>
 
               <a
-                href={`https://wa.me/${activeAssistant.whatsapp?.replace(/\D/g, '')}`}
+                href={`https://wa.me/${activeAssistant.phone?.replace(/\D/g, '')}`}
                 target='_blank'
                 rel='noreferrer'
                 className='flex items-center justify-between p-5 bg-green-50 rounded-2xl border border-green-100 hover:border-green-400 transition-all'
@@ -271,7 +284,7 @@ const PatientAppointments = () => {
                     WhatsApp
                   </p>
                   <p className='text-sm font-bold text-slate-900'>
-                    {activeAssistant.whatsapp}
+                    {activeAssistant.phone}
                   </p>
                 </div>
                 <div className='w-8 h-8 bg-green-500 text-white rounded-lg flex items-center justify-center'>
