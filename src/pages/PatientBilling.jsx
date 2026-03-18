@@ -26,7 +26,7 @@ const PatientBilling = () => {
           // Mapping Mongoose Schema fields to UI component names
           const mappedData = data.map(bill => ({
             invoiceNumber: bill.invoiceNumber,
-            // Schema uses 'paid', 'partially_paid', 'due'
+            // Mapping Schema enums to UI display strings
             status:
               bill.paymentStatus === 'paid'
                 ? 'Paid'
@@ -174,6 +174,16 @@ const PatientBilling = () => {
             No Records Found
           </div>
         )}
+
+        {/* Bottom Logout Button */}
+        <div className='flex justify-end mt-12'>
+          <button
+            onClick={handleLogout}
+            className='w-48 border-2 border-red-200 text-red-700 rounded-xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all focus:ring-2 focus:ring-red-500 outline-none'
+          >
+            LogOut
+          </button>
+        </div>
       </main>
       <Footer />
     </div>
