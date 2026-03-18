@@ -1,11 +1,6 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { Patient } from "../models/patient.model.js";
-import { Admin } from "../models/admin.model.js";
-import { Doctor } from "../models/doctor.model.js";
-import { DoctorAssistant } from "../models/doctorAssistant.model.js";
-import { LabAssistant } from "../models/labAssistant.model.js";
-import { Receptionist } from "../models/receptionist.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { deleteFromCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -268,59 +263,59 @@ const logoutPatient = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Logged out successfully"));
 });
 
-const refreshAccessToken = asyncHandler(async (req, res) => {
-  const incomingRefreshToken =
-    req.cookies.refreshToken || req.body.refreshToken;
+// const refreshAccessToken = asyncHandler(async (req, res) => {
+//   const incomingRefreshToken =
+//     req.cookies.refreshToken || req.body.refreshToken;
 
-  if (!incomingRefreshToken) {
-    throw new ApiError(401, "Refresh token is missing");
-  }
+//   if (!incomingRefreshToken) {
+//     throw new ApiError(401, "Refresh token is missing");
+//   }
 
-  try {
-    const decodedToken = jwt.verify(
-      incomingRefreshToken,
-      process.env.REFRESH_TOKEN_SECRET,
-    );
+//   try {
+//     const decodedToken = jwt.verify(
+//       incomingRefreshToken,
+//       process.env.REFRESH_TOKEN_SECRET,
+//     );
 
-    let user;
-    if (decodedToken?.role === "admin") {
-      user = await Admin.findById(decodedToken?._id).select("+refreshToken");
-    } else if (decodedToken?.role === "patient") {
-      user = await Patient.findById(decodedToken?._id).select("+refreshToken");
-    }
+//     let user;
+//     if (decodedToken?.role === "admin") {
+//       user = await Admin.findById(decodedToken?._id).select("+refreshToken");
+//     } else if (decodedToken?.role === "patient") {
+//       user = await Patient.findById(decodedToken?._id).select("+refreshToken");
+//     }
 
-    if (!user) {
-      throw new ApiError(401, "User session not found");
-    }
+//     if (!user) {
+//       throw new ApiError(401, "User session not found");
+//     }
 
-    if (incomingRefreshToken.trim() !== user.refreshToken?.trim()) {
-      throw new ApiError(401, "Refresh token is expired or already used");
-    }
+//     if (incomingRefreshToken.trim() !== user.refreshToken?.trim()) {
+//       throw new ApiError(401, "Refresh token is expired or already used");
+//     }
 
-    const { accessToken, refreshToken: newRefreshToken } =
-      await generateAccessAndRefreshToken(user._id, decodedToken.role);
+//     const { accessToken, refreshToken: newRefreshToken } =
+//       await generateAccessAndRefreshToken(user._id, decodedToken.role);
 
-    const options = {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-    };
+//     const options = {
+//       httpOnly: true,
+//       secure: true,
+//       sameSite: "none",
+//     };
 
-    return res
-      .status(200)
-      .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", newRefreshToken, options)
-      .json(
-        new ApiResponse(
-          200,
-          { accessToken, refreshToken: newRefreshToken },
-          "Access token refreshed",
-        ),
-      );
-  } catch (error) {
-    throw new ApiError(401, error?.message || "Invalid refresh token");
-  }
-});
+//     return res
+//       .status(200)
+//       .cookie("accessToken", accessToken, options)
+//       .cookie("refreshToken", newRefreshToken, options)
+//       .json(
+//         new ApiResponse(
+//           200,
+//           { accessToken, refreshToken: newRefreshToken },
+//           "Access token refreshed",
+//         ),
+//       );
+//   } catch (error) {
+//     throw new ApiError(401, error?.message || "Invalid refresh token");
+//   }
+// });
 
 //*********************get patient profile****************
 const getPatientProfile = asyncHandler(async (req, res) => {
@@ -447,7 +442,6 @@ export {
   finalizeRegistration,
   loginPatient,
   logoutPatient,
-  refreshAccessToken,
   getPatientProfile,
   updatePatientProfile,
   changeCurrentPassword,

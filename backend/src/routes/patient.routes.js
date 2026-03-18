@@ -4,7 +4,6 @@ import {
   finalizeRegistration,
   loginPatient,
   logoutPatient,
-  refreshAccessToken,
   getPatientProfile,
   updatePatientProfile,
   changeCurrentPassword
@@ -22,7 +21,6 @@ router
 router.route("/finalize-registration").post(finalizeRegistration);
 router.route("/login").post(loginPatient);
 router.route("/logout").post(verifyJWT, logoutPatient);
-router.route("/refresh-token").post(refreshAccessToken);
 router.route("/profile").get(verifyJWT, getPatientProfile);
 router.route("/update-profile").patch(
     verifyJWT, 
@@ -33,3 +31,5 @@ router.route("/change-password").post(verifyJWT, changeCurrentPassword);
 
 
 export default router;
+
+// router.route("/refresh-token").post(refreshAccessToken);
