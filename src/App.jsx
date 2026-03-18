@@ -9,6 +9,10 @@ import DoctorLogin from './pages/DoctorLogin.jsx';
 import StaffLogin from './pages/StaffLogin.jsx';
 import PatientDashboard from './pages/PatientDashboard.jsx';
 import EditProfile from './pages/EditProfile.jsx';
+import HealthVault from './pages/HealthVault.jsx';
+import SearchDoctor from './pages/SearchDoctor.jsx';
+import PatientAppointments from './pages/PatientAppointments.jsx';
+import PatientBilling from './pages/PatientBilling.jsx';
 const App = () => {
   return (
     <Router>
@@ -23,6 +27,10 @@ const App = () => {
           <Route path='/login-staff' element={<StaffLogin />} />
           <Route path='/patient-dashboard' element={<PatientDashboard />} />
           <Route path='/edit-profile' element={<EditProfile />} />
+          <Route path='/my-records' element={<HealthVault />} />
+          <Route path='/search-doctor' element={<SearchDoctor />} />
+          <Route path='/appointments' element={<PatientAppointments />} />
+          <Route path='/billing' element={<PatientBilling />} />
         </Routes>
       </div>
     </Router>
