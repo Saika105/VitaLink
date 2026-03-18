@@ -20,7 +20,6 @@ const labAssistantSchema = new mongoose.Schema(
       index: true,
     },
 
-    // Admin who created this lab assistant account
     createdByAdmin: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
@@ -31,10 +30,9 @@ const labAssistantSchema = new mongoose.Schema(
   baseSchemaOptions
 );
 
-labAssistantSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+labAssistantSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 labAssistantSchema.methods.isPasswordCorrect = async function (password) {

@@ -9,11 +9,15 @@ import {
 
 const doctorAssistantSchema = new mongoose.Schema(
   {
-    assistantId: externalIdField("DR-ASST"),
+    assistantId: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
 
     ...createStaffBaseFields(),
 
-    // The doctor this assistant is assigned to
     doctor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Doctor",
@@ -28,7 +32,6 @@ const doctorAssistantSchema = new mongoose.Schema(
       index: true,
     },
 
-    // Admin who created this assistant account
     createdByAdmin: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
@@ -36,15 +39,14 @@ const doctorAssistantSchema = new mongoose.Schema(
       index: true,
     },
   },
-  baseSchemaOptions
+  baseSchemaOptions,
 );
 
 doctorAssistantSchema.index({ doctor: 1, hospital: 1 });
 
-doctorAssistantSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+doctorAssistantSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 doctorAssistantSchema.methods.isPasswordCorrect = async function (password) {
@@ -62,7 +64,7 @@ doctorAssistantSchema.methods.generateAccessToken = function () {
       doctor: this.doctor,
     },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
+    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY },
   );
 };
 
@@ -74,9 +76,11 @@ doctorAssistantSchema.methods.generateRefreshToken = function () {
       loginId: this.assistantId,
     },
     process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: process.env.REFRESH_TOKEN_EXPIRY }
+    { expiresIn: process.env.REFRESH_TOKEN_EXPIRY },
   );
 };
 
-export const DoctorAssistant = mongoose.model("DoctorAssistant", doctorAssistantSchema);
-
+export const DoctorAssistant = mongoose.model(
+  "DoctorAssistant",
+  doctorAssistantSchema,
+);

@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { Admin } from "../models/admin.model.js";
 import { Hospital } from "../models/hospital.model.js";
 import { Doctor } from "../models/doctor.model.js";
+import { DoctorSchedule } from "../models/doctorSchedule.model.js";
 import { DoctorAssistant } from "../models/doctorAssistant.model.js";
 import { LabAssistant } from "../models/labAssistant.model.js";
 import { Receptionist } from "../models/receptionist.model.js";
@@ -38,7 +39,8 @@ const loginAdmin = asyncHandler(async (req, res) => {
   }
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
-    admin._id, "admin"
+    admin._id,
+    "admin",
   );
 
   const loggedInAdmin = await Admin.findById(admin._id)
@@ -92,8 +94,183 @@ const logoutAdmin = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Admin logged out successfully"));
 });
 
+//******************************* DOCTOR PART *********************** */
+const generateUniqueDoctorId = () => {
+  const digits = Math.floor(1000 + Math.random() * 9000); 
+  const year = new Date().getFullYear();
+  return `DOC-${year}-${digits}`;
+};
 
+const generateScheduleId = () => {
+  return `SCHED-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+};
 
+//************** Create doctor ********** */
+const createDoctor = asyncHandler(async (req, res) => {
+  const {
+    fullName,
+    email,
+    password,
+    phone,             
+    gender,            
+    dateOfBirth,       
+    emergencyContact,  
+    licenseNumber,
+    specialization,
+    designation,
+    degree,
+    yearsExperience,
+    consultationFee,
+    sittingTimeLabel,
+    workingDays,
+    timeSlots,
+  } = req.body;
 
+  if (
+    [fullName, email, password, phone, gender, dateOfBirth, licenseNumber, specialization, sittingTimeLabel].some(
+      (f) => f?.trim() === ""
+    )
+  ) {
+    throw new ApiError(400, "All profile and availability fields are required");
+  }
 
-export { loginAdmin, logoutAdmin};
+  let parsedWorkingDays = typeof workingDays === 'string' ? JSON.parse(workingDays) : workingDays;
+  let parsedTimeSlots = typeof timeSlots === 'string' ? JSON.parse(timeSlots) : timeSlots;
+
+  if (!Array.isArray(parsedWorkingDays) || parsedWorkingDays.length === 0) {
+    throw new ApiError(400, "At least one working day is required");
+  }
+
+  const existedDoctor = await Doctor.findOne({ 
+    $or: [{ email }, { licenseNumber }, { phone }] 
+  });
+
+  if (existedDoctor) {
+    throw new ApiError(409, "Doctor with this email, license, or phone already exists");
+  }
+
+  const photoLocalPath = req.file?.path;
+  if (!photoLocalPath) throw new ApiError(400, "Doctor profile photo is required");
+  
+  const photo = await uploadOnCloudinary(photoLocalPath);
+  if (!photo) throw new ApiError(500, "Error while uploading profile photo");
+
+  const doctor = await Doctor.create({
+    doctorId: generateUniqueDoctorId(), 
+    fullName,
+    email,
+    password,
+    phone,
+    gender: gender.toLowerCase(), 
+    dateOfBirth,
+    emergencyContact,
+    licenseNumber,
+    specialization,
+    designation,
+    degree,
+    yearsExperience: Number(yearsExperience) || 0,
+    profilePhoto: { 
+        url: photo.url, 
+        publicId: photo.public_id 
+    },
+    hospital: req.user.hospital, 
+    createdByAdmin: req.user._id, 
+  });
+
+  if (!doctor) {
+    if (photo.publicId) {
+      await deleteFromCloudinary(photo.publicId);
+    }
+    throw new ApiError(500, "Error while creating doctor account");
+  }
+
+  const schedule = await DoctorSchedule.create({
+    scheduleId: generateScheduleId(),
+    doctor: doctor._id,
+    hospital: req.user.hospital,
+    sittingTimeLabel,
+    workingDays: parsedWorkingDays,
+    consultationFee: Number(consultationFee) || 0,
+    timeSlots: parsedTimeSlots,
+  });
+
+  if (!schedule) {
+    await Doctor.findByIdAndDelete(doctor._id);
+    if (photo.publicId) {
+      await deleteFromCloudinary(photo.publicId);
+    }
+    throw new ApiError(500, "Error while creating doctor schedule");
+  }
+
+  const createdDoctor = await Doctor.findById(doctor._id).select("-password -refreshToken");
+
+  return res.status(201).json(
+    new ApiResponse(
+      201,
+      { doctor: createdDoctor, schedule },
+      "Doctor account and schedule created successfully"
+    )
+  );
+});
+
+//************************ DOCTOR Assistant PART *********************** */
+const generateAssistantId = () => {
+  const digits = Math.floor(1000 + Math.random() * 9000);
+  const year = new Date().getFullYear();
+  return `ASST-${year}-${digits}`;
+};
+
+//************** Create doctor assistant ********** */
+const createDoctorAssistant = asyncHandler(async (req, res) => {
+  const { 
+    fullName, 
+    email, 
+    password, 
+    phone, 
+    gender, 
+    dateOfBirth, 
+    doctor,          
+    emergencyName,   
+    emergencyPhone,  
+    nidNumber,
+    address 
+  } = req.body;
+
+  if ([fullName, email, password, phone, doctor, emergencyName, emergencyPhone].some((f) => f?.trim() === "")) {
+    throw new ApiError(400, "All profile fields and emergency contact details are required");
+  }
+
+  const existedAssistant = await DoctorAssistant.findOne({ $or: [{ email }, { phone }] });
+  if (existedAssistant) throw new ApiError(409, "Assistant with this email or phone already exists");
+
+  const assistant = await DoctorAssistant.create({
+    assistantId: generateAssistantId(),
+    fullName,
+    email,
+    password,
+    phone,
+    gender: gender.toLowerCase(),
+    dateOfBirth,
+    address,
+    nidNumber,
+    emergencyContact: {
+      name: emergencyName,
+      phone: emergencyPhone
+    },
+    doctor, 
+    hospital: req.user.hospital, 
+    createdByAdmin: req.user._id, 
+  });
+
+  if (!assistant) {
+    throw new ApiError(500, "Internal Server Error: Failed to register the assistant account.");
+  }
+
+  const createdAssistant = await DoctorAssistant.findById(assistant._id).select("-password");
+
+  return res.status(201).json(
+    new ApiResponse(201, createdAssistant, "Doctor Assistant registered successfully")
+  );
+});
+
+export { loginAdmin, logoutAdmin, createDoctor , createDoctorAssistant };

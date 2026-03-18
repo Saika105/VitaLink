@@ -20,7 +20,6 @@ const receptionistSchema = new mongoose.Schema(
       index: true,
     },
 
-    // Admin who created this receptionist account
     createdByAdmin: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
@@ -31,10 +30,9 @@ const receptionistSchema = new mongoose.Schema(
   baseSchemaOptions
 );
 
-receptionistSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+receptionistSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 receptionistSchema.methods.isPasswordCorrect = async function (password) {

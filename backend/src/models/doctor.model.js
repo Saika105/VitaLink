@@ -1,80 +1,88 @@
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import {
-  baseSchemaOptions,
-  createStaffBaseFields,
-  externalIdField,
-  fileSchema,
-} from "./_shared.js";
 
 const doctorSchema = new mongoose.Schema(
   {
-    doctorId: externalIdField("DOC"),
-
-    ...createStaffBaseFields(),
-
-    licenseNumber: {
+    doctorId: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    fullName: {
       type: String,
       required: true,
       trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
       unique: true,
-      maxlength: 100,
-    },
-
-    designation: {
-      type: String,
+      lowercase: true,
       trim: true,
-      maxlength: 100,
     },
-
-    degree: {
+    password: {
       type: String,
-      trim: true,
-      maxlength: 150,
+      required: true,
     },
-
+    phone: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    gender: {
+      type: String,
+      required: true,
+      enum: ["male", "female", "other"],
+    },
+    dateOfBirth: {
+      type: Date,
+      required: true,
+    },
+    licenseNumber: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
     specialization: {
       type: String,
       required: true,
       trim: true,
-      maxlength: 120,
     },
-
-    yearsExperience: {
-      type: Number,
-      min: 0,
-      max: 50,
-      default: 0,
-    },
+    designation: { type: String, trim: true },
+    degree: { type: String, trim: true },
+    yearsExperience: { type: Number, default: 0 },
 
     profilePhoto: {
-      type: fileSchema,
-      default: null,
+      url: { type: String },
+      publicId: { type: String },
     },
-
     hospital: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Hospital",
       required: true,
-      index: true,
     },
-
-    // Admin who created this doctor account
     createdByAdmin: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
       required: true,
-      index: true,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    refreshToken: {
+      type: String,
     },
   },
-  baseSchemaOptions
+  { timestamps: true }
 );
 
-doctorSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+doctorSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 doctorSchema.methods.isPasswordCorrect = async function (password) {
@@ -108,4 +116,3 @@ doctorSchema.methods.generateRefreshToken = function () {
 };
 
 export const Doctor = mongoose.model("Doctor", doctorSchema);
- 

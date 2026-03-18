@@ -1,19 +1,21 @@
 import mongoose from "mongoose";
-import { WEEK_DAYS } from "./enums.js";
-import {
-  baseSchemaOptions,
-  externalIdField,
-  timeSlotSchema,
-  validateTimeSlotOrder,
-} from "./_shared.js";
 
-// Stores a doctor's schedule at a specific hospital:
-// working days, time slots, and consultation fee.
-// Used by the appointment booking flow.
+const timeSlotSchema = new mongoose.Schema(
+  {
+    start: { type: String, required: true },
+    end: { type: String, required: true },
+    isAvailable: { type: Boolean, default: true },
+  },
+  { _id: false },
+);
 
 const doctorScheduleSchema = new mongoose.Schema(
   {
-    scheduleId: externalIdField("SCHED"),
+    scheduleId: {
+      type: String,
+      required: true,
+      unique: true,
+    },
 
     doctor: {
       type: mongoose.Schema.Types.ObjectId,
@@ -29,30 +31,20 @@ const doctorScheduleSchema = new mongoose.Schema(
       index: true,
     },
 
-    specializationLabel: {
-      type: String,
-      trim: true,
-      maxlength: 120,
-      default: null,
-    },
-
-    // Human-readable sitting time e.g. "Morning: 9AM - 12PM"
     sittingTimeLabel: {
       type: String,
       required: true,
       trim: true,
-      maxlength: 100,
     },
 
     workingDays: {
       type: [String],
       required: true,
-      enum: WEEK_DAYS,
       validate: {
         validator: function (value) {
           return Array.isArray(value) && value.length > 0;
         },
-        message: "workingDays must contain at least one day",
+        message: "At least one working day is required",
       },
     },
 
@@ -61,15 +53,9 @@ const doctorScheduleSchema = new mongoose.Schema(
       required: true,
       validate: {
         validator: function (value) {
-          return (
-            Array.isArray(value) &&
-            value.length > 0 &&
-            value.every(function (slot) {
-              return validateTimeSlotOrder(slot);
-            })
-          );
+          return Array.isArray(value) && value.length > 0;
         },
-        message: "timeSlots must contain valid start/end values",
+        message: "At least one time slot is required",
       },
     },
 
@@ -85,11 +71,12 @@ const doctorScheduleSchema = new mongoose.Schema(
       default: true,
     },
   },
-  baseSchemaOptions
+  { timestamps: true },
 );
 
-// A doctor can only have one schedule per hospital
 doctorScheduleSchema.index({ doctor: 1, hospital: 1 }, { unique: true });
 
-const DoctorSchedule = mongoose.model("DoctorSchedule", doctorScheduleSchema);
-export default DoctorSchedule;
+export const DoctorSchedule = mongoose.model(
+  "DoctorSchedule",
+  doctorScheduleSchema,
+);
