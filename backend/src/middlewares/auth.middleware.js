@@ -11,7 +11,7 @@ import {DoctorAssistant} from "../models/doctorAssistant.model.js";
 import {LabAssistant} from "../models/labAssistant.model.js";
 import {Receptionist} from "../models/receptionist.model.js";
 
-// Map role string from JWT to correct Mongoose model
+
 const roleModelMap = {
   patient: Patient,
   doctor: Doctor,
@@ -56,12 +56,11 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
   }
 });
 
-// export const isAdmin = (req, res, next) => {
-//     // Check if the user attached by verifyJWT has an 'admin' role
-//     // This assumes your model has a 'role' field or you are using a separate Admin model
-//     if (req.user && req.user.role === "admin") {
-//         next();
-//     } else {
-//         throw new ApiError(403, "Access denied. Admin rights required.");
-//     }
-// };
+export const isAdmin = (req, res, next) => {
+    if (req.user && req.user.role === "admin") {
+        next();
+    } else {
+        throw new ApiError(403, "Access denied. Admin rights required.");
+    }
+};
+

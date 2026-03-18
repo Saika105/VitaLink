@@ -1,26 +1,17 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { Patient } from "../models/patient.model.js";
+import { Admin } from "../models/admin.model.js";
+import { Doctor } from "../models/doctor.model.js";
+import { DoctorAssistant } from "../models/doctorAssistant.model.js";
+import { LabAssistant } from "../models/labAssistant.model.js";
+import { Receptionist } from "../models/receptionist.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { deleteFromCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { generateAccessAndRefreshToken } from "../utils/token.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
-
-const generateAccessAndRefreshToken = async (patientId) => {
-  try {
-    const patient = await Patient.findById(patientId);
-    const accessToken = patient.generateAccessToken();
-    const refreshToken = patient.generateRefreshToken();
-
-    patient.refreshToken = refreshToken;
-    await patient.save({ validateBeforeSave: false });
-
-    return { accessToken, refreshToken };
-  } catch (error) {
-    throw new ApiError(500, "Error generating security tokens");
-  }
-};
 
 // Utility function to generate a unique patient ID
 const generateUniquePatientId = () => {
@@ -222,7 +213,7 @@ const loginPatient = asyncHandler(async (req, res) => {
   }
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
-    patient._id,
+    patient._id, "patient"
   );
 
   const loggedInPatient = await Patient.findById(patient._id).select(
@@ -290,16 +281,30 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       incomingRefreshToken,
       process.env.REFRESH_TOKEN_SECRET,
     );
-    const patient = await Patient.findById(decodedToken?._id);
 
-    if (!patient || incomingRefreshToken !== patient?.refreshToken) {
-      throw new ApiError(401, "Refresh token is expired or invalid");
+    let user;
+    if (decodedToken?.role === "admin") {
+      user = await Admin.findById(decodedToken?._id).select("+refreshToken");
+    } else if (decodedToken?.role === "patient") {
+      user = await Patient.findById(decodedToken?._id).select("+refreshToken");
+    }
+
+    if (!user) {
+      throw new ApiError(401, "User session not found");
+    }
+
+    if (incomingRefreshToken.trim() !== user.refreshToken?.trim()) {
+      throw new ApiError(401, "Refresh token is expired or already used");
     }
 
     const { accessToken, refreshToken: newRefreshToken } =
-      await generateAccessAndRefreshToken(patient._id);
+      await generateAccessAndRefreshToken(user._id, decodedToken.role);
 
-    const options = { httpOnly: true, secure: true, sameSite: "none" };
+    const options = {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    };
 
     return res
       .status(200)
@@ -309,7 +314,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         new ApiResponse(
           200,
           { accessToken, refreshToken: newRefreshToken },
-          "Token refreshed",
+          "Access token refreshed",
         ),
       );
   } catch (error) {
