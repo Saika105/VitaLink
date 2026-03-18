@@ -1,0 +1,183 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import DashboardNav from '../components/DashboardNav';
+
+const PatientBilling = () => {
+  const navigate = useNavigate();
+  const [billingHistory, setBillingHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const apiUrl = import.meta.env.VITE_API_URL;
+
+  useEffect(() => {
+    const fetchBilling = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${apiUrl}/patient/billing`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          // Mapping Mongoose Schema fields to UI component names
+          const mappedData = data.map(bill => ({
+            invoiceNumber: bill.invoiceNumber,
+            // Schema uses 'paid', 'partially_paid', 'due'
+            status:
+              bill.paymentStatus === 'paid'
+                ? 'Paid'
+                : bill.paymentStatus === 'partially_paid'
+                  ? 'Partial'
+                  : 'Due',
+            hospitalName: bill.hospital?.fullName || 'VitaLink Partner',
+            date: new Date(bill.invoiceDate).toLocaleDateString(),
+            reason: bill.billSummary || 'Medical Services',
+            totalAmount: bill.totalAmount,
+            balanceDue: bill.balanceDue,
+            mongoId: bill._id,
+          }));
+          setBillingHistory(mappedData);
+        }
+      } catch (err) {
+        console.error('Failed to connect to billing server');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBilling();
+  }, [apiUrl]);
+
+  const handlePayDue = (invoiceNumber, amount) => {
+    alert(`Redirecting to payment gateway for Invoice: ${invoiceNumber}`);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    navigate('/login-patient');
+  };
+
+  return (
+    <div className='min-h-screen bg-[#F8FAFC] flex flex-col font-inter text-slate-800'>
+      <Navbar />
+      <DashboardNav />
+
+      <main className='grow max-w-7xl mx-auto w-full p-4 md:p-10 flex flex-col'>
+        <div className='flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6'>
+          <div>
+            <p className='text-[10px] font-black text-[#3B82F6] uppercase tracking-[0.25em] mb-1'>
+              Financial Summary
+            </p>
+            <h2 className='text-3xl font-black text-slate-900 uppercase tracking-tighter'>
+              Billing History
+            </h2>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className='flex justify-center p-20'>
+            <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-[#3B82F6]'></div>
+          </div>
+        ) : (
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
+            {billingHistory.map(bill => (
+              <div
+                key={bill.invoiceNumber}
+                className='bg-white rounded-3xl p-8 shadow-2xl border border-slate-100 flex flex-col justify-between transition-all hover:shadow-blue-100'
+              >
+                <div>
+                  <div className='flex justify-between items-start mb-6'>
+                    <span className='text-sm text-[#3B82F6] font-bold'>
+                      {bill.invoiceNumber}
+                    </span>
+                    <span
+                      className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-xl ${
+                        bill.status === 'Paid'
+                          ? 'bg-green-100 text-green-700'
+                          : bill.status === 'Partial'
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-red-100 text-red-700'
+                      }`}
+                    >
+                      {bill.status}
+                    </span>
+                  </div>
+
+                  <h3 className='text-lg font-bold text-slate-900 uppercase leading-tight'>
+                    {bill.hospitalName}
+                  </h3>
+                  <p className='text-[10px] font-black text-slate-700 mt-2 uppercase tracking-widest'>
+                    {bill.date}
+                  </p>
+
+                  <div className='mt-6'>
+                    <p className='text-[10px] font-black text-[#3B82F6] uppercase tracking-[0.25em] mb-1'>
+                      Details
+                    </p>
+                    <p className='text-sm font-bold text-slate-700'>
+                      {bill.reason}
+                    </p>
+                  </div>
+
+                  <div className='mt-6 space-y-4 border-t border-slate-50 pt-6'>
+                    <div className='flex justify-between items-center'>
+                      <p className='text-[10px] font-black text-slate-700 uppercase tracking-widest'>
+                        Total
+                      </p>
+                      <p className='text-sm font-black text-slate-900'>
+                        ৳ {bill.totalAmount}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className='mt-8'>
+                  {bill.balanceDue > 0 ? (
+                    <div className='bg-red-50 rounded-2xl p-5 border border-red-100 text-center'>
+                      <div className='flex justify-between items-center mb-4'>
+                        <p className='text-[10px] font-black text-red-400 uppercase tracking-widest'>
+                          Due
+                        </p>
+                        <p className='text-lg font-black text-red-600'>
+                          ৳ {bill.balanceDue}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() =>
+                          handlePayDue(bill.invoiceNumber, bill.balanceDue)
+                        }
+                        className='w-full bg-[#3B82F6] hover:bg-[#1E40AF] text-white font-bold py-3.5 rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest text-[10px]'
+                      >
+                        Pay Now
+                      </button>
+                    </div>
+                  ) : (
+                    <div className='bg-slate-50 rounded-2xl p-5 text-center border border-slate-300'>
+                      <p className='text-[10px] font-black text-slate-800 uppercase tracking-widest'>
+                        Settled
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!isLoading && billingHistory.length === 0 && (
+          <div className='p-32 text-center text-slate-400 uppercase font-black text-[10px] tracking-[0.3em] border-2 border-dashed border-slate-200 rounded-4xl'>
+            No Records Found
+          </div>
+        )}
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
+export default PatientBilling;
