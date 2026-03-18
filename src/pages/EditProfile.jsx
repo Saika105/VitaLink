@@ -8,18 +8,29 @@ const EditProfile = () => {
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showPasswords, setShowPasswords] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
+    fullName: '',
     email: '',
-    contact: '',
-    emergencyContact: '',
+    phone: '',
+    emergencyContact: { name: '', phone: '', relationship: '' },
     address: '',
-    photo: '',
+    profilePhoto: null,
+  });
+
+  const [passwordData, setPasswordData] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: '',
   });
 
   const inputStyle =
-    'w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all font-mono placeholder-slate-300 bg-slate-50/50';
+    'w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all font-inter placeholder-slate-300 bg-slate-50/50';
+  const labelStyle =
+    'text-[11px] font-black text-slate-900 uppercase tracking-[0.15em] ml-1 mb-2 block font-inter';
 
   useEffect(() => {
     const fetchCurrentData = async () => {
@@ -33,14 +44,18 @@ const EditProfile = () => {
         if (response.ok) {
           const data = await response.json();
           setFormData({
-            name: data.name || '',
+            fullName: data.fullName || '',
             email: data.email || '',
-            contact: data.contact || '',
-            emergencyContact: data.emergencyContact || '',
+            phone: data.phone || '',
+            emergencyContact: data.emergencyContact || {
+              name: '',
+              phone: '',
+              relationship: '',
+            },
             address: data.address || '',
-            photo: data.photo || '',
+            profilePhoto: data.profilePhoto || null,
           });
-          if (data.photo) setImagePreview(data.photo);
+          if (data.profilePhoto?.url) setImagePreview(data.profilePhoto.url);
         }
       } catch (err) {
         console.error(err);
@@ -59,7 +74,7 @@ const EditProfile = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
-        setFormData(prev => ({ ...prev, photo: reader.result }));
+        setFormData(prev => ({ ...prev, profilePhoto: reader.result }));
       };
       reader.readAsDataURL(file);
     }
@@ -68,7 +83,6 @@ const EditProfile = () => {
   const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const response = await fetch(`${apiUrl}/patient/update`, {
         method: 'PUT',
@@ -78,7 +92,6 @@ const EditProfile = () => {
         },
         body: JSON.stringify(formData),
       });
-
       if (response.ok) {
         alert('Profile updated successfully!');
         navigate('/patient-dashboard');
@@ -89,6 +102,65 @@ const EditProfile = () => {
     } catch (err) {
       console.error(err);
       alert('Server connection failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async e => {
+    e.preventDefault();
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      alert('New passwords do not match');
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch(`${apiUrl}/auth/change-password`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          oldPassword: passwordData.oldPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+      if (response.ok) {
+        alert('Password updated successfully!');
+        setIsModalOpen(false);
+        setPasswordData({
+          oldPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Update failed');
+      }
+    } catch (err) {
+      alert('Connection error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${apiUrl}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email }),
+      });
+      if (response.ok) {
+        setResetSent(true);
+        setTimeout(() => setResetSent(false), 5000);
+      } else {
+        alert('Failed to initiate reset. Please check your internet.');
+      }
+    } catch (err) {
+      alert('Connection error');
     } finally {
       setLoading(false);
     }
@@ -118,11 +190,11 @@ const EditProfile = () => {
 
           <div className='flex flex-col md:flex-row gap-12 font-inter'>
             <div className='flex flex-col items-center gap-4 font-inter'>
-              <label className='text-[12px] font-black text-slate-800 uppercase tracking-widest font-inter'>
+              <label className='text-[11px] font-black text-slate-800 uppercase tracking-widest font-inter'>
                 Profile Photo
               </label>
               <div className='relative group font-inter'>
-                <div className='w-40 h-40 rounded-[2rem] overflow-hidden border-4 border-slate-50 shadow-xl bg-slate-100 flex items-center justify-center font-inter'>
+                <div className='w-40 h-40 rounded-4xl overflow-hidden border-4 border-slate-50 shadow-xl bg-slate-100 flex items-center justify-center font-inter'>
                   {imagePreview ? (
                     <img
                       src={imagePreview}
@@ -145,7 +217,7 @@ const EditProfile = () => {
                     </svg>
                   )}
                 </div>
-                <label className='absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-[2rem] font-inter'>
+                <label className='absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-4xl font-inter'>
                   <span className='text-[10px] font-black text-white uppercase tracking-tighter font-inter'>
                     Change Photo
                   </span>
@@ -160,18 +232,37 @@ const EditProfile = () => {
               <p className='text-[10px] text-slate-500 font-bold uppercase font-inter'>
                 JPG/PNG Max 2MB
               </p>
+
+              <button
+                type='button'
+                onClick={() => setIsModalOpen(true)}
+                className='mt-6 w-full h-12 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[10px] rounded-xl font-black uppercase tracking-widest shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2 font-inter'
+              >
+                <svg
+                  className='w-4 h-4'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth='2'
+                    d='M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z'
+                  />
+                </svg>
+                Change Password
+              </button>
             </div>
 
             <div className='flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 font-inter'>
               <div className='md:col-span-2 font-inter'>
-                <label className='text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] ml-1 font-inter'>
-                  Full Name
-                </label>
+                <label className={labelStyle}>Full Name</label>
                 <input
                   type='text'
-                  value={formData.name}
+                  value={formData.fullName}
                   onChange={e =>
-                    setFormData({ ...formData, name: e.target.value })
+                    setFormData({ ...formData, fullName: e.target.value })
                   }
                   className={inputStyle}
                   placeholder='Full Name'
@@ -179,9 +270,7 @@ const EditProfile = () => {
               </div>
 
               <div className='font-inter'>
-                <label className='text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] ml-1 font-inter'>
-                  Email Address
-                </label>
+                <label className={labelStyle}>Email Address</label>
                 <input
                   type='email'
                   value={formData.email}
@@ -194,14 +283,12 @@ const EditProfile = () => {
               </div>
 
               <div className='font-inter'>
-                <label className='text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] ml-1 font-inter'>
-                  Contact Number
-                </label>
+                <label className={labelStyle}>Contact Number</label>
                 <input
                   type='text'
-                  value={formData.contact}
+                  value={formData.phone}
                   onChange={e =>
-                    setFormData({ ...formData, contact: e.target.value })
+                    setFormData({ ...formData, phone: e.target.value })
                   }
                   className={inputStyle}
                   placeholder='Contact Number'
@@ -209,16 +296,17 @@ const EditProfile = () => {
               </div>
 
               <div className='md:col-span-2 font-inter'>
-                <label className='text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] ml-1 font-inter'>
-                  Emergency Contact
-                </label>
+                <label className={labelStyle}>Emergency Contact Number</label>
                 <input
                   type='text'
-                  value={formData.emergencyContact}
+                  value={formData.emergencyContact?.phone || ''}
                   onChange={e =>
                     setFormData({
                       ...formData,
-                      emergencyContact: e.target.value,
+                      emergencyContact: {
+                        ...formData.emergencyContact,
+                        phone: e.target.value,
+                      },
                     })
                   }
                   className={inputStyle}
@@ -226,10 +314,8 @@ const EditProfile = () => {
                 />
               </div>
 
-              <div className='md:col-span-2 flex flex-col gap-2 font-inter'>
-                <label className='text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] ml-1 font-inter'>
-                  Permanent Home Address
-                </label>
+              <div className='md:col-span-2 flex flex-col font-inter'>
+                <label className={labelStyle}>Permanent Home Address</label>
                 <textarea
                   value={formData.address}
                   onChange={e =>
@@ -260,6 +346,151 @@ const EditProfile = () => {
           </div>
         </form>
       </main>
+
+      {/* Modal code remains exactly the same */}
+      {isModalOpen && (
+        <div className='fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm font-inter'>
+          <div className='bg-white w-full max-w-md rounded-4xl p-8 shadow-2xl border border-slate-100 font-inter'>
+            <div className='mb-6 font-inter flex justify-between items-start'>
+              <div className='font-inter'>
+                <h3 className='text-xl font-black text-slate-900 uppercase tracking-tighter font-inter'>
+                  Access Credentials
+                </h3>
+                <p className='text-[10px] font-bold text-slate-500 uppercase tracking-widest font-inter'>
+                  Change your vault password
+                </p>
+              </div>
+              <button
+                type='button'
+                onClick={() => setShowPasswords(!showPasswords)}
+                className='text-slate-400 hover:text-[#3B82F6] transition-colors p-2 font-inter'
+              >
+                {showPasswords ? (
+                  <svg
+                    className='w-5 h-5'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth='2'
+                      d='M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18'
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className='w-5 h-5'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth='2'
+                      d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
+                    />
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth='2'
+                      d='M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
+                    />
+                  </svg>
+                )}
+              </button>
+            </div>
+
+            {resetSent && (
+              <div className='mb-6 p-4 bg-blue-50 border border-blue-100 rounded-2xl animate-pulse'>
+                <p className='text-[11px] font-bold text-[#3B82F6] uppercase tracking-wider text-center'>
+                  Recovery link sent to your vault email!
+                </p>
+              </div>
+            )}
+
+            <form
+              onSubmit={handleChangePassword}
+              className='space-y-4 font-inter'
+            >
+              <div className='font-inter'>
+                <label className={labelStyle}>Current Password</label>
+                <input
+                  type={showPasswords ? 'text' : 'password'}
+                  required
+                  className={inputStyle}
+                  value={passwordData.oldPassword}
+                  onChange={e =>
+                    setPasswordData({
+                      ...passwordData,
+                      oldPassword: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className='font-inter'>
+                <label className={labelStyle}>New Password</label>
+                <input
+                  type={showPasswords ? 'text' : 'password'}
+                  required
+                  className={inputStyle}
+                  value={passwordData.newPassword}
+                  onChange={e =>
+                    setPasswordData({
+                      ...passwordData,
+                      newPassword: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className='font-inter'>
+                <label className={labelStyle}>Confirm New Password</label>
+                <input
+                  type={showPasswords ? 'text' : 'password'}
+                  required
+                  className={inputStyle}
+                  value={passwordData.confirmPassword}
+                  onChange={e =>
+                    setPasswordData({
+                      ...passwordData,
+                      confirmPassword: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className='flex flex-col gap-3 pt-4 font-inter'>
+                <button
+                  type='submit'
+                  disabled={loading}
+                  className='w-full h-12 bg-[#3B82F6] text-white text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-[#1E40AF] transition-all shadow-lg shadow-blue-500/30 font-inter'
+                >
+                  {loading ? 'Validating...' : 'Update Password'}
+                </button>
+                {!resetSent && (
+                  <button
+                    type='button'
+                    onClick={handleForgotPassword}
+                    className='text-[10px] font-bold text-slate-600 uppercase tracking-widest hover:text-black transition-all text-center font-inter'
+                  >
+                    Forgot Current Password?
+                  </button>
+                )}
+                <button
+                  type='button'
+                  onClick={() => setIsModalOpen(false)}
+                  className='w-full h-12 border-2 border-slate-100 text-slate-700 text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-50 transition-all font-inter'
+                >
+                  Close Portal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );

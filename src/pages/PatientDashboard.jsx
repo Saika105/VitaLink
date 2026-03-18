@@ -11,16 +11,16 @@ const PatientDashboard = () => {
   const cardRef = useRef(null);
 
   const [patientData, setPatientData] = useState({
-    uniqueId: '',
-    name: '',
+    upid: '',
+    fullName: '',
     email: '',
     age: '',
     gender: '',
-    img: '',
-    contact: '',
-    emergencyContact: '',
+    profilePhoto: null,
+    phone: '',
+    emergencyContact: { name: '', phone: '', relationship: '' },
     address: '',
-    dob: '',
+    dateOfBirth: '',
     bloodGroup: '',
   });
 
@@ -73,7 +73,7 @@ const PatientDashboard = () => {
       const image = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.href = image;
-      link.download = `${patientData.name || 'Patient'}_VitaLink_Card.png`;
+      link.download = `${patientData.fullName || 'Patient'}_VitaLink_Card.png`;
       link.click();
     }
   };
@@ -99,10 +99,10 @@ const PatientDashboard = () => {
           >
             <div className='flex flex-col items-center text-center mb-6'>
               <div className='w-32 h-32 bg-white rounded-3xl shadow border border-slate-300 mb-4 overflow-hidden flex items-center justify-center'>
-                {patientData.img ? (
+                {patientData.profilePhoto?.url ? (
                   <img
-                    src={patientData.img}
-                    alt={patientData.name}
+                    src={patientData.profilePhoto.url}
+                    alt={patientData.fullName}
                     className='w-full h-full object-cover'
                   />
                 ) : (
@@ -118,10 +118,10 @@ const PatientDashboard = () => {
                 )}
               </div>
               <h3 className='text-lg font-bold text-slate-900 uppercase font-inter'>
-                {patientData.name || 'Patient Name'}
+                {patientData.fullName || 'Patient Name'}
               </h3>
               <p className='text-sm text-blue-600 font-inter mt-0.5'>
-                {patientData.uniqueId || 'PT-XXXXXX'}
+                {patientData.upid || 'PT-XXXXXX'}
               </p>
             </div>
 
@@ -160,7 +160,7 @@ const PatientDashboard = () => {
                   Contact Number
                 </p>
                 <div className='bg-white border rounded-lg px-3.5 py-1.5 text-xs font-medium font-inter'>
-                  {patientData.contact || '---'}
+                  {patientData.phone || '---'}
                 </div>
               </div>
               <div>
@@ -168,7 +168,7 @@ const PatientDashboard = () => {
                   Emergency Contact
                 </p>
                 <div className='bg-red-50 border border-red-200 rounded-lg px-3.5 py-1.5 text-xs font-bold text-red-700 font-inter'>
-                  {patientData.emergencyContact || '---'}
+                  {patientData.emergencyContact?.phone || '---'}
                 </div>
               </div>
               <div>

@@ -4,7 +4,7 @@ import logo from '../assets/logo black.png';
 
 const LoginPatient = () => {
   const navigate = useNavigate();
-  const [loginData, setLoginData] = useState({ uniqueId: '', password: '' });
+  const [loginData, setLoginData] = useState({ upid: '', password: '' });
   const apiUrl = import.meta.env.VITE_API_URL;
 
   const handleLogin = async e => {
@@ -15,7 +15,7 @@ const LoginPatient = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          uniqueId: loginData.uniqueId,
+          upid: loginData.upid,
           password: loginData.password,
         }),
       });
@@ -55,10 +55,11 @@ const LoginPatient = () => {
               </label>
               <input
                 type='text'
-                className='border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all font-mono placeholder-slate-300 bg-slate-50/50'
+                className='border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all font-inter placeholder-slate-300 bg-slate-50/50'
                 placeholder='PT-XXXXXX'
+                value={loginData.upid}
                 onChange={e =>
-                  setLoginData({ ...loginData, uniqueId: e.target.value })
+                  setLoginData({ ...loginData, upid: e.target.value })
                 }
                 required
               />
@@ -72,6 +73,7 @@ const LoginPatient = () => {
                 type='password'
                 className='border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all placeholder-slate-300 bg-slate-50/50 font-inter'
                 placeholder='********'
+                value={loginData.password}
                 onChange={e =>
                   setLoginData({ ...loginData, password: e.target.value })
                 }

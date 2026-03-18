@@ -9,11 +9,11 @@ const PatientSignUp = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
 
   const [formData, setFormData] = useState({
-    name: '',
+    fullName: '',
     email: '',
-    nid: '',
+    nidNumber: '',
     birthCertificate: '',
-    dob: '',
+    dateOfBirth: '',
     phone: '',
     gender: '',
     address: '',
@@ -48,11 +48,11 @@ const PatientSignUp = () => {
   const handleSignUpClick = async e => {
     e.preventDefault();
 
-    if (!isUnder18(formData.dob) && !formData.nid) {
+    if (!isUnder18(formData.dateOfBirth) && !formData.nidNumber) {
       alert('NID is required for adults.');
       return;
     }
-    if (isUnder18(formData.dob) && !formData.birthCertificate) {
+    if (isUnder18(formData.dateOfBirth) && !formData.birthCertificate) {
       alert('Birth Certificate Number is required for minors.');
       return;
     }
@@ -70,7 +70,7 @@ const PatientSignUp = () => {
       const data = await response.json();
 
       if (response.ok) {
-        setGeneratedId(data.uniqueId);
+        setGeneratedId(data.upid);
         setShowPopup(true);
       } else {
         alert(data.message || 'Registration failed');
@@ -97,7 +97,7 @@ const PatientSignUp = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          uniqueId: generatedId,
+          upid: generatedId,
           password: passwords.password,
         }),
       });
@@ -137,8 +137,8 @@ const PatientSignUp = () => {
             <div className='space-y-4 font-inter'>
               <FormInput
                 label='Full Name'
-                name='name'
-                value={formData.name}
+                name='fullName'
+                value={formData.fullName}
                 onChange={handleInputChange}
                 placeholder='Enter Full Name'
                 required
@@ -155,8 +155,8 @@ const PatientSignUp = () => {
               <FormInput
                 label='Date of Birth'
                 type='date'
-                name='dob'
-                value={formData.dob}
+                name='dateOfBirth'
+                value={formData.dateOfBirth}
                 onChange={handleInputChange}
                 required
               />
@@ -171,7 +171,7 @@ const PatientSignUp = () => {
             </div>
 
             <div className='space-y-4 font-inter'>
-              {isUnder18(formData.dob) ? (
+              {isUnder18(formData.dateOfBirth) ? (
                 <FormInput
                   label='Birth Certificate Number'
                   name='birthCertificate'
@@ -183,8 +183,8 @@ const PatientSignUp = () => {
               ) : (
                 <FormInput
                   label='NID Number'
-                  name='nid'
-                  value={formData.nid}
+                  name='nidNumber'
+                  value={formData.nidNumber}
                   onChange={handleInputChange}
                   placeholder='10 or 17-digit ID'
                   required
@@ -274,7 +274,7 @@ const PatientSignUp = () => {
                     type='text'
                     value={generatedId}
                     readOnly
-                    className='w-full border border-slate-200 rounded-lg p-3 bg-slate-50 font-mono text-[#3B82F6] text-center text-xl font-bold cursor-not-allowed font-inter'
+                    className='w-full border border-slate-200 rounded-lg p-3 bg-slate-50 font-inter text-[#3B82F6] text-center text-xl font-bold cursor-not-allowed'
                   />
                 </div>
 
