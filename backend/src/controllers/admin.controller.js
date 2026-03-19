@@ -495,7 +495,50 @@ const createReceptionist = asyncHandler(async (req, res) => {
     );
 });
 
-//-------------------- Fetch ----------------------
+//-------------------- FETCH ----------------------
+const getHospitalStaff = asyncHandler(async (req, res) => {
+  const { role } = req.query;
+  const hospitalId = req.user.hospital;
+
+  if (!role) {
+    throw new ApiError(400, "Role query parameter is required");
+  }
+
+  let staffData = [];
+  const query = { hospital: hospitalId };
+
+  switch (role.toUpperCase()) {
+    case "DOCTORS":
+      staffData = await Doctor.find(query).select("-password -refreshToken");
+      break;
+
+    case "ASSISTANTS":
+      staffData = await DoctorAssistant.find(query).select(
+        "-password -refreshToken",
+      );
+      break;
+
+    case "LAB STAFF":
+      staffData = await LabAssistant.find(query).select(
+        "-password -refreshToken",
+      );
+      break;
+
+    case "RECEPTIONIST":
+      staffData = await Receptionist.find(query).select(
+        "-password -refreshToken",
+      );
+      break;
+
+    default:
+      throw new ApiError(400, "Invalid role selected");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, staffData, `${role} fetched successfully`));
+});
+
 
 
 export {
@@ -505,4 +548,5 @@ export {
   createDoctorAssistant,
   createLabAssistant,
   createReceptionist,
+  getHospitalStaff,
 };

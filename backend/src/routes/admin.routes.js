@@ -6,6 +6,7 @@ import {
     createDoctorAssistant,
     createLabAssistant,
     createReceptionist,
+    getHospitalStaff,
 } from "../controllers/admin.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -31,12 +32,14 @@ router.route("/register-lab-assistant").post(
     upload.none(), 
     createLabAssistant
 );
-
 router.route("/register-receptionist").post(
     verifyJWT, 
     upload.none(), 
     createReceptionist
 );
+router.route("/staff").get(verifyJWT, getHospitalStaff);
+
+
 
 export default router;
 
