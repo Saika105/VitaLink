@@ -539,7 +539,55 @@ const getHospitalStaff = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, staffData, `${role} fetched successfully`));
 });
 
+//-------------------- DELETE ----------------------
+const deleteStaff = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { role } = req.query;
+  const hospitalId = req.user.hospital;
 
+  if (!role) {
+    throw new ApiError(
+      400,
+      "Role is required to identify the correct department",
+    );
+  }
+
+  let deletedMember;
+  // Safety Filter to ensure they only delete staff from their hospital
+  const filter = { _id: id, hospital: hospitalId };
+
+  switch (role.toUpperCase()) {
+    case "DOCTORS":
+      deletedMember = await Doctor.findOneAndDelete(filter);
+      break;
+
+    case "ASSISTANTS":
+      deletedMember = await DoctorAssistant.findOneAndDelete(filter);
+      break;
+
+    case "LAB STAFF":
+      deletedMember = await LabAssistant.findOneAndDelete(filter);
+      break;
+
+    case "RECEPTIONIST":
+      deletedMember = await Receptionist.findOneAndDelete(filter);
+      break;
+
+    default:
+      throw new ApiError(400, "Invalid role provided for deletion");
+  }
+
+  if (!deletedMember) {
+    throw new ApiError(
+      404,
+      "Staff member not found or you don't have permission to delete them",
+    );
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, `${role} member removed successfully`));
+});
 
 export {
   loginAdmin,
@@ -549,4 +597,5 @@ export {
   createLabAssistant,
   createReceptionist,
   getHospitalStaff,
+  deleteStaff,
 };
