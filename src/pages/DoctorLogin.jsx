@@ -14,8 +14,9 @@ const DoctorLogin = () => {
       const response = await fetch(`${apiUrl}/doctors/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
-          doctorId: loginData.doctorId,
+          upid: loginData.doctorId,
           password: loginData.password,
         }),
       });
@@ -23,7 +24,7 @@ const DoctorLogin = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', data.token);
+        localStorage.setItem('token', data.data.accessToken);
         localStorage.setItem('role', 'doctor');
         navigate('/doctor-dashboard');
       } else {
@@ -48,15 +49,15 @@ const DoctorLogin = () => {
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className='space-y-4'>
+          <form onSubmit={handleLogin} className='space-y-4 font-inter'>
             <div className='flex flex-col gap-1.5'>
               <label className='text-[12px] font-bold text-black uppercase tracking-widest ml-1 font-inter'>
-                Medical Registration ID
+                Doctor ID
               </label>
               <input
                 type='text'
-                className='border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all font-mono placeholder-slate-300 bg-slate-50/50'
-                placeholder='DOC-XXXXXX'
+                className='border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all font-inter placeholder-slate-300 bg-slate-50/50'
+                placeholder='Enter your ID'
                 onChange={e =>
                   setLoginData({ ...loginData, doctorId: e.target.value })
                 }
@@ -87,7 +88,7 @@ const DoctorLogin = () => {
             </button>
           </form>
 
-          <div className='mt-8 pt-6 border-t border-slate-50 text-center'>
+          <div className='mt-8 pt-6 border-t border-slate-50 text-center font-inter'>
             <p className='text-[12px] text-black font-bold uppercase tracking-tight font-inter'>
               Need assistance?
               <button
@@ -110,20 +111,20 @@ const DoctorLogin = () => {
             />
           </div>
           <div className='max-w-85 w-full space-y-8 relative z-10 font-inter'>
-            <div className='border-y border-blue-100 py-3'>
+            <div className='border-y border-blue-100 py-3 font-inter'>
               <h4 className='text-[11px] font-black text-[#3B82F6] tracking-[0.25em] uppercase text-center font-inter'>
                 Universal Patient Healthcare Companion
               </h4>
             </div>
             <ul className='space-y-6 text-left font-inter'>
-              <li className='flex gap-4'>
+              <li className='flex gap-4 font-inter'>
                 <div className='mt-2 w-1.5 h-1.5 rounded-full bg-[#3B82F6] shrink-0' />
                 <p className='text-black leading-relaxed text-[13px] font-semibold font-inter'>
                   Access medical timelines and diagnostic records in one secure
                   workspace.
                 </p>
               </li>
-              <li className='flex gap-4'>
+              <li className='flex gap-4 font-inter'>
                 <div className='mt-2 w-1.5 h-1.5 rounded-full bg-[#3B82F6] shrink-0' />
                 <p className='text-black leading-relaxed text-[13px] font-semibold font-inter'>
                   Issue verified digital prescriptions and manage clinical
