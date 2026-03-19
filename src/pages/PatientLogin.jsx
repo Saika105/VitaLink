@@ -14,6 +14,7 @@ const LoginPatient = () => {
       const response = await fetch(`${apiUrl}/patients/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           upid: loginData.upid,
           password: loginData.password,
@@ -23,7 +24,7 @@ const LoginPatient = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', data.token);
+        localStorage.setItem('token', data.data.accessToken);
         localStorage.setItem('role', 'patient');
         navigate('/patient-dashboard');
       } else {
@@ -48,15 +49,15 @@ const LoginPatient = () => {
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className='space-y-4'>
+          <form onSubmit={handleLogin} className='space-y-4 font-inter'>
             <div className='flex flex-col gap-1.5'>
-              <label className='text-[12px] font-bold text-black uppercase tracking-widest ml-1 font-inter'>
+              <label className='text-[12px] font-bold text-black uppercase tracking-widest ml-1'>
                 Unique Patient ID
               </label>
               <input
                 type='text'
-                className='border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all font-inter placeholder-slate-300 bg-slate-50/50'
-                placeholder='PT-XXXXXX'
+                className='border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all placeholder-slate-300 bg-slate-50/50'
+                placeholder='Enter your ID'
                 value={loginData.upid}
                 onChange={e =>
                   setLoginData({ ...loginData, upid: e.target.value })
@@ -66,12 +67,12 @@ const LoginPatient = () => {
             </div>
 
             <div className='flex flex-col gap-1.5'>
-              <label className='text-[12px] font-bold text-black uppercase tracking-widest ml-1 font-inter'>
+              <label className='text-[12px] font-bold text-black uppercase tracking-widest ml-1'>
                 Password
               </label>
               <input
                 type='password'
-                className='border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all placeholder-slate-300 bg-slate-50/50 font-inter'
+                className='border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all placeholder-slate-300 bg-slate-50/50'
                 placeholder='********'
                 value={loginData.password}
                 onChange={e =>
@@ -83,17 +84,17 @@ const LoginPatient = () => {
 
             <button
               type='submit'
-              className='w-full bg-[#3B82F6] hover:bg-[#1E40AF] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-200 active:scale-[0.98] transition-all text-xs uppercase tracking-[0.2em] mt-2 font-inter'
+              className='w-full bg-[#3B82F6] hover:bg-[#1E40AF] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-200 active:scale-[0.98] transition-all text-xs uppercase tracking-[0.2em] mt-2'
             >
               Enter My Vault
             </button>
           </form>
 
-          <div className='mt-8 pt-6 border-t border-slate-50 text-center font-inter'>
+          <div className='mt-8 pt-6 border-t border-slate-50 text-center'>
             <p className='text-[12px] text-black font-bold uppercase tracking-tight'>
               New to VitaLink?
               <button
-                className='text-[#3B82F6] font-black hover:text-[#1E40AF] hover:underline ml-2 uppercase tracking-widest transition-colors font-inter'
+                className='text-[#3B82F6] font-black hover:text-[#1E40AF] hover:underline ml-2 uppercase tracking-widest transition-colors'
                 onClick={() => navigate('/signup-patient')}
               >
                 Create Account
@@ -111,13 +112,13 @@ const LoginPatient = () => {
               className='h-20 w-auto object-contain'
             />
           </div>
-          <div className='max-w-85 w-full space-y-8 relative z-10 font-inter'>
-            <div className='border-y border-blue-100 py-3 font-inter'>
+          <div className='max-w-85 w-full space-y-8 relative z-10'>
+            <div className='border-y border-blue-100 py-3'>
               <h4 className='text-[11px] font-black text-[#3B82F6] tracking-[0.25em] uppercase text-center'>
                 Universal Patient Healthcare Companion
               </h4>
             </div>
-            <ul className='space-y-6 text-left font-inter'>
+            <ul className='space-y-6 text-left'>
               <li className='flex gap-4'>
                 <div className='mt-2 w-1.5 h-1.5 rounded-full bg-[#3B82F6] shrink-0' />
                 <p className='text-black leading-relaxed text-[13px] font-semibold'>
