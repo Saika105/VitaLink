@@ -83,8 +83,8 @@ const StaffLogin = () => {
               </label>
               <input
                 type='text'
-                className='border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all font-mono placeholder-slate-300 bg-slate-50/50'
-                placeholder=''
+                className='border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all font-inter placeholder-slate-300 bg-slate-50/50'
+                placeholder='Enter your ID'
                 onChange={e =>
                   setLoginData({ ...loginData, staffId: e.target.value })
                 }
@@ -150,15 +150,21 @@ const StaffLogin = () => {
               <li className='flex gap-4'>
                 <div className='mt-2 w-1.5 h-1.5 rounded-full bg-[#3B82F6] shrink-0' />
                 <p className='text-black leading-relaxed text-[13px] font-semibold'>
-                  Oversee hospital operations, manage billing cycles, and
-                  coordinate appointments.
+                  Coordinate doctor schedules and streamline patient clinical
+                  workflows.
                 </p>
               </li>
               <li className='flex gap-4'>
                 <div className='mt-2 w-1.5 h-1.5 rounded-full bg-[#3B82F6] shrink-0' />
                 <p className='text-black leading-relaxed text-[13px] font-semibold'>
-                  Maintain secure synchronization between patients and clinical
-                  departments.
+                  Manage diagnostic laboratory requests and secure test results
+                  data.
+                </p>
+              </li>
+              <li className='flex gap-4'>
+                <div className='mt-2 w-1.5 h-1.5 rounded-full bg-[#3B82F6] shrink-0' />
+                <p className='text-black leading-relaxed text-[13px] font-semibold'>
+                  Oversee hospital reception and manage patient billing cycles.
                 </p>
               </li>
             </ul>
