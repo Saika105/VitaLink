@@ -94,9 +94,11 @@ const logoutAdmin = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Admin logged out successfully"));
 });
 
-//******************************* DOCTOR PART *********************** */
+//--------------------CREATE ----------------------
+
+//************** Create doctor ***********/
 const generateUniqueDoctorId = () => {
-  const digits = Math.floor(1000 + Math.random() * 9000); 
+  const digits = Math.floor(1000 + Math.random() * 9000);
   const year = new Date().getFullYear();
   return `DOC-${year}-${digits}`;
 };
@@ -105,16 +107,15 @@ const generateScheduleId = () => {
   return `SCHED-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 };
 
-//************** Create doctor ********** */
 const createDoctor = asyncHandler(async (req, res) => {
   const {
     fullName,
     email,
     password,
-    phone,             
-    gender,            
-    dateOfBirth,       
-    emergencyContact,  
+    phone,
+    gender,
+    dateOfBirth,
+    emergencyContact,
     licenseNumber,
     specialization,
     designation,
@@ -127,41 +128,55 @@ const createDoctor = asyncHandler(async (req, res) => {
   } = req.body;
 
   if (
-    [fullName, email, password, phone, gender, dateOfBirth, licenseNumber, specialization, sittingTimeLabel].some(
-      (f) => f?.trim() === ""
-    )
+    [
+      fullName,
+      email,
+      password,
+      phone,
+      gender,
+      dateOfBirth,
+      licenseNumber,
+      specialization,
+      sittingTimeLabel,
+    ].some((f) => f?.trim() === "")
   ) {
     throw new ApiError(400, "All profile and availability fields are required");
   }
 
-  let parsedWorkingDays = typeof workingDays === 'string' ? JSON.parse(workingDays) : workingDays;
-  let parsedTimeSlots = typeof timeSlots === 'string' ? JSON.parse(timeSlots) : timeSlots;
+  let parsedWorkingDays =
+    typeof workingDays === "string" ? JSON.parse(workingDays) : workingDays;
+  let parsedTimeSlots =
+    typeof timeSlots === "string" ? JSON.parse(timeSlots) : timeSlots;
 
   if (!Array.isArray(parsedWorkingDays) || parsedWorkingDays.length === 0) {
     throw new ApiError(400, "At least one working day is required");
   }
 
-  const existedDoctor = await Doctor.findOne({ 
-    $or: [{ email }, { licenseNumber }, { phone }] 
+  const existedDoctor = await Doctor.findOne({
+    $or: [{ email }, { licenseNumber }, { phone }],
   });
 
   if (existedDoctor) {
-    throw new ApiError(409, "Doctor with this email, license, or phone already exists");
+    throw new ApiError(
+      409,
+      "Doctor with this email, license, or phone already exists",
+    );
   }
 
   const photoLocalPath = req.file?.path;
-  if (!photoLocalPath) throw new ApiError(400, "Doctor profile photo is required");
-  
+  if (!photoLocalPath)
+    throw new ApiError(400, "Doctor profile photo is required");
+
   const photo = await uploadOnCloudinary(photoLocalPath);
   if (!photo) throw new ApiError(500, "Error while uploading profile photo");
 
   const doctor = await Doctor.create({
-    doctorId: generateUniqueDoctorId(), 
+    doctorId: generateUniqueDoctorId(),
     fullName,
     email,
     password,
     phone,
-    gender: gender.toLowerCase(), 
+    gender: gender.toLowerCase(),
     dateOfBirth,
     emergencyContact,
     licenseNumber,
@@ -169,12 +184,12 @@ const createDoctor = asyncHandler(async (req, res) => {
     designation,
     degree,
     yearsExperience: Number(yearsExperience) || 0,
-    profilePhoto: { 
-        url: photo.url, 
-        publicId: photo.public_id 
+    profilePhoto: {
+      url: photo.url,
+      publicId: photo.public_id,
     },
-    hospital: req.user.hospital, 
-    createdByAdmin: req.user._id, 
+    hospital: req.user.hospital,
+    createdByAdmin: req.user._id,
   });
 
   if (!doctor) {
@@ -202,46 +217,68 @@ const createDoctor = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Error while creating doctor schedule");
   }
 
-  const createdDoctor = await Doctor.findById(doctor._id).select("-password -refreshToken");
-
-  return res.status(201).json(
-    new ApiResponse(
-      201,
-      { doctor: createdDoctor, schedule },
-      "Doctor account and schedule created successfully"
-    )
+  const createdDoctor = await Doctor.findById(doctor._id).select(
+    "-password -refreshToken",
   );
+
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(
+        201,
+        { doctor: createdDoctor, schedule },
+        "Doctor account and schedule created successfully",
+      ),
+    );
 });
 
-//************************ DOCTOR Assistant PART *********************** */
+//************** Create doctor assistant ********** */
 const generateAssistantId = () => {
   const digits = Math.floor(1000 + Math.random() * 9000);
   const year = new Date().getFullYear();
   return `ASST-${year}-${digits}`;
 };
 
-//************** Create doctor assistant ********** */
 const createDoctorAssistant = asyncHandler(async (req, res) => {
-  const { 
-    fullName, 
-    email, 
-    password, 
-    phone, 
-    gender, 
-    dateOfBirth, 
-    doctor,          
-    emergencyName,   
-    emergencyPhone,  
+  const {
+    fullName,
+    email,
+    password,
+    phone,
+    gender,
+    dateOfBirth,
+    doctor,
+    emergencyName,
+    emergencyPhone,
     nidNumber,
-    address 
+    address,
   } = req.body;
 
-  if ([fullName, email, password, phone, doctor, emergencyName, emergencyPhone].some((f) => f?.trim() === "")) {
-    throw new ApiError(400, "All profile fields and emergency contact details are required");
+  if (
+    [
+      fullName,
+      email,
+      password,
+      phone,
+      doctor,
+      emergencyName,
+      emergencyPhone,
+    ].some((f) => f?.trim() === "")
+  ) {
+    throw new ApiError(
+      400,
+      "All profile fields and emergency contact details are required",
+    );
   }
 
-  const existedAssistant = await DoctorAssistant.findOne({ $or: [{ email }, { phone }] });
-  if (existedAssistant) throw new ApiError(409, "Assistant with this email or phone already exists");
+  const existedAssistant = await DoctorAssistant.findOne({
+    $or: [{ email }, { phone }],
+  });
+  if (existedAssistant)
+    throw new ApiError(
+      409,
+      "Assistant with this email or phone already exists",
+    );
 
   const assistant = await DoctorAssistant.create({
     assistantId: generateAssistantId(),
@@ -255,22 +292,217 @@ const createDoctorAssistant = asyncHandler(async (req, res) => {
     nidNumber,
     emergencyContact: {
       name: emergencyName,
-      phone: emergencyPhone
+      phone: emergencyPhone,
     },
-    doctor, 
-    hospital: req.user.hospital, 
-    createdByAdmin: req.user._id, 
+    doctor,
+    hospital: req.user.hospital,
+    createdByAdmin: req.user._id,
   });
 
   if (!assistant) {
-    throw new ApiError(500, "Internal Server Error: Failed to register the assistant account.");
+    throw new ApiError(
+      500,
+      "Internal Server Error: Failed to register the assistant account.",
+    );
   }
 
-  const createdAssistant = await DoctorAssistant.findById(assistant._id).select("-password");
-
-  return res.status(201).json(
-    new ApiResponse(201, createdAssistant, "Doctor Assistant registered successfully")
+  const createdAssistant = await DoctorAssistant.findById(assistant._id).select(
+    "-password",
   );
+
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(
+        201,
+        createdAssistant,
+        "Doctor Assistant registered successfully",
+      ),
+    );
 });
 
-export { loginAdmin, logoutAdmin, createDoctor , createDoctorAssistant };
+//************** Create lab assistant ********** */
+const generateLabAssistantId = () => {
+  const year = new Date().getFullYear();
+  const randomDigits = Math.floor(1000 + Math.random() * 9000);
+  return `LAB-ASST-${year}${randomDigits}`;
+};
+
+const createLabAssistant = asyncHandler(async (req, res) => {
+  const {
+    fullName,
+    email,
+    password,
+    phone,
+    gender,
+    dateOfBirth,
+    emergencyName,
+    emergencyPhone,
+    nidNumber,
+    address,
+  } = req.body;
+
+  if (
+    [
+      fullName,
+      email,
+      password,
+      phone,
+      gender,
+      dateOfBirth,
+      emergencyName,
+      emergencyPhone,
+    ].some((f) => !f || f.trim() === "")
+  ) {
+    throw new ApiError(
+      400,
+      "All personal and emergency contact fields are required",
+    );
+  }
+
+  const existedAssistant = await LabAssistant.findOne({
+    $or: [{ email }, { phone }],
+  });
+
+  if (existedAssistant) {
+    throw new ApiError(
+      409,
+      "Lab Assistant with this email or phone already exists",
+    );
+  }
+
+  const labAssistant = await LabAssistant.create({
+    labAssistantId: generateLabAssistantId(),
+    fullName,
+    email,
+    password,
+    phone,
+    gender: gender.toLowerCase(),
+    dateOfBirth,
+    address,
+    nidNumber,
+    emergencyContact: {
+      name: emergencyName,
+      phone: emergencyPhone,
+    },
+    hospital: req.user.hospital,
+    createdByAdmin: req.user._id,
+  });
+
+  if (!labAssistant) {
+    throw new ApiError(500, "Failed to create Lab Assistant account");
+  }
+
+  const createdAssistant = await LabAssistant.findById(labAssistant._id).select(
+    "-password -refreshToken",
+  );
+
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(
+        201,
+        createdAssistant,
+        "Lab Assistant registered successfully",
+      ),
+    );
+});
+
+//************** Create Receptionist ********** */
+const generateReceptionistId = () => {
+  const year = new Date().getFullYear();
+  const randomDigits = Math.floor(1000 + Math.random() * 9000);
+  return `REC-${year}${randomDigits}`;
+};
+
+const createReceptionist = asyncHandler(async (req, res) => {
+  const {
+    fullName,
+    email,
+    password,
+    phone,
+    gender,
+    dateOfBirth,
+    emergencyName,
+    emergencyPhone,
+    nidNumber,
+    address,
+  } = req.body;
+
+  if (
+    [
+      fullName,
+      email,
+      password,
+      phone,
+      gender,
+      dateOfBirth,
+      emergencyName,
+      emergencyPhone,
+    ].some((f) => !f || f.trim() === "")
+  ) {
+    throw new ApiError(
+      400,
+      "All personal and emergency contact fields are required",
+    );
+  }
+
+  const existedReceptionist = await Receptionist.findOne({
+    $or: [{ email }, { phone }],
+  });
+
+  if (existedReceptionist) {
+    throw new ApiError(
+      409,
+      "Receptionist with this email or phone already exists",
+    );
+  }
+
+  const receptionist = await Receptionist.create({
+    receptionistId: generateReceptionistId(),
+    fullName,
+    email,
+    password,
+    phone,
+    gender: gender.toLowerCase(),
+    dateOfBirth,
+    address,
+    nidNumber,
+    emergencyContact: {
+      name: emergencyName,
+      phone: emergencyPhone,
+    },
+    hospital: req.user.hospital,
+    createdByAdmin: req.user._id,
+  });
+
+  if (!receptionist) {
+    throw new ApiError(500, "Failed to create Receptionist account");
+  }
+
+  const createdReceptionist = await Receptionist.findById(
+    receptionist._id,
+  ).select("-password -refreshToken");
+
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(
+        201,
+        createdReceptionist,
+        "Receptionist registered successfully",
+      ),
+    );
+});
+
+//-------------------- Fetch ----------------------
+
+
+export {
+  loginAdmin,
+  logoutAdmin,
+  createDoctor,
+  createDoctorAssistant,
+  createLabAssistant,
+  createReceptionist,
+};
