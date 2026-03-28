@@ -29,7 +29,6 @@ const PatientAppointments = () => {
 
         if (response.ok) {
           const data = await response.json();
-          // Map backend nested objects to table format
           const mappedData = data.map(apt => ({
             id: apt._id,
             hospital: apt.hospital?.fullName,
@@ -98,87 +97,91 @@ const PatientAppointments = () => {
       <DashboardNav />
 
       <main className='p-4 md:p-8 max-w-7xl mx-auto w-full grow'>
-        <div className='mb-8'>
-          <h2 className='text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight uppercase'>
+        <div className='mb-6 md:mb-8'>
+          <h2 className='text-xl md:text-3xl font-extrabold text-slate-900 tracking-tight uppercase'>
             Appointment Schedule
           </h2>
-          <p className='text-sm font-bold text-blue-700 uppercase tracking-widest mt-0.5'>
+          <p className='text-[10px] md:text-sm font-bold text-blue-700 uppercase tracking-widest mt-0.5'>
             Manage all your appointments in one place
           </p>
         </div>
 
-        <div className='flex w-fit bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner mb-8'>
-          {['Upcoming', 'Completed', 'Canceled'].map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
-                activeTab === tab
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+        <div className='overflow-x-auto no-scrollbar mb-8'>
+          <div className='flex w-max md:w-fit bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner'>
+            {['Upcoming', 'Completed', 'Canceled'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-5 md:px-6 py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${
+                  activeTab === tab
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className='bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden'>
-          <div className='overflow-x-auto'>
-            <table className='w-full text-left border-collapse'>
+          <div className='overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200'>
+            <table className='w-full text-left border-collapse min-w-175'>
               <thead>
                 <tr className='bg-slate-50 border-b border-slate-100'>
-                  <th className='p-5 text-[12px] uppercase tracking-widest text-black font-black text-center w-16'>
+                  <th className='p-4 md:p-5 text-[11px] md:text-[12px] uppercase tracking-widest text-black font-black text-center w-12 md:w-16'>
                     #
                   </th>
-                  <th className='p-5 text-[12px] uppercase tracking-widest text-black font-black'>
+                  <th className='p-4 md:p-5 text-[11px] md:text-[12px] uppercase tracking-widest text-black font-black'>
                     Hospital
                   </th>
-                  <th className='p-5 text-[12px] uppercase tracking-widest text-black font-black'>
+                  <th className='p-4 md:p-5 text-[11px] md:text-[12px] uppercase tracking-widest text-black font-black'>
                     Doctor
                   </th>
-                  <th className='p-5 text-[12px] uppercase tracking-widest text-black font-black'>
+                  <th className='p-4 md:p-5 text-[11px] md:text-[12px] uppercase tracking-widest text-black font-black'>
                     Specialization
                   </th>
-                  <th className='p-5 text-[12px] uppercase tracking-widest text-black font-black'>
+                  <th className='p-4 md:p-5 text-[11px] md:text-[12px] uppercase tracking-widest text-black font-black'>
                     Schedule
                   </th>
-                  <th className='p-5 text-[12px] uppercase tracking-widest text-black font-black text-center'>
+                  <th className='p-4 md:p-5 text-[11px] md:text-[12px] uppercase tracking-widest text-black font-black text-center'>
                     Action
                   </th>
                 </tr>
               </thead>
-              <tbody className='divide-y divide-slate-50 text-sm'>
+              <tbody className='divide-y divide-slate-50 text-xs md:text-sm'>
                 {appointments.map((apt, idx) => (
                   <tr
                     key={apt.id}
                     className='hover:bg-blue-50/30 transition-colors group'
                   >
-                    <td className='p-5 text-center font-bold text-slate-300'>
+                    <td className='p-4 md:p-5 text-center font-bold text-slate-300'>
                       {idx + 1}
                     </td>
-                    <td className='p-5 font-bold text-slate-900'>
+                    <td className='p-4 md:p-5 font-bold text-slate-900 whitespace-nowrap'>
                       {apt.hospital}
                     </td>
-                    <td className='p-5 font-bold text-slate-700'>
+                    <td className='p-4 md:p-5 font-bold text-slate-700 whitespace-nowrap'>
                       {apt.doctor}
                     </td>
-                    <td className='p-5'>
-                      <span className='text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg uppercase border border-blue-100'>
+                    <td className='p-4 md:p-5'>
+                      <span className='text-[9px] md:text-[10px] font-black text-blue-600 bg-blue-50 px-2 md:px-3 py-1 rounded-lg uppercase border border-blue-100 whitespace-nowrap'>
                         {apt.specialization}
                       </span>
                     </td>
-                    <td className='p-5'>
-                      <div className='font-bold text-slate-900'>{apt.date}</div>
-                      <div className='text-[10px] font-bold text-black uppercase'>
+                    <td className='p-4 md:p-5'>
+                      <div className='font-bold text-slate-900 whitespace-nowrap'>
+                        {apt.date}
+                      </div>
+                      <div className='text-[9px] md:text-[10px] font-bold text-black uppercase whitespace-nowrap'>
                         {apt.time}
                       </div>
                     </td>
-                    <td className='p-5 text-center'>
+                    <td className='p-4 md:p-5 text-center whitespace-nowrap'>
                       {activeTab === 'Upcoming' && (
                         <button
                           onClick={() => handleCancel(apt.id)}
-                          className='bg-red-50 text-red-600 border border-red-100 hover:bg-red-600 hover:text-white text-[10px] font-black py-2 px-6 rounded-xl transition-all uppercase tracking-widest'
+                          className='bg-red-50 text-red-600 border border-red-100 hover:bg-red-600 hover:text-white text-[9px] md:text-[10px] font-black py-2 px-4 md:px-6 rounded-xl transition-all uppercase tracking-widest'
                         >
                           Cancel
                         </button>
@@ -186,10 +189,10 @@ const PatientAppointments = () => {
 
                       {activeTab === 'Completed' && (
                         <div className='flex flex-col items-center gap-1'>
-                          <span className='text-[9px] font-black text-slate-400 uppercase'>
+                          <span className='text-[8px] md:text-[9px] font-black text-slate-400 uppercase'>
                             Follow-up
                           </span>
-                          <span className='text-[11px] font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg border border-green-100'>
+                          <span className='text-[10px] md:text-[11px] font-bold text-green-600 bg-green-50 px-2 md:px-3 py-1 rounded-lg border border-green-100'>
                             {apt.followUpDate || 'None Scheduled'}
                           </span>
                         </div>
@@ -198,7 +201,7 @@ const PatientAppointments = () => {
                       {activeTab === 'Canceled' && (
                         <button
                           onClick={() => handleRescheduleClick(apt)}
-                          className='bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black py-2 px-6 rounded-xl shadow-md transition-all uppercase tracking-widest'
+                          className='bg-blue-600 hover:bg-blue-700 text-white text-[9px] md:text-[10px] font-black py-2 px-4 md:px-6 rounded-xl shadow-md transition-all uppercase tracking-widest'
                         >
                           Reschedule
                         </button>
@@ -211,7 +214,7 @@ const PatientAppointments = () => {
           </div>
 
           {appointments.length === 0 && (
-            <div className='p-20 text-center text-black bg-white flex flex-col items-center gap-4'>
+            <div className='p-16 md:p-20 text-center text-black bg-white flex flex-col items-center gap-4'>
               <p className='text-xs font-bold uppercase tracking-widest'>
                 No {activeTab.toLowerCase()} records found
               </p>
@@ -231,10 +234,10 @@ const PatientAppointments = () => {
 
       {showPopup && activeAssistant && (
         <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
-          <div className='bg-white rounded-[40px] p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center animate-in fade-in zoom-in duration-300'>
-            <div className='w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6'>
+          <div className='bg-white rounded-4xl md:rounded-[40px] p-6 md:p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center'>
+            <div className='w-14 h-14 md:w-16 md:h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6'>
               <svg
-                className='w-8 h-8'
+                className='w-7 h-7 md:w-8 md:h-8'
                 fill='none'
                 stroke='currentColor'
                 viewBox='0 0 24 24'
@@ -247,21 +250,21 @@ const PatientAppointments = () => {
                 />
               </svg>
             </div>
-            <h3 className='text-2xl font-black text-slate-900 uppercase'>
+            <h3 className='text-xl md:text-2xl font-black text-slate-900 uppercase'>
               Reschedule Slot
             </h3>
-            <p className='text-slate-500 text-sm mt-2'>
+            <p className='text-slate-500 text-xs md:text-sm mt-2'>
               Contact the assistant of <b>{activeAssistant.name}</b> to pick a
               new date.
             </p>
 
-            <div className='my-8 space-y-3'>
+            <div className='my-6 md:my-8 space-y-3'>
               <a
                 href={`tel:${activeAssistant.phone}`}
-                className='flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-200 hover:border-blue-400 transition-all'
+                className='flex items-center justify-between p-4 md:p-5 bg-slate-50 rounded-2xl border border-slate-200 hover:border-blue-400 transition-all'
               >
                 <div className='text-left'>
-                  <p className='text-[10px] font-black text-black uppercase tracking-widest'>
+                  <p className='text-[9px] md:text-[10px] font-black text-black uppercase tracking-widest'>
                     Call Assistant
                   </p>
                   <p className='text-sm font-bold text-slate-900'>
@@ -277,10 +280,10 @@ const PatientAppointments = () => {
                 href={`https://wa.me/${activeAssistant.phone?.replace(/\D/g, '')}`}
                 target='_blank'
                 rel='noreferrer'
-                className='flex items-center justify-between p-5 bg-green-50 rounded-2xl border border-green-100 hover:border-green-400 transition-all'
+                className='flex items-center justify-between p-4 md:p-5 bg-green-50 rounded-2xl border border-green-100 hover:border-green-400 transition-all'
               >
                 <div className='text-left'>
-                  <p className='text-[10px] font-black text-green-600/60 uppercase tracking-widest'>
+                  <p className='text-[9px] md:text-[10px] font-black text-green-600/60 uppercase tracking-widest'>
                     WhatsApp
                   </p>
                   <p className='text-sm font-bold text-slate-900'>
