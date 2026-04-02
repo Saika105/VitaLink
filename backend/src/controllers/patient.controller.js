@@ -324,7 +324,7 @@ const updatePatientProfile = asyncHandler(async (req, res) => {
       returnDocument: "after",
       runValidators: true,
       //   new: true,
-      //   runValidators: true, // Ensures email/phone formats are still valid
+      //   runValidators: true, 
     },
   ).select("-password -refreshToken");
 

@@ -20,7 +20,7 @@ const roleModelMap = {
 };
 
 export const refreshAccessToken = asyncHandler(async (req, res) => {
-  const incomingRefreshToken = 
+  const incomingRefreshToken =
     req.cookies?.refreshToken || req.body?.refreshToken;
 
   if (!incomingRefreshToken) {
@@ -30,23 +30,25 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
   try {
     const decodedToken = jwt.verify(
       incomingRefreshToken,
-      process.env.REFRESH_TOKEN_SECRET
+      process.env.REFRESH_TOKEN_SECRET,
     );
 
     const Model = roleModelMap[decodedToken?.role];
-    
+
     if (!Model) {
-      throw new ApiError(401, "Invalid token role or role not supported");
+      throw new ApiError(401, "Invalid token role");
     }
 
-    const user = await Model.findById(decodedToken?._id).select("+refreshToken");
+    const user = await Model.findById(decodedToken?._id).select(
+      "+refreshToken",
+    );
 
-    if (!user) {
-      throw new ApiError(401, "User session no longer exists");
+    if (!user || !user.refreshToken) {
+      throw new ApiError(401, "User session has expired. Please login again.");
     }
 
-    if (incomingRefreshToken.trim() !== user.refreshToken?.trim()) {
-      throw new ApiError(401, "Refresh token is expired or already used");
+    if (incomingRefreshToken.trim() !== user.refreshToken.trim()) {
+      throw new ApiError(401, "Token is invalid or has already been used");
     }
 
     const { accessToken, refreshToken: newRefreshToken } =
@@ -65,16 +67,16 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
       .json(
         new ApiResponse(
           200,
-          { 
-            accessToken, 
-            refreshToken: newRefreshToken,
-            role: decodedToken.role 
+          {
+            accessToken,
+            refreshToken: newRefreshToken, // frontend update 
+            role: decodedToken.role,
           },
-          "Access token refreshed successfully"
-        )
+          "Access token refreshed successfully",
+        ),
       );
-
   } catch (error) {
     throw new ApiError(401, error?.message || "Invalid refresh token session");
   }
 });
+
