@@ -16,7 +16,7 @@ const EditProfile = () => {
     fullName: '',
     email: '',
     phone: '',
-    emergencyContact: { name: '', phone: '', relationship: '' },
+    emergencyContact: '',
     address: '',
     profilePhoto: null,
   });
@@ -35,27 +35,24 @@ const EditProfile = () => {
   useEffect(() => {
     const fetchCurrentData = async () => {
       try {
-        const response = await fetch(`${apiUrl}/patient/profile`, {
+        const response = await fetch(`${apiUrl}/api/v1/patients/profile`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
             'Content-Type': 'application/json',
           },
         });
         if (response.ok) {
-          const data = await response.json();
+          const result = await response.json();
+          const data = result.data;
           setFormData({
             fullName: data.fullName || '',
             email: data.email || '',
             phone: data.phone || '',
-            emergencyContact: data.emergencyContact || {
-              name: '',
-              phone: '',
-              relationship: '',
-            },
+            emergencyContact: data.emergencyContact || '',
             address: data.address || '',
             profilePhoto: data.profilePhoto || null,
           });
-          if (data.profilePhoto?.url) setImagePreview(data.profilePhoto.url);
+          if (data.profilePhoto) setImagePreview(data.profilePhoto);
         }
       } catch (err) {
         console.error(err);
@@ -71,12 +68,8 @@ const EditProfile = () => {
         alert('File size exceeds 2MB limit');
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-        setFormData(prev => ({ ...prev, profilePhoto: reader.result }));
-      };
-      reader.readAsDataURL(file);
+      setImagePreview(URL.createObjectURL(file));
+      setFormData(prev => ({ ...prev, profilePhoto: file }));
     }
   };
 
@@ -84,14 +77,25 @@ const EditProfile = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/patient/update`, {
-        method: 'PUT',
+      const data = new FormData();
+      data.append('fullName', formData.fullName);
+      data.append('email', formData.email);
+      data.append('phone', formData.phone);
+      data.append('address', formData.address);
+      data.append('emergencyContact', formData.emergencyContact);
+
+      if (formData.profilePhoto instanceof File) {
+        data.append('profilePhoto', formData.profilePhoto);
+      }
+
+      const response = await fetch(`${apiUrl}/api/v1/patients/update-profile`, {
+        method: 'PATCH',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: data,
       });
+
       if (response.ok) {
         alert('Profile updated successfully!');
         navigate('/patient-dashboard');
@@ -115,17 +119,21 @@ const EditProfile = () => {
     }
     setLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/auth/change-password`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${apiUrl}/api/v1/patients/change-password`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            oldPassword: passwordData.oldPassword,
+            newPassword: passwordData.newPassword,
+            confirmPassword: passwordData.confirmPassword,
+          }),
         },
-        body: JSON.stringify({
-          oldPassword: passwordData.oldPassword,
-          newPassword: passwordData.newPassword,
-        }),
-      });
+      );
       if (response.ok) {
         alert('Password updated successfully!');
         setIsModalOpen(false);
@@ -148,7 +156,7 @@ const EditProfile = () => {
   const handleForgotPassword = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/auth/forgot-password`, {
+      const response = await fetch(`${apiUrl}/api/v1/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email }),
@@ -299,14 +307,11 @@ const EditProfile = () => {
                 <label className={labelStyle}>Emergency Contact Number</label>
                 <input
                   type='text'
-                  value={formData.emergencyContact?.phone || ''}
+                  value={formData.emergencyContact}
                   onChange={e =>
                     setFormData({
                       ...formData,
-                      emergencyContact: {
-                        ...formData.emergencyContact,
-                        phone: e.target.value,
-                      },
+                      emergencyContact: e.target.value,
                     })
                   }
                   className={inputStyle}
@@ -347,7 +352,6 @@ const EditProfile = () => {
         </form>
       </main>
 
-      {/* Modal code remains exactly the same */}
       {isModalOpen && (
         <div className='fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm font-inter'>
           <div className='bg-white w-full max-w-md rounded-4xl p-8 shadow-2xl border border-slate-100 font-inter'>
