@@ -21,18 +21,29 @@ const prescriptionSchema = new mongoose.Schema(
     doctor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Doctor",
-      required: true,
+      required: false,
       index: true,
+    },
+
+    manualDoctorName: { 
+      type: String, 
+      trim: true,
+      default: null 
     },
 
     hospital: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Hospital",
-      required: true,
+      required: false,
       index: true,
     },
 
-    // Only set when source is "doctor_assistant"
+    manualHospitalName: { 
+      type: String, 
+      trim: true,
+      default: null 
+    },
+
     uploadedByAssistant: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "DoctorAssistant",
@@ -43,13 +54,13 @@ const prescriptionSchema = new mongoose.Schema(
     appointment: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Appointment",
-      required: true,
+      required: false,
       index: true,
     },
 
     diagnosis: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
       maxlength: 2000,
     },
@@ -63,7 +74,7 @@ const prescriptionSchema = new mongoose.Schema(
 
     medications: {
       type: [medicationSchema],
-      required: true,
+      required: false,
       validate: {
         validator: function (value) {
           return Array.isArray(value) && value.length > 0;

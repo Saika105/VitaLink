@@ -10,7 +10,6 @@ export const baseSchemaOptions = {
   minimize: false,
 };
 
-// Generates a unique external ID field with a given prefix e.g. "PT-XXXX"
 export function externalIdField(prefix) {
   return {
     type: String,

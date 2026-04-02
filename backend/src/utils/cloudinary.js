@@ -27,8 +27,6 @@ const deleteFromCloudinary = async (cloudinaryUrl) => {
     try {
         if (!cloudinaryUrl) return null;
 
-        // Extract publicId from the full URL
-        // Splits by '/' to get the last part, then splits by '.' to remove file extension
         const publicId = cloudinaryUrl.split('/').pop().split('.')[0];
 
         const response = await cloudinary.uploader.destroy(publicId);
