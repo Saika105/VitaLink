@@ -46,7 +46,11 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
       throw new ApiError(401, "Invalid Access Token");
     }
 
-    req.user = user;
+    //new field to store role along with user details, so we don't have to decode the token again in controllers to check the role
+    const userWithRole = user.toObject();
+    userWithRole.role = decodedToken.role;
+
+    req.user = userWithRole;
     req.role = decodedToken.role;
 
     next();

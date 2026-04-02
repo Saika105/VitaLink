@@ -22,7 +22,7 @@ const addPatientPrescription = asyncHandler(async (req, res) => {
   //4. Handle file upload to Cloudinary and get the file URL
   //5. Create a new Prescription document in MongoDB with the provided details and file URL
   //6. Return success response with the created prescription data
-  if (req.user.role !== "patient") {
+  if (req.role !== "patient") {
     throw new ApiError(403, "Only patients can upload to the Health Vault");
   }
 
