@@ -25,10 +25,10 @@ const prescriptionSchema = new mongoose.Schema(
       index: true,
     },
 
-    manualDoctorName: { 
-      type: String, 
+    manualDoctorName: {
+      type: String,
       trim: true,
-      default: null 
+      default: null,
     },
 
     hospital: {
@@ -38,10 +38,10 @@ const prescriptionSchema = new mongoose.Schema(
       index: true,
     },
 
-    manualHospitalName: { 
-      type: String, 
+    manualHospitalName: {
+      type: String,
       trim: true,
-      default: null 
+      default: null,
     },
 
     uploadedByAssistant: {
@@ -77,13 +77,16 @@ const prescriptionSchema = new mongoose.Schema(
       required: false,
       validate: {
         validator: function (value) {
-          return Array.isArray(value) && value.length > 0;
+          if (this.source === "doctor") {
+            return Array.isArray(value) && value.length > 0;
+          }
+          return true; 
         },
-        message: "At least one medication is required",
+        message:
+          "At least one medication is required for doctor-issued prescriptions",
       },
     },
 
-    // For scanned/uploaded handwritten prescriptions
     prescriptionFile: {
       type: fileSchema,
       default: null,
@@ -107,14 +110,18 @@ const prescriptionSchema = new mongoose.Schema(
       default: "doctor",
     },
   },
-  baseSchemaOptions
+  baseSchemaOptions,
 );
 
 prescriptionSchema.index({ patient: 1, prescribedDate: -1 });
 
 prescriptionSchema.pre("validate", function (next) {
   if (this.source === "doctor_assistant" && !this.uploadedByAssistant) {
-    return next(new Error("uploadedByAssistant is required when source is doctor_assistant"));
+    return next(
+      new Error(
+        "uploadedByAssistant is required when source is doctor_assistant",
+      ),
+    );
   }
   if (this.followUpDate && this.followUpDate <= this.prescribedDate) {
     return next(new Error("followUpDate must be after prescribedDate"));
@@ -122,5 +129,4 @@ prescriptionSchema.pre("validate", function (next) {
   next();
 });
 
-const Prescription = mongoose.model("Prescription", prescriptionSchema);
-export default Prescription;
+export const Prescription = mongoose.model("Prescription", prescriptionSchema);

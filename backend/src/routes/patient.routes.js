@@ -36,13 +36,16 @@ router.route("/update-profile").patch(
 router.route("/change-password").post(verifyJWT, changeCurrentPassword);
 
 //from prescription.controller.js
-router.route("/prescriptions/:patientId?").get(verifyJWT, getPatientPrescriptions);
-router.route("/prescriptions").post(
+router.route("/prescriptions").get(verifyJWT, getPatientPrescriptions);
+// router.route("/prescriptions/get/:patientId").get(verifyJWT, getPatientPrescriptions);
+
+router.route("/prescriptions/add").post(
     verifyJWT, 
     upload.single("prescriptionFile"), 
     addPatientPrescription
 );
-router.route("/prescriptions/:id").delete(verifyJWT, deletePrescription);
+
+router.route("/prescriptions/delete/:id").delete(verifyJWT, deletePrescription);
 
 export default router;
 
