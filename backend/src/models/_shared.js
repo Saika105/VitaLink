@@ -31,17 +31,17 @@ export const fileSchema = new Schema(
     mimeType: { type: String, trim: true, maxlength: 100 },
     size: { type: Number, min: 0 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 // Sub-schema for emergency contact
 export const emergencyContactSchema = new Schema(
   {
-    name: { type: String, required: true, trim: true, maxlength: 100 },
+    name: { type: String, trim: true, maxlength: 100, default: "" },
     phone: { type: String, required: true, trim: true, match: PHONE_REGEX },
-    relation: { type: String, trim: true, maxlength: 50 },
+    relation: { type: String, trim: true, maxlength: 50, default: "" },
   },
-  { _id: false }
+  { _id: false },
 );
 
 // Sub-schema for time slots (e.g. "09:00" - "12:00")
@@ -50,7 +50,7 @@ export const timeSlotSchema = new Schema(
     start: { type: String, required: true, match: TIME_REGEX },
     end: { type: String, required: true, match: TIME_REGEX },
   },
-  { _id: false }
+  { _id: false },
 );
 
 // Sub-schema for a single medication entry in a prescription
@@ -62,7 +62,7 @@ export const medicationSchema = new Schema(
     duration: { type: String, trim: true, maxlength: 120 },
     instructions: { type: String, trim: true, maxlength: 500 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 // Sub-schema for a single line item in a bill
@@ -88,7 +88,7 @@ export const billItemSchema = new Schema(
       default: null,
     },
   },
-  { _id: false }
+  { _id: false },
 );
 
 // Sub-schema for a single payment entry (bills can have multiple partial payments)
@@ -99,7 +99,7 @@ export const paymentEntrySchema = new Schema(
     paidAt: { type: Date, default: Date.now },
     reference: { type: String, trim: true, maxlength: 100 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 // Reusable base fields shared across all staff roles

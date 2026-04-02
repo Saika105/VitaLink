@@ -545,48 +545,41 @@ const deleteStaff = asyncHandler(async (req, res) => {
   const { role } = req.query;
   const hospitalId = req.user.hospital;
 
-  if (!role) {
-    throw new ApiError(
-      400,
-      "Role is required to identify the correct department",
-    );
-  }
+  let Model;
+  const normalizedRole = role.toUpperCase();
 
-  let deletedMember;
-  // Safety Filter to ensure they only delete staff from their hospital
-  const filter = { _id: id, hospital: hospitalId };
-
-  switch (role.toUpperCase()) {
+  switch (normalizedRole) {
     case "DOCTORS":
-      deletedMember = await Doctor.findOneAndDelete(filter);
+      Model = Doctor;
       break;
-
     case "ASSISTANTS":
-      deletedMember = await DoctorAssistant.findOneAndDelete(filter);
+      Model = DoctorAssistant;
       break;
-
     case "LAB STAFF":
-      deletedMember = await LabAssistant.findOneAndDelete(filter);
+      Model = LabAssistant;
       break;
-
     case "RECEPTIONIST":
-      deletedMember = await Receptionist.findOneAndDelete(filter);
+      Model = Receptionist;
       break;
-
     default:
-      throw new ApiError(400, "Invalid role provided for deletion");
+      throw new ApiError(400, "Invalid role provided");
   }
 
-  if (!deletedMember) {
-    throw new ApiError(
-      404,
-      "Staff member not found or you don't have permission to delete them",
-    );
+  const staffMember = await Model.findOne({ _id: id, hospital: hospitalId });
+
+  if (!staffMember) {
+    throw new ApiError(404, "Staff member not found or permission denied");
   }
+
+  if (normalizedRole === "DOCTORS" && staffMember.avatar?.url) {
+    await deleteFromCloudinary(staffMember.avatar.url);
+  }
+
+  await Model.findByIdAndDelete(id);
 
   return res
     .status(200)
-    .json(new ApiResponse(200, {}, `${role} member removed successfully`));
+    .json(new ApiResponse(200, {}, `${role} removed successfully`));
 });
 
 export {

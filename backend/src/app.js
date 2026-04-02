@@ -7,12 +7,15 @@ const app = express()
 
 //middlewares--- check are user capable of doing the request
 app.use(cors({
-    origin: process.env.CORS_ORIGIN, //***which origins i am allowing
+    origin: [
+        process.env.CORS_ORIGIN, 
+        "http://localhost:8000"  
+    ],
     credentials: true
-})) 
+}));
 
-app.use(express.json({limit: "16kb"})) 
-app.use(express.urlencoded({extended: true, limit: "16kb"})) 
+app.use(express.json({limit: "1mb"})) 
+app.use(express.urlencoded({extended: true, limit: "1mb"})) 
 app.use(express.static("public")) 
 app.use(cookieParser()) 
 
