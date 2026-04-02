@@ -27,7 +27,8 @@ const deleteFromCloudinary = async (cloudinaryUrl) => {
     try {
         if (!cloudinaryUrl) return null;
 
-        const publicId = cloudinaryUrl.split('/').pop().split('.')[0];
+        // This regex correctly extracts the public_id even if it's in a folder
+        const publicId = cloudinaryUrl.split('/').slice(-2).join('/').split('.')[0];
 
         const response = await cloudinary.uploader.destroy(publicId);
         return response;

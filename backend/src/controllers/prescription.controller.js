@@ -16,12 +16,11 @@ const generatePrescriptionId = () => {
 //************** Add Patient Prescription ********** */
 const addPatientPrescription = asyncHandler(async (req, res) => {
   //steps:
-  //1. Verify JWT and get patient ID from token (handled by auth middleware)
-  //2. Get prescription details from request body
-  //3. Validate that all fields are provided and valid
-  //4. Handle file upload to Cloudinary and get the file URL
-  //5. Create a new Prescription document in MongoDB with the provided details and file URL
-  //6. Return success response with the created prescription data
+  //1. Verify JWT and ensure the user is a patient
+  //2. Validate incoming data 
+  //3. Upload prescription file to Cloudinary
+  //4. Create a new Prescription object and save it to the database
+  //5. Return success response with the created prescription data
   if (req.role !== "patient") {
     throw new ApiError(403, "Only patients can upload to the Health Vault");
   }
@@ -43,38 +42,42 @@ const addPatientPrescription = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Cloudinary upload failed");
   }
 
-  const prescription = await Prescription.create({
-    prescriptionId: generatePrescriptionId(),
-    patient: req.user._id,
+  try {
+    const prescription = await Prescription.create({
+      prescriptionId: generatePrescriptionId(),
+      patient: req.user._id,
+      diagnosis: diagnosis?.trim() || "General Health Record",
+      advice: advice || "",
+      manualDoctorName: manualDoctorName || "Unknown Doctor",
+      manualHospitalName: manualHospitalName || "Private Clinic/Hospital",
+      prescribedDate: prescribedDate || Date.now(),
+      source: "imported",
+      prescriptionFile: {
+        url: uploadResult.secure_url,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        size: uploadResult.bytes,
+      },
+    });
 
-    diagnosis:
-      diagnosis && diagnosis.trim() !== ""
-        ? diagnosis
-        : "General Health Record",
+    return res
+      .status(201)
+      .json(
+        new ApiResponse(
+          201,
+          prescription,
+          "Prescription added to your Health Vault",
+        ),
+      );
+  } catch (error) {
+    console.log("DB Creation failed, deleting file from Cloudinary...");
+    await deleteFromCloudinary(uploadResult.secure_url);
 
-    advice: advice || "",
-    manualDoctorName: manualDoctorName || "Unknown Doctor",
-    manualHospitalName: manualHospitalName || "Private Clinic/Hospital",
-    prescribedDate: prescribedDate || Date.now(),
-    source: "imported",
-
-    prescriptionFile: {
-      url: uploadResult.secure_url,
-      originalName: req.file.originalname,
-      mimeType: req.file.mimetype,
-      size: uploadResult.bytes,
-    },
-  });
-
-  return res
-    .status(201)
-    .json(
-      new ApiResponse(
-        201,
-        prescription,
-        "Prescription added to your Health Vault",
-      ),
+    throw new ApiError(
+      500,
+      error?.message || "Failed to save prescription to database",
     );
+  }
 });
 
 //************** Delete Prescription ********** */
@@ -119,7 +122,7 @@ const deletePrescription = asyncHandler(async (req, res) => {
     );
 });
 
-//************** Get Patient Prescriptions ********** */
+//************** Universal Get Patient Prescriptions  ********** */
 const getPatientPrescriptions = asyncHandler(async (req, res) => {
   const targetId = req.params.patientId || req.user._id;
 

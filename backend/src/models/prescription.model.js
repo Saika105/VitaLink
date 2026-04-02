@@ -115,18 +115,14 @@ const prescriptionSchema = new mongoose.Schema(
 
 prescriptionSchema.index({ patient: 1, prescribedDate: -1 });
 
-prescriptionSchema.pre("validate", function (next) {
+prescriptionSchema.pre("validate", async function () {
   if (this.source === "doctor_assistant" && !this.uploadedByAssistant) {
-    return next(
-      new Error(
-        "uploadedByAssistant is required when source is doctor_assistant",
-      ),
-    );
+    throw new Error("uploadedByAssistant is required when source is doctor_assistant");
   }
+
   if (this.followUpDate && this.followUpDate <= this.prescribedDate) {
-    return next(new Error("followUpDate must be after prescribedDate"));
+    throw new Error("followUpDate must be after prescribedDate");
   }
-  next();
 });
 
 export const Prescription = mongoose.model("Prescription", prescriptionSchema);
