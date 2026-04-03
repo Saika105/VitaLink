@@ -13,6 +13,8 @@ import HealthVault from './pages/HealthVault.jsx';
 import SearchDoctor from './pages/SearchDoctor.jsx';
 import PatientAppointments from './pages/PatientAppointments.jsx';
 import PatientBilling from './pages/PatientBilling.jsx';
+import ConfirmUpload from './pages/ConfirmUpload';
+
 const App = () => {
   return (
     <Router>
@@ -31,6 +33,7 @@ const App = () => {
           <Route path='/search-doctor' element={<SearchDoctor />} />
           <Route path='/appointments' element={<PatientAppointments />} />
           <Route path='/billing' element={<PatientBilling />} />
+          <Route path='/confirm-upload' element={<ConfirmUpload />} />
         </Routes>
       </div>
     </Router>
