@@ -15,17 +15,16 @@ const generateReportId = () => {
 // ********************PATIENT LAB REPORT CONTROLLERS********************
 //************** Add Patient Lab Report ********** */
 const addPatientLabReport = asyncHandler(async (req, res) => {
-  if (req.role !== "patient") {
+  const userRole = req.user?.role || req.role;
+  if (userRole !== "patient") {
     throw new ApiError(403, "Only patients can upload to the Health Vault");
   }
 
-  const {
-    testName,
-    manualHospitalName,
-  } = req.body;
+  const { testName, manualHospitalName } = req.body;
 
-  if (!testName || !manualHospitalName) {
-    throw new ApiError(400, "Test name and Hospital name are required");
+  if (!testName?.trim() || !manualHospitalName?.trim()) {
+    if (req.file?.path) fs.unlinkSync(req.file.path);
+    throw new ApiError(400, "Test name and Hospital name are both required");
   }
 
   if (!req.file) {
@@ -41,15 +40,16 @@ const addPatientLabReport = asyncHandler(async (req, res) => {
     const labReport = await LabReport.create({
       reportId: generateReportId(),
       patient: req.user._id,
-      testName: testName?.trim() || "General Lab Report",
-      testType: testType || "Other",
-      manualHospitalName: manualHospitalName || "Private Hospital",
-      reportDate: reportDate || Date.now(),
+      testName: testName.trim(),
+      testType: "Other",
+      manualHospitalName: manualHospitalName.trim(),
+      reportDate: Date.now(),
       source: "imported",
       price: 0,
       isPaid: true,
       reportFile: {
         url: uploadResult.secure_url,
+        public_id: uploadResult.public_id,
         originalName: req.file.originalname,
         mimeType: req.file.mimetype,
         size: uploadResult.bytes,
@@ -66,7 +66,13 @@ const addPatientLabReport = asyncHandler(async (req, res) => {
         ),
       );
   } catch (error) {
-    await deleteFromCloudinary(uploadResult.secure_url);
+    if (uploadResult?.public_id) {
+      const isPdf = req.file.mimetype === "application/pdf";
+      await deleteFromCloudinary(
+        uploadResult.public_id,
+        isPdf ? "raw" : "image",
+      );
+    }
     throw new ApiError(
       500,
       error?.message || "Failed to save report to database",
@@ -85,14 +91,16 @@ const deletePatientLabReport = asyncHandler(async (req, res) => {
   }
 
   if (report.patient.toString() !== req.user._id.toString()) {
-    throw new ApiError(
-      403,
-      "Security Violation: You are not authorized to delete this record.",
-    );
+    throw new ApiError(403, "Security Violation: Unauthorized deletion.");
   }
 
-  if (report.reportFile?.url) {
-    await deleteFromCloudinary(report.reportFile.url);
+  if (report.reportFile?.public_id) {
+    const isPdf = report.reportFile.mimeType === "application/pdf";
+
+    await deleteFromCloudinary(
+      report.reportFile.public_id,
+      isPdf ? "raw" : "image",
+    );
   }
 
   await LabReport.findByIdAndDelete(id);
@@ -104,20 +112,34 @@ const deletePatientLabReport = asyncHandler(async (req, res) => {
 
 //*********** *Universal Get Patient Lab Reports  ********** */
 const getPatientLabReports = asyncHandler(async (req, res) => {
-  const targetId = req.params.patientId || req.user._id;
+  const allowedRoles = ["patient", "doctor", "labAssistant"];
+  const userRole = req.user?.role;
+  const userId = req.user?._id;
 
-  if (req.user.role === "patient" && targetId.toString() !== req.user._id.toString()) {
-    throw new ApiError(403, "Access Denied: Patients can only view their own vault.");
+  if (!allowedRoles.includes(userRole)) {
+    throw new ApiError(
+      403,
+      "Access Denied: Admins and unauthorized roles cannot view the Health Vault.",
+    );
   }
-  
+
+  const targetId = req.params.patientId || userId;
+
+  if (userRole === "patient" && targetId.toString() !== userId.toString()) {
+    throw new ApiError(
+      403,
+      "Access Denied: Patients can only view their own records.",
+    );
+  }
+
   const reports = await LabReport.find({ patient: targetId })
     .sort({ reportDate: -1 })
     .populate("hospital", "fullName")
     .populate("labAssistant", "fullName");
 
-  return res.status(200).json(
-    new ApiResponse(200, reports, "Lab reports retrieved successfully")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, reports, "Lab reports retrieved successfully"));
 });
 
-export { addPatientLabReport , deletePatientLabReport , getPatientLabReports };
+export { addPatientLabReport, deletePatientLabReport, getPatientLabReports };

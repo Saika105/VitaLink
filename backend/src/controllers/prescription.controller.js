@@ -17,22 +17,23 @@ const generatePrescriptionId = () => {
 const addPatientPrescription = asyncHandler(async (req, res) => {
   //steps:
   //1. Verify JWT and ensure the user is a patient
-  //2. Validate incoming data 
+  //2. Validate incoming data
   //3. Upload prescription file to Cloudinary
   //4. Create a new Prescription object and save it to the database
   //5. Return success response with the created prescription data
-  if (req.role !== "patient") {
+  if (req.user?.role !== "patient" && req.role !== "patient") {
     throw new ApiError(403, "Only patients can upload to the Health Vault");
   }
 
-  const {
-    diagnosis,
-    manualDoctorName,
-    manualHospitalName,
-    prescribedDate,
-    advice,
-  } = req.body;
+  // 2. Extract and Validate Required Text Fields
+  const { manualDoctorName, manualHospitalName } = req.body;
 
+  // STRICT VALIDATION: Error if either is missing or just empty spaces
+  if (!manualDoctorName?.trim() || !manualHospitalName?.trim()) {
+    throw new ApiError(400, "Doctor name and Hospital name are both required");
+  }
+
+  // 3. File Validation
   if (!req.file) {
     throw new ApiError(400, "Prescription file is required");
   }
@@ -46,14 +47,15 @@ const addPatientPrescription = asyncHandler(async (req, res) => {
     const prescription = await Prescription.create({
       prescriptionId: generatePrescriptionId(),
       patient: req.user._id,
-      diagnosis: diagnosis?.trim() || "General Health Record",
-      advice: advice || "",
-      manualDoctorName: manualDoctorName || "Unknown Doctor",
-      manualHospitalName: manualHospitalName || "Private Clinic/Hospital",
-      prescribedDate: prescribedDate || Date.now(),
+      manualDoctorName: manualDoctorName.trim(),
+      manualHospitalName: manualHospitalName.trim(),
+      diagnosis: "General Health Record",
+      advice: "N/A",
+      prescribedDate: Date.now(),
       source: "imported",
       prescriptionFile: {
         url: uploadResult.secure_url,
+        public_id: uploadResult.public_id,
         originalName: req.file.originalname,
         mimeType: req.file.mimetype,
         size: uploadResult.bytes,
@@ -63,20 +65,13 @@ const addPatientPrescription = asyncHandler(async (req, res) => {
     return res
       .status(201)
       .json(
-        new ApiResponse(
-          201,
-          prescription,
-          "Prescription added to your Health Vault",
-        ),
+        new ApiResponse(201, prescription, "Prescription saved successfully"),
       );
   } catch (error) {
-    console.log("DB Creation failed, deleting file from Cloudinary...");
-    await deleteFromCloudinary(uploadResult.secure_url);
-
-    throw new ApiError(
-      500,
-      error?.message || "Failed to save prescription to database",
-    );
+    if (uploadResult?.public_id) {
+      await deleteFromCloudinary(uploadResult.public_id);
+    }
+    throw new ApiError(500, error?.message || "Failed to save to database");
   }
 });
 
@@ -105,8 +100,13 @@ const deletePrescription = asyncHandler(async (req, res) => {
     );
   }
 
-  if (prescription.prescriptionFile?.url) {
-    await deleteFromCloudinary(prescription.prescriptionFile.url);
+  if (prescription.prescriptionFile?.public_id) {
+    const isPdf = prescription.prescriptionFile.mimeType === "application/pdf";
+
+    await deleteFromCloudinary(
+      prescription.prescriptionFile.public_id,
+      isPdf ? "raw" : "image",
+    );
   }
 
   await Prescription.findByIdAndDelete(id);
@@ -124,22 +124,29 @@ const deletePrescription = asyncHandler(async (req, res) => {
 
 //************** Universal Get Patient Prescriptions  ********** */
 const getPatientPrescriptions = asyncHandler(async (req, res) => {
-  const targetId = req.params.patientId || req.user._id;
+  const allowedRoles = ["patient", "doctor", "labAssistant"];
+  const userRole = req.user?.role;
+  const userId = req.user?._id;
 
-  if (
-    req.user.role === "patient" &&
-    req.params.patientId &&
-    req.params.patientId !== req.user._id.toString()
-  ) {
+  if (!allowedRoles.includes(userRole)) {
     throw new ApiError(
       403,
-      "You are only authorized to view your own prescriptions",
+      "Access Denied: You do not have permission to view medical records.",
+    );
+  }
+
+  const targetId = req.params.patientId || userId;
+
+  if (userRole === "patient" && targetId.toString() !== userId.toString()) {
+    throw new ApiError(
+      403,
+      "Access Denied: You are only authorized to view your own prescriptions",
     );
   }
 
   const prescriptions = await Prescription.find({ patient: targetId })
     .sort({ prescribedDate: -1 })
-    .populate("hospital", "name")
+    .populate("hospital", "fullName")
     .populate("doctor", "fullName");
 
   return res
@@ -148,7 +155,5 @@ const getPatientPrescriptions = asyncHandler(async (req, res) => {
       new ApiResponse(200, prescriptions, "Records retrieved successfully"),
     );
 });
-
-
 
 export { addPatientPrescription, deletePrescription, getPatientPrescriptions };

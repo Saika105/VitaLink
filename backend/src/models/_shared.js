@@ -26,6 +26,7 @@ export function externalIdField(prefix) {
 export const fileSchema = new Schema(
   {
     url: { type: String, required: true, trim: true },
+    public_id: { type: String, required: true, trim: true },
     originalName: { type: String, trim: true, maxlength: 255 },
     mimeType: { type: String, trim: true, maxlength: 100 },
     size: { type: Number, min: 0 },

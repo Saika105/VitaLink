@@ -27,14 +27,17 @@ const deleteFromCloudinary = async (cloudinaryUrl) => {
   try {
     if (!cloudinaryUrl) return null;
 
-    // 1. Extract Public ID
-    // If URL is .../v12345/folder/image.jpg -> result is "folder/image"
-    const publicId = cloudinaryUrl.split("/").slice(-2).join("/").split(".")[0];
+    const urlParts = cloudinaryUrl.split("/");
+    const fileNameWithExtension = urlParts.pop();
+    const publicId = fileNameWithExtension.split(".")[0];
 
     const isPdf = cloudinaryUrl.toLowerCase().endsWith(".pdf");
+    const resType = isPdf ? "raw" : "image";
+
+    console.log(`Attempting to delete ${resType}: ${publicId}`);
 
     const response = await cloudinary.uploader.destroy(publicId, {
-      resource_type: isPdf ? "raw" : "image",
+      resource_type: resType,
     });
 
     console.log("Cloudinary Delete Response:", response);
