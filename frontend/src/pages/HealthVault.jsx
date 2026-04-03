@@ -209,7 +209,7 @@ const HealthVault = () => {
                     <div>
                       <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
                         {activeTab === 'Prescriptions'
-                          ? 'Doctor / Diagnosis'
+                          ? 'Doctor Name'
                           : 'Test Name'}
                       </p>
                       <p className='font-bold text-slate-800 leading-tight'>
