@@ -1,0 +1,50 @@
+const apiUrl = import.meta.env.VITE_API_URL;
+
+export const protectedFetch = async (endpoint, options = {}) => {
+  let token = localStorage.getItem('token');
+
+  const defaultHeaders = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  let response = await fetch(`${apiUrl}${endpoint}`, {
+    ...options,
+    headers: defaultHeaders,
+  });
+
+  if (response.status === 401) {
+    const refreshResponse = await fetch(`${apiUrl}/api/v1/auth/refresh-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        refreshToken: localStorage.getItem('refreshToken'),
+      }),
+    });
+
+    if (refreshResponse.ok) {
+      const result = await refreshResponse.json();
+      localStorage.setItem('token', result.data.accessToken);
+      if (result.data.refreshToken) {
+        localStorage.setItem('refreshToken', result.data.refreshToken);
+      }
+
+      return await fetch(`${apiUrl}${endpoint}`, {
+        ...options,
+        headers: {
+          ...defaultHeaders,
+          Authorization: `Bearer ${result.data.accessToken}`,
+        },
+      });
+    } else {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('role');
+      window.location.href = '/login-patient';
+      return response;
+    }
+  }
+
+  return response;
+};
