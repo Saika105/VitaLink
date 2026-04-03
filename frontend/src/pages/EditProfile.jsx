@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import DashboardNav from '../components/DashboardNav';
+import { protectedFetch } from '../utils/api';
 
 const EditProfile = () => {
   const navigate = useNavigate();
@@ -35,12 +36,7 @@ const EditProfile = () => {
   useEffect(() => {
     const fetchCurrentData = async () => {
       try {
-        const response = await fetch(`${apiUrl}/api/v1/patients/profile`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json',
-          },
-        });
+        const response = await protectedFetch('/api/v1/patients/profile');
         if (response.ok) {
           const result = await response.json();
           const data = result.data;
@@ -59,7 +55,7 @@ const EditProfile = () => {
       }
     };
     fetchCurrentData();
-  }, [apiUrl]);
+  }, []);
 
   const handleImageChange = e => {
     const file = e.target.files[0];
@@ -88,11 +84,8 @@ const EditProfile = () => {
         data.append('profilePhoto', formData.profilePhoto);
       }
 
-      const response = await fetch(`${apiUrl}/api/v1/patients/update-profile`, {
+      const response = await protectedFetch('/api/v1/patients/update-profile', {
         method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
         body: data,
       });
 
@@ -119,14 +112,10 @@ const EditProfile = () => {
     }
     setLoading(true);
     try {
-      const response = await fetch(
-        `${apiUrl}/api/v1/patients/change-password`,
+      const response = await protectedFetch(
+        '/api/v1/patients/change-password',
         {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({
             oldPassword: passwordData.oldPassword,
             newPassword: passwordData.newPassword,
