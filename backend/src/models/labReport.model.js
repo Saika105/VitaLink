@@ -13,14 +13,19 @@ const labReportSchema = new mongoose.Schema(
       index: true,
     },
 
+    manualHospitalName: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
     hospital: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Hospital",
-      required: true,
+      required: false,
       index: true,
     },
 
-    // Only set when source is "lab_assistant"
     labAssistant: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "LabAssistant",
@@ -28,10 +33,16 @@ const labReportSchema = new mongoose.Schema(
       index: true,
     },
 
-    // The prescription that ordered this test (if any)
     prescription: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Prescription",
+      default: null,
+      index: true,
+    },
+
+    room: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "LabRoom",
       default: null,
       index: true,
     },
@@ -74,7 +85,6 @@ const labReportSchema = new mongoose.Schema(
       default: null,
     },
 
-    // Report can only be uploaded after payment is confirmed
     isPaid: {
       type: Boolean,
       default: false,
@@ -87,17 +97,18 @@ const labReportSchema = new mongoose.Schema(
       default: "lab_assistant",
     },
   },
-  baseSchemaOptions
+  baseSchemaOptions,
 );
 
 labReportSchema.index({ patient: 1, reportDate: -1 });
 
 labReportSchema.pre("validate", function (next) {
   if (this.source === "lab_assistant" && !this.labAssistant) {
-    return next(new Error("labAssistant is required when source is lab_assistant"));
+    return next(
+      new Error("labAssistant is required when source is lab_assistant"),
+    );
   }
   next();
 });
 
-const LabReport = mongoose.model("LabReport", labReportSchema);
-export default LabReport;
+export const LabReport = mongoose.model("LabReport", labReportSchema);

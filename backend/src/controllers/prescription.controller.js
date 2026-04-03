@@ -149,6 +149,6 @@ const getPatientPrescriptions = asyncHandler(async (req, res) => {
     );
 });
 
-//*********** *Universal Search Patient Prescriptions  ********** */
+
 
 export { addPatientPrescription, deletePrescription, getPatientPrescriptions };
