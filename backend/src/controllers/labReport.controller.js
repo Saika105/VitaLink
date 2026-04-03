@@ -22,9 +22,11 @@ const addPatientLabReport = asyncHandler(async (req, res) => {
   const {
     testName,
     manualHospitalName,
-    reportDate,
-    testType,
   } = req.body;
+
+  if (!testName || !manualHospitalName) {
+    throw new ApiError(400, "Test name and Hospital name are required");
+  }
 
   if (!req.file) {
     throw new ApiError(400, "Lab report file is required");

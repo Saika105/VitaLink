@@ -102,13 +102,10 @@ const labReportSchema = new mongoose.Schema(
 
 labReportSchema.index({ patient: 1, reportDate: -1 });
 
-labReportSchema.pre("validate", function (next) {
+labReportSchema.pre("validate", async function () {
   if (this.source === "lab_assistant" && !this.labAssistant) {
-    return next(
-      new Error("labAssistant is required when source is lab_assistant"),
-    );
+    throw new Error("labAssistant is required when source is lab_assistant");
   }
-  next();
 });
 
 export const LabReport = mongoose.model("LabReport", labReportSchema);
