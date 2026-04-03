@@ -6,7 +6,8 @@ import {
   logoutPatient,
   getPatientProfile,
   updatePatientProfile,
-  changeCurrentPassword
+  changeCurrentPassword,
+  getAllDoctors,
 } from "../controllers/patient.controller.js";
 import{ 
   addPatientPrescription, 
@@ -39,6 +40,7 @@ router.route("/update-profile").patch(
     updatePatientProfile
 );
 router.route("/change-password").post(verifyJWT, changeCurrentPassword);
+router.route("/doctors").get(verifyJWT, getAllDoctors);
 
 //from prescription.controller.js
 router.route("/prescriptions/add").post(

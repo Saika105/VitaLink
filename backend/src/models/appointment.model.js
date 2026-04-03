@@ -99,7 +99,6 @@ const appointmentSchema = new mongoose.Schema(
       default: null,
     },
 
-    // Assistant who added this patient to the queue
     addedToQueueByAssistant: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "DoctorAssistant",
@@ -175,5 +174,5 @@ appointmentSchema.pre("validate", function (next) {
   next();
 });
 
-const Appointment = mongoose.model("Appointment", appointmentSchema);
-export default Appointment;
+export const Appointment = mongoose.model("Appointment", appointmentSchema);
+

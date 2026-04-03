@@ -1,6 +1,8 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { Patient } from "../models/patient.model.js";
+import { Doctor } from "../models/doctor.model.js";
+import { DoctorSchedule } from "../models/doctorSchedule.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { deleteFromCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -384,6 +386,41 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Password changed successfully"));
 });
 
+//*******************search doctors***************** */
+const getAllDoctors = asyncHandler(async (req, res) => {
+  const { specialty, name } = req.query;
+
+  let filter = { isActive: true };
+
+  if (specialty && specialty !== 'All') {
+    filter.specialization = specialty; 
+  }
+
+  if (name) {
+    filter.fullName = { $regex: name, $options: "i" }; 
+  }
+
+  const doctors = await Doctor.find(filter)
+    .select("-password -refreshToken -email")
+    .populate("hospital", "name address");
+
+  const doctorsWithSchedules = await Promise.all(
+    doctors.map(async (doc) => {
+      const schedule = await DoctorSchedule.findOne({ doctor: doc._id, isActive: true })
+        .select("consultationFee sittingTimeLabel workingDays timeSlots");
+      
+      return {
+        ...doc._doc,
+        schedule: schedule || null
+      };
+    })
+  );
+
+  return res
+  .status(200)
+  .json(new ApiResponse(200, doctorsWithSchedules, "Doctors and schedules fetched successfully"));
+});
+
 export {
   initializeRegistration,
   finalizeRegistration,
@@ -392,4 +429,5 @@ export {
   getPatientProfile,
   updatePatientProfile,
   changeCurrentPassword,
+  getAllDoctors,
 };
