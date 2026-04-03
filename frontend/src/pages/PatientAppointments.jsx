@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import DashboardNav from '../components/DashboardNav';
+import { protectedFetch } from '../utils/api';
 
 const PatientAppointments = () => {
   const navigate = useNavigate();
@@ -11,25 +12,16 @@ const PatientAppointments = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [activeAssistant, setActiveAssistant] = useState(null);
 
-  const apiUrl = import.meta.env.VITE_API_URL;
-
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(
-          `${apiUrl}/patient/appointments?status=${activeTab}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          },
+        const response = await protectedFetch(
+          `/api/v1/patients/appointments?status=${activeTab}`,
         );
 
         if (response.ok) {
-          const data = await response.json();
-          const mappedData = data.map(apt => ({
+          const result = await response.json();
+          const mappedData = result.data.map(apt => ({
             id: apt._id,
             hospital: apt.hospital?.fullName,
             doctor: apt.doctor?.fullName,
@@ -50,7 +42,7 @@ const PatientAppointments = () => {
       }
     };
     fetchAppointments();
-  }, [activeTab, apiUrl]);
+  }, [activeTab]);
 
   const handleRescheduleClick = apt => {
     setActiveAssistant({
@@ -68,27 +60,34 @@ const PatientAppointments = () => {
       )
     ) {
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${apiUrl}/appointments/${id}/cancel`, {
-          method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+        const response = await protectedFetch(
+          `/api/v1/patients/appointments/${id}/cancel`,
+          {
+            method: 'PATCH',
           },
-        });
+        );
         if (response.ok) {
           setAppointments(prev => prev.filter(a => a.id !== id));
         }
       } catch (err) {
-        setAppointments([]);
+        console.error(err);
       }
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    navigate('/login-patient');
+  const handleLogout = async () => {
+    try {
+      await protectedFetch('/api/v1/patients/logout', {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Logout Error:', error);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('role');
+      navigate('/login-patient');
+    }
   };
 
   return (

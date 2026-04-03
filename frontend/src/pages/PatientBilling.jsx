@@ -3,30 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import DashboardNav from '../components/DashboardNav';
+import { protectedFetch } from '../utils/api';
 
 const PatientBilling = () => {
   const navigate = useNavigate();
   const [billingHistory, setBillingHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchBilling = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${apiUrl}/patient/billing`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+        const response = await protectedFetch('/api/v1/patients/billing');
 
         if (response.ok) {
-          const data = await response.json();
-          // Mapping Mongoose Schema fields to UI component names
-          const mappedData = data.map(bill => ({
+          const result = await response.json();
+          const mappedData = result.data.map(bill => ({
             invoiceNumber: bill.invoiceNumber,
-            // Mapping Schema enums to UI display strings
             status:
               bill.paymentStatus === 'paid'
                 ? 'Paid'
@@ -50,16 +42,25 @@ const PatientBilling = () => {
     };
 
     fetchBilling();
-  }, [apiUrl]);
+  }, []);
 
   const handlePayDue = (invoiceNumber, amount) => {
     alert(`Redirecting to payment gateway for Invoice: ${invoiceNumber}`);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    navigate('/login-patient');
+  const handleLogout = async () => {
+    try {
+      await protectedFetch('/api/v1/patients/logout', {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Logout Error:', error);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('role');
+      navigate('/login-patient');
+    }
   };
 
   return (
@@ -170,12 +171,11 @@ const PatientBilling = () => {
         )}
 
         {!isLoading && billingHistory.length === 0 && (
-          <div className='p-32 text-center text-slate-400 uppercase font-black text-[10px] tracking-[0.3em] border-2 border-dashed border-slate-200 rounded-4xl'>
+          <div className='p-32 text-center text-slate-600 uppercase font-black text-[12px] tracking-[0.3em] border-2 border-dashed border-slate-200 rounded-4xl'>
             No Records Found
           </div>
         )}
 
-        {/* Bottom Logout Button */}
         <div className='flex justify-end mt-12'>
           <button
             onClick={handleLogout}

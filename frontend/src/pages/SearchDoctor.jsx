@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import DashboardNav from '../components/DashboardNav';
+import { protectedFetch } from '../utils/api';
 
 const SearchDoctor = () => {
   const navigate = useNavigate();
@@ -11,8 +12,6 @@ const SearchDoctor = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showPopup, setShowPopup] = useState(false);
   const [activeDoctor, setActiveDoctor] = useState(null);
-
-  const apiUrl = import.meta.env.VITE_API_URL;
 
   const specialties = [
     'All',
@@ -27,19 +26,15 @@ const SearchDoctor = () => {
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const token = localStorage.getItem('token');
         const queryParam =
           selectedSpecialty === 'All' ? '' : `?specialty=${selectedSpecialty}`;
-        const response = await fetch(`${apiUrl}/doctors${queryParam}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+        const response = await protectedFetch(
+          `/api/v1/patients/doctors${queryParam}`,
+        );
 
         if (response.ok) {
-          const data = await response.json();
-          setDoctors(Array.isArray(data) ? data : []);
+          const result = await response.json();
+          setDoctors(Array.isArray(result.data) ? result.data : []);
         } else {
           setDoctors([]);
         }
@@ -48,7 +43,7 @@ const SearchDoctor = () => {
       }
     };
     fetchDoctors();
-  }, [selectedSpecialty, apiUrl]);
+  }, [selectedSpecialty]);
 
   const filteredDoctors = doctors.filter(doc =>
     doc.fullName?.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -59,10 +54,19 @@ const SearchDoctor = () => {
     setShowPopup(true);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    navigate('/login-patient');
+  const handleLogout = async () => {
+    try {
+      await protectedFetch('/api/v1/patients/logout', {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Logout Error:', error);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('role');
+      navigate('/login-patient');
+    }
   };
 
   return (
