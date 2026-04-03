@@ -55,7 +55,7 @@ const ConfirmUpload = () => {
         alert(
           `${uploadType.charAt(0).toUpperCase() + uploadType.slice(1)} uploaded successfully!`,
         );
-        navigate('/health-vault');
+        navigate('/my-records');
       } else {
         const error = await response.json();
         alert(error.message || 'Upload failed');
@@ -111,7 +111,7 @@ const ConfirmUpload = () => {
                 className='w-full border border-slate-200 rounded-xl p-4 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all bg-slate-50/50'
                 placeholder={
                   uploadType === 'prescription'
-                    ? 'e.g. Dr. Abcd'
+                    ? 'e.g. Dr. ABCD'
                     : 'e.g. Blood Test'
                 }
                 value={recordDetails.title}
@@ -128,7 +128,7 @@ const ConfirmUpload = () => {
               <input
                 type='text'
                 required
-                className='w-full border border-slate-300 rounded-xl p-4 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all bg-slate-50/50'
+                className='w-full border border-slate-200 rounded-xl p-4 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all bg-slate-50/50'
                 placeholder='e.g. Central Hospital'
                 value={recordDetails.hospitalName}
                 onChange={e =>
@@ -144,14 +144,14 @@ const ConfirmUpload = () => {
               <button
                 type='button'
                 onClick={() => navigate('/patient-dashboard')}
-                className='flex-1 h-14 border-2 border-slate-100 rounded-2xl text-[11px] font-black text-slate-600 uppercase tracking-widest hover:bg-slate-50 transition-all'
+                className='flex-1 h-14 border-2 border-slate-400 rounded-2xl text-[12px] font-black text-slate-600 uppercase tracking-widest hover:bg-slate-200 transition-all'
               >
                 Discard
               </button>
               <button
                 type='submit'
                 disabled={loading}
-                className='flex-2 h-14 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[11px] rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 transition-all disabled:opacity-50'
+                className='flex-2 h-14 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[12px] rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 transition-all disabled:opacity-50'
               >
                 {loading ? 'Securing...' : 'Confirm & Upload'}
               </button>
