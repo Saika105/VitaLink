@@ -4,6 +4,7 @@ import html2canvas from 'html2canvas';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import DashboardNav from '../components/DashboardNav';
+import { protectedFetch } from '../utils/api';
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
@@ -16,50 +17,62 @@ const PatientDashboard = () => {
     email: '',
     age: '',
     gender: '',
-    profilePhoto: null,
+    profilePhoto: '',
     phone: '',
-    emergencyContact: { name: '', phone: '', relationship: '' },
+    emergencyContact: '',
     address: '',
     dateOfBirth: '',
     bloodGroup: '',
   });
 
+  const [activeUploadType, setActiveUploadType] = useState('');
   const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchPatientInfo = async () => {
       try {
-        const response = await fetch(`${apiUrl}/patient/profile`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json',
-          },
-        });
+        const response = await protectedFetch('/api/v1/patients/profile');
+
         if (response.ok) {
-          const data = await response.json();
-          setPatientData(data);
+          const result = await response.json();
+          setPatientData(result.data);
         }
       } catch (err) {
         console.error('Fetch error:', err);
       }
     };
     fetchPatientInfo();
-  }, [apiUrl]);
+  }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    navigate('/login-patient');
+  const handleLogout = async () => {
+    try {
+      await protectedFetch('/api/v1/patients/logout', {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Logout Error:', error);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('role');
+      navigate('/login-patient');
+    }
   };
 
-  const triggerFileSelect = () => {
+  const triggerFileSelect = type => {
+    setActiveUploadType(type);
     fileInputRef.current.click();
   };
 
   const handleFileUpload = e => {
     const file = e.target.files[0];
     if (file) {
-      navigate('/my-records', { state: { selectedFile: file } });
+      navigate('/confirm-upload', {
+        state: {
+          selectedFile: file,
+          uploadType: activeUploadType,
+        },
+      });
     }
   };
 
@@ -99,9 +112,9 @@ const PatientDashboard = () => {
           >
             <div className='flex flex-col items-center text-center mb-6'>
               <div className='w-32 h-32 bg-white rounded-3xl shadow border border-slate-300 mb-4 overflow-hidden flex items-center justify-center'>
-                {patientData.profilePhoto?.url ? (
+                {patientData.profilePhoto ? (
                   <img
-                    src={patientData.profilePhoto.url}
+                    src={patientData.profilePhoto}
                     alt={patientData.fullName}
                     className='w-full h-full object-cover'
                   />
@@ -168,7 +181,7 @@ const PatientDashboard = () => {
                   Emergency Contact
                 </p>
                 <div className='bg-red-50 border border-red-200 rounded-lg px-3.5 py-1.5 text-xs font-bold text-red-700 font-inter'>
-                  {patientData.emergencyContact?.phone || '---'}
+                  {patientData.emergencyContact || '---'}
                 </div>
               </div>
               <div>
@@ -194,7 +207,7 @@ const PatientDashboard = () => {
 
             <div className='space-y-5 grow font-inter'>
               <button
-                onClick={triggerFileSelect}
+                onClick={() => triggerFileSelect('prescription')}
                 className='w-full text-left bg-slate-50 border border-slate-300 rounded-2xl p-5 flex justify-between items-center group hover:bg-white hover:border-blue-600 hover:shadow-lg transition-all focus:ring-4 focus:ring-blue-100 outline-none font-inter'
               >
                 <div>
@@ -211,7 +224,7 @@ const PatientDashboard = () => {
               </button>
 
               <button
-                onClick={triggerFileSelect}
+                onClick={() => triggerFileSelect('report')}
                 className='w-full text-left bg-slate-50 border border-slate-300 rounded-2xl p-5 flex justify-between items-center group hover:bg-white hover:border-blue-600 hover:shadow-lg transition-all focus:ring-4 focus:ring-blue-100 outline-none font-inter'
               >
                 <div>
