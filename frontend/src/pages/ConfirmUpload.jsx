@@ -17,12 +17,17 @@ const ConfirmUpload = () => {
 
   const selectedFile = location.state?.selectedFile;
   const uploadType = location.state?.uploadType;
+  const userRole = location.state?.role;
 
   useEffect(() => {
     if (!selectedFile || !uploadType) {
-      navigate('/patient-dashboard');
+      if (userRole === 'assistant') {
+        navigate('/assistant-dashboard');
+      } else {
+        navigate('/patient-dashboard');
+      }
     }
-  }, [selectedFile, uploadType, navigate]);
+  }, [selectedFile, uploadType, navigate, userRole]);
 
   const handleUpload = async e => {
     e.preventDefault();
@@ -55,7 +60,12 @@ const ConfirmUpload = () => {
         alert(
           `${uploadType.charAt(0).toUpperCase() + uploadType.slice(1)} uploaded successfully!`,
         );
-        navigate('/my-records');
+
+        if (userRole === 'assistant') {
+          navigate('/assistant-dashboard');
+        } else {
+          navigate('/my-records');
+        }
       } else {
         const error = await response.json();
         alert(error.message || 'Upload failed');
@@ -73,7 +83,7 @@ const ConfirmUpload = () => {
   return (
     <div className='min-h-screen bg-[#F8FAFC] flex flex-col font-inter text-slate-900'>
       <Navbar />
-      <DashboardNav />
+      {userRole !== 'assistant' && <DashboardNav />}
 
       <main className='grow flex items-center justify-center p-6 md:p-12'>
         <div className='w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 p-8 md:p-12'>
@@ -87,8 +97,8 @@ const ConfirmUpload = () => {
           </div>
 
           <div className='bg-slate-50 border border-slate-200 rounded-3xl p-6 mb-8 flex items-center gap-4'>
-            <div className='w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-blue-600 font-bold'>
-              DOC
+            <div className='w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-blue-600 font-bold text-xs uppercase'>
+              File
             </div>
             <div className='overflow-hidden'>
               <p className='text-[10px] font-black text-slate-400 uppercase tracking-widest'>
@@ -143,7 +153,13 @@ const ConfirmUpload = () => {
             <div className='flex flex-col sm:flex-row gap-4 pt-4'>
               <button
                 type='button'
-                onClick={() => navigate('/patient-dashboard')}
+                onClick={() => {
+                  if (userRole === 'assistant') {
+                    navigate('/assistant');
+                  } else {
+                    navigate('/patient-dashboard');
+                  }
+                }}
                 className='flex-1 h-14 border-2 border-slate-400 rounded-2xl text-[12px] font-black text-slate-600 uppercase tracking-widest hover:bg-slate-200 transition-all'
               >
                 Discard
