@@ -24,18 +24,25 @@ const uploadOnCloudinary = async (localFilePath) => {
 };
 
 const deleteFromCloudinary = async (cloudinaryUrl) => {
-    try {
-        if (!cloudinaryUrl) return null;
+  try {
+    if (!cloudinaryUrl) return null;
 
-        // This regex correctly extracts the public_id even if it's in a folder
-        const publicId = cloudinaryUrl.split('/').slice(-2).join('/').split('.')[0];
+    // 1. Extract Public ID
+    // If URL is .../v12345/folder/image.jpg -> result is "folder/image"
+    const publicId = cloudinaryUrl.split("/").slice(-2).join("/").split(".")[0];
 
-        const response = await cloudinary.uploader.destroy(publicId);
-        return response;
-    } catch (error) {
-        console.error("Error deleting from Cloudinary:", error);
-        return null;
-    }
+    const isPdf = cloudinaryUrl.toLowerCase().endsWith(".pdf");
+
+    const response = await cloudinary.uploader.destroy(publicId, {
+      resource_type: isPdf ? "raw" : "image",
+    });
+
+    console.log("Cloudinary Delete Response:", response);
+    return response;
+  } catch (error) {
+    console.error("Error deleting from Cloudinary:", error);
+    return null;
+  }
 };
 
 export { uploadOnCloudinary, deleteFromCloudinary };
