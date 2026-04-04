@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import DashboardNav from '../components/DashboardNav';
 import { protectedFetch } from '../utils/api';
 
 const AssistantDashboard = () => {
@@ -18,7 +19,6 @@ const AssistantDashboard = () => {
   const [sessionList, setSessionList] = useState([]);
   const [currentDate, setCurrentDate] = useState('');
   const [showClearModal, setShowClearModal] = useState(false);
-
   const [noteInput, setNoteInput] = useState('');
   const [notes, setNotes] = useState([]);
 
@@ -47,22 +47,10 @@ const AssistantDashboard = () => {
     const fetchTodaysQueue = async () => {
       try {
         const response = await protectedFetch('/api/v1/assistant/queue');
-        let apiData = [];
         if (response.ok) {
           const result = await response.json();
-          apiData = result.data || [];
+          setSessionList(result.data || []);
         }
-
-        /* --- DUMMY DATA START:  --- */
-        const dummyPatient = {
-          _id: 'dummy123',
-          patient: { fullName: 'Mahdia Hossai' },
-          arrivalTime: '10:00 AM',
-          queueStatus: 'waiting',
-          followUpDate: null,
-        };
-        setSessionList([dummyPatient, ...apiData]);
-        /* --- DUMMY DATA END --- */
       } catch (err) {
         setSessionList([]);
       }
@@ -98,19 +86,16 @@ const AssistantDashboard = () => {
   const handleSearchPatient = async e => {
     e.preventDefault();
     if (!patientId) return;
-
-    if (patientId === 'dummy123') {
-      setCurrentPatient({ _id: 'dummy123', fullName: 'Mahdia Hossain' });
-      return;
-    }
-
     try {
       const response = await protectedFetch(
         `/api/v1/assistant/patient-check/${patientId}`,
       );
       if (response.ok) {
-        const data = await response.json();
-        setCurrentPatient(data);
+        const result = await response.json();
+        setCurrentPatient(result.data);
+      } else {
+        alert('Patient not found in vault');
+        setCurrentPatient(null);
       }
     } catch (err) {
       console.error(err);
@@ -119,52 +104,23 @@ const AssistantDashboard = () => {
 
   const handleConfirmArrival = async () => {
     if (!currentPatient) return;
-
-    const dbStartTime = assistantData.doctor?.startTime || '09:00';
-    const [startHour, startMinute] = dbStartTime.split(':');
-    const baseTime = new Date();
-    baseTime.setHours(parseInt(startHour), parseInt(startMinute), 0);
-
-    const minutesToAdd = sessionList.length * 15;
-    const arrivalTime = new Date(baseTime.getTime() + minutesToAdd * 60000);
-    const formattedTime = arrivalTime.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-
-    if (currentPatient._id === 'dummy123') {
-      const dummyEntry = {
-        _id: 'dummy' + Date.now(),
-        patient: { fullName: currentPatient.fullName },
-        arrivalTime: formattedTime,
-        queueStatus: 'waiting',
-        followUpDate: null,
-      };
-      setSessionList([...sessionList, dummyEntry]);
-      setCurrentPatient(null);
-      setPatientId('');
-      return;
-    }
-
     const arrivalData = {
-      patientId: currentPatient._id,
-      arrivalTime: formattedTime,
-      queueStatus: 'waiting',
+      patientId: currentPatient.upid,
     };
-
     try {
-      const response = await protectedFetch(
-        '/api/v1/assistant/confirm-arrival',
-        {
-          method: 'POST',
-          body: JSON.stringify(arrivalData),
-        },
-      );
+      const response = await protectedFetch('/api/v1/assistant/add-to-queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(arrivalData),
+      });
       if (response.ok) {
         const result = await response.json();
-        setSessionList([...sessionList, result.data]);
+        setSessionList(prev => [...prev, result.data]);
         setCurrentPatient(null);
         setPatientId('');
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || 'Failed to add patient');
       }
     } catch (err) {
       console.error(err);
@@ -173,18 +129,13 @@ const AssistantDashboard = () => {
 
   const updateStatus = async (index, newStatus) => {
     const appointment = sessionList[index];
-    if (appointment._id.toString().startsWith('dummy')) {
-      const updatedList = [...sessionList];
-      updatedList[index].queueStatus = newStatus;
-      setSessionList(updatedList);
-      return;
-    }
     try {
       const response = await protectedFetch(
         `/api/v1/assistant/appointments/${appointment._id}/status`,
         {
           method: 'PATCH',
-          body: JSON.stringify({ queueStatus: newStatus }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
         },
       );
       if (response.ok) {
@@ -199,17 +150,12 @@ const AssistantDashboard = () => {
 
   const updateFollowUp = async (index, date) => {
     const appointment = sessionList[index];
-    if (appointment._id.toString().startsWith('dummy')) {
-      const updatedList = [...sessionList];
-      updatedList[index].followUpDate = date;
-      setSessionList(updatedList);
-      return;
-    }
     try {
       const response = await protectedFetch(
         `/api/v1/assistant/appointments/${appointment._id}/followup`,
         {
           method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ followUpDate: date }),
         },
       );
@@ -226,12 +172,12 @@ const AssistantDashboard = () => {
   const handleFileChange = (e, aptId) => {
     const file = e.target.files[0];
     if (!file) return;
-
     navigate('/confirm-upload', {
       state: {
         selectedFile: file,
         uploadType: 'prescription',
         role: 'assistant',
+        appointmentId: aptId,
       },
     });
   };
@@ -239,12 +185,12 @@ const AssistantDashboard = () => {
   const handleClearSessionFinal = async () => {
     try {
       await protectedFetch('/api/v1/assistant/clear-session', {
-        method: 'DELETE',
+        method: 'PATCH',
       });
       setSessionList([]);
       setShowClearModal(false);
     } catch (err) {
-      setSessionList([]);
+      console.error(err);
       setShowClearModal(false);
     }
   };
@@ -312,6 +258,9 @@ const AssistantDashboard = () => {
                   <h4 className='text-md font-black text-slate-900 uppercase mt-1'>
                     {currentPatient.fullName}
                   </h4>
+                  <p className='text-[10px] font-bold text-slate-500 uppercase'>
+                    {currentPatient.upid}
+                  </p>
                   <button
                     onClick={handleConfirmArrival}
                     className='w-full mt-4 bg-slate-900 text-white py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-colors'
@@ -369,13 +318,6 @@ const AssistantDashboard = () => {
                     </button>
                   </div>
                 ))}
-                {notes.length === 0 && (
-                  <div className='py-8 text-center border-2 border-dashed border-slate-100 rounded-2xl'>
-                    <p className='text-[9px] text-slate-400 font-black uppercase tracking-widest'>
-                      No pending logs
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -439,7 +381,7 @@ const AssistantDashboard = () => {
                             {item.patient?.fullName}
                           </div>
                           <div className='text-[10px] font-bold text-blue-600 uppercase'>
-                            {item._id}
+                            {item.patient?.upid}
                           </div>
                         </td>
                         <td className='p-6'>

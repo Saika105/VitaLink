@@ -18,24 +18,32 @@ const HealthVault = () => {
     try {
       const endpoint =
         activeTab === 'Prescriptions'
-          ? '/api/v1/patients/prescriptions'
-          : '/api/v1/patients/reports';
+          ? '/api/v1/prescriptions/get-patient-prescriptions'
+          : '/api/v1/lab-reports/get-patient-lab-reports';
 
       const response = await protectedFetch(endpoint);
 
       if (response.ok) {
         const result = await response.json();
         const mappedData = result.data.map(item => {
-          const rawUrl = item.prescriptionFile?.url || item.file?.url || '';
-
           return {
             id: item._id,
-            title: item.diagnosis || item.reportName || 'Medical Record',
-            hospital: item.hospitalName || 'VitaLink Partner',
+            title:
+              activeTab === 'Prescriptions'
+                ? item.diagnosis || 'Prescription Record'
+                : item.testName || 'Lab Report',
+            doctor: item.manualDoctorName || 'Not Specified',
+            hospital:
+              item.hospital?.fullName ||
+              item.manualHospitalName ||
+              'Private Clinic',
             date: new Date(
-              item.prescribedDate || item.createdAt,
+              item.prescribedDate || item.reportDate || item.createdAt,
             ).toLocaleDateString(),
-            fileUrl: rawUrl,
+            fileUrl:
+              activeTab === 'Prescriptions'
+                ? item.prescriptionFile?.url
+                : item.reportFile?.url,
           };
         });
         setItems(mappedData);
@@ -56,12 +64,17 @@ const HealthVault = () => {
   }, [activeTab]);
 
   const handleDelete = async id => {
-    if (!window.confirm('Are you sure you want to delete this record?')) return;
+    if (
+      !window.confirm(
+        'Are you sure you want to delete this record permanently?',
+      )
+    )
+      return;
     try {
       const endpoint =
         activeTab === 'Prescriptions'
-          ? `/api/v1/patients/prescriptions/${id}`
-          : `/api/v1/patients/reports/${id}`;
+          ? `/api/v1/prescriptions/delete-prescription/${id}`
+          : `/api/v1/lab-reports/delete-patient-lab-report/${id}`;
 
       const response = await protectedFetch(endpoint, { method: 'DELETE' });
       if (response.ok) {
@@ -107,8 +120,10 @@ const HealthVault = () => {
     }
   };
 
-  const filteredItems = items.filter(item =>
-    (item.title || '').toLowerCase().includes(searchQuery.toLowerCase()),
+  const filteredItems = items.filter(
+    item =>
+      (item.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.doctor || '').toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -134,7 +149,7 @@ const HealthVault = () => {
             <input
               type='text'
               className='bg-transparent border-none outline-none text-sm font-medium w-full md:w-60'
-              placeholder='Filter records...'
+              placeholder='Search by diagnosis or doctor...'
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
@@ -179,12 +194,15 @@ const HealthVault = () => {
                         <span className='block text-lg font-bold text-slate-900 truncate max-w-xs'>
                           {item.title}
                         </span>
-                        <span className='text-xs text-slate-500 font-medium'>
+                        <span className='text-[10px] block font-black text-blue-600 uppercase tracking-widest'>
+                          Dr. {item.doctor}
+                        </span>
+                        <span className='text-xs text-slate-400 font-medium'>
                           {item.date}
                         </span>
                       </div>
                     </div>
-                    <div className='text-slate-300 group-hover:text-blue-600'>
+                    <div className='text-slate-300 group-hover:text-blue-600 font-black'>
                       →
                     </div>
                   </button>
@@ -201,15 +219,34 @@ const HealthVault = () => {
             <div className='bg-white rounded-3xl border border-slate-200 p-6 shadow-xl sticky top-24'>
               {selectedItem ? (
                 <div>
-                  <div className='w-full aspect-4/3 bg-slate-50 rounded-2xl mb-6 flex items-center justify-center border border-slate-100 overflow-hidden text-blue-600 font-black uppercase text-xl'>
-                    Preview
+                  <div className='w-full aspect-4/3 bg-slate-50 rounded-2xl mb-6 flex items-center justify-center border border-slate-100 overflow-hidden'>
+                    {selectedItem.fileUrl?.endsWith('.pdf') ? (
+                      <div className='flex flex-col items-center'>
+                        <svg
+                          className='w-12 h-12 text-red-500 mb-2'
+                          fill='currentColor'
+                          viewBox='0 0 20 20'
+                        >
+                          <path d='M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z' />
+                        </svg>
+                        <span className='text-[10px] font-black text-slate-400 uppercase'>
+                          PDF Document
+                        </span>
+                      </div>
+                    ) : (
+                      <img
+                        src={selectedItem.fileUrl}
+                        alt='Preview'
+                        className='w-full h-full object-cover opacity-80'
+                      />
+                    )}
                   </div>
 
                   <div className='space-y-4 mb-8'>
                     <div>
                       <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
                         {activeTab === 'Prescriptions'
-                          ? 'Doctor Name'
+                          ? 'Diagnosis / Subject'
                           : 'Test Name'}
                       </p>
                       <p className='font-bold text-slate-800 leading-tight'>
@@ -218,15 +255,23 @@ const HealthVault = () => {
                     </div>
                     <div>
                       <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
-                        Hospital / Clinic
+                        Assigned Physician
                       </p>
-                      <p className='font-bold text-slate-800 leading-tight'>
+                      <p className='font-bold text-slate-800 leading-tight uppercase'>
+                        Dr. {selectedItem.doctor}
+                      </p>
+                    </div>
+                    <div>
+                      <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
+                        Medical Facility
+                      </p>
+                      <p className='font-bold text-slate-800 leading-tight uppercase'>
                         {selectedItem.hospital}
                       </p>
                     </div>
                     <div>
                       <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
-                        Date Added
+                        Date of Record
                       </p>
                       <p className='font-bold text-slate-800'>
                         {selectedItem.date}
@@ -251,7 +296,7 @@ const HealthVault = () => {
                     </button>
                     <button
                       onClick={() => handleDelete(selectedItem.id)}
-                      className='w-full mt-4 text-[10px] font-black text-red-400 uppercase tracking-widest hover:text-red-600 transition-colors'
+                      className='w-full mt-4 text-[10px] font-black text-red-400 hover:text-red-600 transition-colors uppercase tracking-widest'
                     >
                       Delete Permanent
                     </button>
@@ -265,12 +310,6 @@ const HealthVault = () => {
                 </div>
               )}
             </div>
-            <button
-              onClick={handleLogout}
-              className='w-full mt-6 bg-white border-2 border-red-100 text-red-700 rounded-2xl py-4 text-xs font-black uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-sm'
-            >
-              Logout
-            </button>
           </aside>
         </div>
       </main>

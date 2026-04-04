@@ -11,12 +11,13 @@ const PatientAppointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
   const [activeAssistant, setActiveAssistant] = useState(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
         const response = await protectedFetch(
-          `/api/v1/patients/appointments?status=${activeTab}`,
+          `${import.meta.env.VITE_API_URL}/api/v1/patients/appointments?status=${activeTab}`,
         );
 
         if (response.ok) {
@@ -61,7 +62,7 @@ const PatientAppointments = () => {
     ) {
       try {
         const response = await protectedFetch(
-          `/api/v1/patients/appointments/${id}/cancel`,
+          `${import.meta.env.VITE_API_URL}/api/v1/patients/appointments/${id}/cancel`,
           {
             method: 'PATCH',
           },
@@ -75,11 +76,31 @@ const PatientAppointments = () => {
     }
   };
 
+  const handleClearTable = async () => {
+    try {
+      const response = await protectedFetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/patients/appointments/clear?status=${activeTab}`,
+        {
+          method: 'DELETE',
+        },
+      );
+      if (response.ok) {
+        setAppointments([]);
+        setShowClearConfirm(false);
+      }
+    } catch (err) {
+      console.error('Clear error:', err);
+    }
+  };
+
   const handleLogout = async () => {
     try {
-      await protectedFetch('/api/v1/patients/logout', {
-        method: 'POST',
-      });
+      await protectedFetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/patients/logout`,
+        {
+          method: 'POST',
+        },
+      );
     } catch (error) {
       console.error('Logout Error:', error);
     } finally {
@@ -105,22 +126,31 @@ const PatientAppointments = () => {
           </p>
         </div>
 
-        <div className='overflow-x-auto no-scrollbar mb-8'>
-          <div className='flex w-max md:w-fit bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner'>
-            {['Upcoming', 'Completed', 'Canceled'].map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-5 md:px-6 py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${
-                  activeTab === tab
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
+        <div className='flex items-center justify-between gap-4 mb-8'>
+          <div className='overflow-x-auto no-scrollbar'>
+            <div className='flex w-max md:w-fit bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner'>
+              {['Upcoming', 'Completed', 'Canceled'].map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-5 md:px-6 py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${
+                    activeTab === tab
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
           </div>
+
+          <button
+            onClick={() => setShowClearConfirm(true)}
+            className='bg-red-50 text-red-600 border border-red-100 px-4 md:px-6 py-2.5 md:py-3 rounded-xl text-[10px] md:text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-sm'
+          >
+            Clear {activeTab} History
+          </button>
         </div>
 
         <div className='bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden'>
@@ -230,6 +260,49 @@ const PatientAppointments = () => {
           </button>
         </div>
       </main>
+
+      {showClearConfirm && (
+        <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
+          <div className='bg-white rounded-4xl p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center'>
+            <div className='w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6'>
+              <svg
+                className='w-8 h-8'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth='2.5'
+                  d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+                />
+              </svg>
+            </div>
+            <h3 className='text-xl font-black text-slate-900 uppercase'>
+              Clear {activeTab}?
+            </h3>
+            <p className='text-slate-500 text-xs mt-2 leading-relaxed'>
+              This action will permanently delete all records from the{' '}
+              <b>{activeTab}</b> list. This cannot be undone.
+            </p>
+            <div className='grid grid-cols-2 gap-3 mt-8'>
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className='py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all'
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClearTable}
+                className='py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-200 transition-all'
+              >
+                Delete All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showPopup && activeAssistant && (
         <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
