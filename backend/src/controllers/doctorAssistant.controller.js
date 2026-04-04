@@ -7,6 +7,7 @@ import { Appointment } from "../models/appointment.model.js";
 import { Doctor } from "../models/doctor.model.js";
 import { DoctorSchedule } from "../models/doctorSchedule.model.js";
 import { Prescription } from "../models/prescription.model.js";
+import { generatePrescriptionId } from "../controllers/prescription.controller.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { deleteFromCloudinary } from "../utils/cloudinary.js";
 import { generateAccessAndRefreshToken } from "../utils/token.js";
@@ -62,6 +63,7 @@ const loginAssistant = asyncHandler(async (req, res) => {
         200,
         {
           user: loggedInAssistant,
+          role: "doctor_assistant",
           token: accessToken,
         },
         "Assistant logged in successfully",
@@ -140,17 +142,28 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Patient ID is required to add to queue");
   }
 
+  const patientRecord = await Patient.findOne({
+    upid: patientId.toUpperCase(),
+  });
+
+  if (!patientRecord) {
+    throw new ApiError(404, "Patient with this ID does not exist");
+  }
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const endOfToday = new Date();
   endOfToday.setHours(23, 59, 59, 999);
 
-  const dailyCount = await Appointment.countDocuments({
+  const lastAppointment = await Appointment.findOne({
     doctor: req.user.doctor,
     hospital: req.user.hospital,
     appointmentDate: { $gte: today, $lte: endOfToday },
-  });
-  const nextSerial = dailyCount + 1;
+  })
+    .sort({ serialNumber: -1 })
+    .select("serialNumber");
+
+  const nextSerial = lastAppointment ? lastAppointment.serialNumber + 1 : 1;
 
   const schedule = await DoctorSchedule.findOne({
     doctor: req.user.doctor,
@@ -161,15 +174,15 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Doctor schedule not found for this hospital.");
   }
 
-  const arrivalTime = new Date().toLocaleTimeString("en-US", {
+  const arrivalTime = new Date().toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
-    hour12: true,
+    hour12: false,
   });
 
   const appointment = await Appointment.create({
     appointmentId: generateAppointmentId(),
-    patient: patientId,
+    patient: patientRecord._id,
     doctor: req.user.doctor,
     hospital: req.user.hospital,
     addedToQueueByAssistant: req.user._id,
@@ -192,9 +205,283 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
     );
 });
 
+//***************Fetch That Days Queue For Assistant Table******* */
+const getDailyAppointmentList = asyncHandler(async (req, res) => {
+  //steps:
+  //1. Get today's date and tomorrow's date
+  //2. Query appointments for the doctor and hospital for today with status "scheduled"
+  //3. Populate patient details
+  //4. Sort by serial number and return the list
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const dailyQueue = await Appointment.aggregate([
+    {
+      $match: {
+        doctor: new mongoose.Types.ObjectId(req.user.doctor),
+        hospital: new mongoose.Types.ObjectId(req.user.hospital),
+        appointmentDate: { $gte: today, $lt: tomorrow },
+        bookingStatus: "scheduled",
+      },
+    },
+    {
+      $lookup: {
+        from: "patients",
+        localField: "patient",
+        foreignField: "_id",
+        as: "patientDetails",
+      },
+    },
+    {
+      $addFields: {
+        patient: { $first: "$patientDetails" },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        serialNumber: 1,
+        arrivalTime: 1,
+        queueStatus: 1,
+        appointmentType: 1,
+        "patient.fullName": 1,
+        "patient.upid": 1,
+        "patient.gender": 1,
+      },
+    },
+    { $sort: { serialNumber: 1 } },
+  ]);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, dailyQueue, "Daily queue synchronized"));
+});
+
+//*********Update Queue Status For Specific Appointment********** */
+const updateQueueStatus = asyncHandler(async (req, res) => {
+  const { appointmentId } = req.params;
+  const { status } = req.body;
+
+  const updateData = { queueStatus: status };
+
+  if (status === "completed" || status === "done") {
+    updateData.bookingStatus = "completed";
+  }
+
+  const appointment = await Appointment.findOneAndUpdate(
+    {
+      _id: appointmentId,
+      doctor: req.user.doctor,
+      hospital: req.user.hospital,
+    },
+    { $set: updateData },
+    { new: true },
+  );
+
+  if (!appointment)
+    throw new ApiError(404, "Appointment not found or unauthorized");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, appointment, `Status updated to ${status}`));
+});
+
+//******************Add Prescription by Assistant*************** */
+const uploadPrescriptionByAssistant = asyncHandler(async (req, res) => {
+  const { appointmentId } = req.params;
+  const { diagnosis, advice } = req.body;
+
+  const appointment = await Appointment.findById(appointmentId)
+    .populate("patient")
+    .populate("doctor");
+
+  if (!appointment) throw new ApiError(404, "Appointment not found");
+
+  if (appointment.doctor._id.toString() !== req.user.doctor.toString()) {
+    throw new ApiError(403, "Not authorized for this doctor's patients");
+  }
+
+  let uploadResult = null;
+  if (req.file) {
+    uploadResult = await uploadOnCloudinary(req.file.path);
+  }
+
+  const prescription = await Prescription.create({
+    prescriptionId: generatePrescriptionId(),
+    patient: appointment.patient._id,
+    doctor: appointment.doctor._id,
+
+    manualDoctorName: appointment.doctor.fullName,
+
+    hospital: appointment.hospital,
+    appointment: appointment._id,
+    uploadedByAssistant: req.user._id,
+    diagnosis: diagnosis || "Consultation",
+    advice: advice || "Follow doctor's instructions",
+    source: "doctor_assistant",
+    prescribedDate: new Date(),
+    prescriptionFile: uploadResult
+      ? {
+          url: uploadResult.secure_url,
+          public_id: uploadResult.public_id,
+        }
+      : null,
+  });
+
+  await appointment.save();
+
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(
+        201,
+        { prescription },
+        "Prescription uploaded successfully",
+      ),
+    );
+});
+
+// *******************Clear Daily Queue ********************* */
+const clearDailyQueue = asyncHandler(async (req, res) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const endOfToday = new Date();
+  endOfToday.setHours(23, 59, 59, 999);
+
+  const result = await Appointment.updateMany(
+    {
+      doctor: req.user.doctor,
+      hospital: req.user.hospital,
+      appointmentDate: { $gte: today, $lte: endOfToday },
+      bookingStatus: "scheduled",
+    },
+    {
+      $set: {
+        bookingStatus: "cancelled",
+        queueStatus: "missed",
+        cancellationReason: "System cleared at end of shift",
+      },
+    },
+  );
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { modifiedCount: result.modifiedCount },
+        `Shift ended. ${result.modifiedCount} no-shows moved to Canceled tab.`,
+      ),
+    );
+});
+
+// ************** Schedule Follow-Up Appointment ********** */
+const scheduleFollowUp = asyncHandler(async (req, res) => {
+  //steps:
+  //1. Get appointment ID from params and followUpDate from body
+  //2. Validate appointment exists and belongs to this Assistant's Doctor
+  //3. Validate followUpDate is in the future
+  //4. Validate followUpDate is not already scheduled for this patient and doctor
+  //5. Count how many FOLLOW-UPS already exist for that future date to determine new serial number
+  //6. RE-SHUFFLE ONLY REGULAR PATIENTS: We only increment serials for patients who are NOT follow-ups OR whose serial is >= our new position.
+  //7. Create the New Future Appointment with type "follow_up"
+  //8. Update current record with followUpDate
+  //9. Return success response
+  const { appointmentId } = req.params;
+  const { followUpDate } = req.body;
+
+  const currentAppt = await Appointment.findById(appointmentId);
+  if (!currentAppt) throw new ApiError(404, "Original appointment not found");
+
+  const futureDate = new Date(followUpDate);
+  futureDate.setHours(0, 0, 0, 0);
+
+  if (futureDate <= new Date().setHours(0, 0, 0, 0)) {
+    throw new ApiError(400, "Follow-up date must be a future date.");
+  }
+
+  const existingEntry = await Appointment.findOne({
+    patient: currentAppt.patient,
+    doctor: currentAppt.doctor,
+    appointmentDate: futureDate,
+    bookingStatus: "scheduled",
+  });
+
+  if (existingEntry) {
+    throw new ApiError(400, "A follow-up is already scheduled for this date.");
+  }
+
+  const lastAppt = await Appointment.findOne({
+    doctor: currentAppt.doctor,
+    appointmentDate: futureDate,
+  }).sort({ serialNumber: -1 });
+
+  const newFollowUpSerial = lastAppt ? lastAppt.serialNumber + 1 : 1;
+
+  const followUpAppt = await Appointment.create({
+    appointmentId: generateAppointmentId(),
+    patient: currentAppt.patient,
+    doctor: currentAppt.doctor,
+    hospital: currentAppt.hospital,
+    appointmentDate: futureDate,
+    serialNumber: newFollowUpSerial,
+    timeSlot: currentAppt.timeSlot,
+    appointmentType: "follow_up",
+    bookingStatus: "scheduled",
+    queueStatus: "not_added",
+    reasonForVisit: `Follow-up for ${currentAppt.appointmentId}`,
+  });
+
+  currentAppt.followUpDate = futureDate;
+  await currentAppt.save();
+
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(
+        201,
+        followUpAppt,
+        `Follow-up Serial #${newFollowUpSerial} booked for ${followUpDate}`,
+      ),
+    );
+});
+
+const checkInPatient = asyncHandler(async (req, res) => {
+  const { appointmentId } = req.params;
+
+  const currentTime = new Date().toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  const appointment = await Appointment.findByIdAndUpdate(
+    appointmentId,
+    {
+      $set: {
+        arrivalTime: currentTime,
+        queueStatus: "pending",
+      },
+    },
+    { new: true },
+  );
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, appointment, "Patient checked in"));
+});
+
 export {
   loginAssistant,
   logoutAssistant,
   searchPatientByUPID,
   addAppointmentToQueue,
+  getDailyAppointmentList,
+  updateQueueStatus,
+  uploadPrescriptionByAssistant,
+  clearDailyQueue,
+  scheduleFollowUp,
+  checkInPatient,
 };

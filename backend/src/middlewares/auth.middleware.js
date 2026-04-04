@@ -4,13 +4,12 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import jwt from "jsonwebtoken";
-import {Patient} from "../models/patient.model.js";
-import {Doctor} from "../models/doctor.model.js";
-import {Admin} from "../models/admin.model.js";
-import {DoctorAssistant} from "../models/doctorAssistant.model.js";
-import {LabAssistant} from "../models/labAssistant.model.js";
-import {Receptionist} from "../models/receptionist.model.js";
-
+import { Patient } from "../models/patient.model.js";
+import { Doctor } from "../models/doctor.model.js";
+import { Admin } from "../models/admin.model.js";
+import { DoctorAssistant } from "../models/doctorAssistant.model.js";
+import { LabAssistant } from "../models/labAssistant.model.js";
+import { Receptionist } from "../models/receptionist.model.js";
 
 const roleModelMap = {
   patient: Patient,
@@ -39,7 +38,7 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
     }
 
     const user = await Model.findById(decodedToken?._id).select(
-      "-password -refreshToken"
+      "-password -refreshToken",
     );
 
     if (!user) {
@@ -54,17 +53,29 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
     req.role = decodedToken.role;
 
     next();
-
   } catch (error) {
     throw new ApiError(401, error?.message || "Invalid access token");
   }
 });
 
 export const isAdmin = (req, res, next) => {
-    if (req.user && req.user.role === "admin") {
-        next();
-    } else {
-        throw new ApiError(403, "Access denied. Admin rights required.");
-    }
+  if (req.user && req.user.role === "admin") {
+    next();
+  } else {
+    throw new ApiError(403, "Access denied. Admin rights required.");
+  }
 };
 
+export const isDoctorAssistant = (req, res, next) => {
+  if (req.user && req.role === "doctor_assistant") {
+    if (!req.user.doctor || !req.user.hospital) {
+      throw new ApiError(
+        403,
+        "Assistant is not assigned to a doctor or hospital session.",
+      );
+    }
+    next();
+  } else {
+    throw new ApiError(403, "Access denied. Doctor Assistant rights required.");
+  }
+};

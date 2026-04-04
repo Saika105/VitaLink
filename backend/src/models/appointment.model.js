@@ -137,40 +137,41 @@ appointmentSchema.index(
 appointmentSchema.index({ patient: 1, appointmentDate: -1 });
 appointmentSchema.index({ doctor: 1, appointmentDate: 1, queueStatus: 1 });
 
-appointmentSchema.pre("validate", function (next) {
+appointmentSchema.pre("validate", async function () {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   if (this.isNew && this.appointmentDate < today) {
-    return next(new Error("appointmentDate cannot be in the past"));
+    throw new Error("appointmentDate cannot be in the past");
   }
+
   if (!validateTimeSlotOrder(this.timeSlot)) {
-    return next(new Error("timeSlot start must be before end"));
+    throw new Error("timeSlot start must be before end");
   }
+
   if (
     this.bookingStatus === "cancelled" &&
     (!this.cancellationReason || !this.cancellationReason.trim())
   ) {
-    return next(new Error("cancellationReason is required when appointment is cancelled"));
+    throw new Error("cancellationReason is required when appointment is cancelled");
   }
+
   if (
     this.bookingStatus === "rescheduled" &&
     (!this.rescheduleDate ||
       !this.rescheduleTimeSlot ||
       !validateTimeSlotOrder(this.rescheduleTimeSlot))
   ) {
-    return next(
-      new Error("rescheduleDate and valid rescheduleTimeSlot are required when rescheduled")
-    );
+    throw new Error("rescheduleDate and valid rescheduleTimeSlot are required when rescheduled");
   }
+
   if (this.queueStatus !== "not_added" && !this.queueAddedAt) {
     this.queueAddedAt = new Date();
   }
-  if (this.followUpDate && this.followUpDate < this.appointmentDate) {
-    return next(new Error("followUpDate must be on or after appointmentDate"));
-  }
 
-  next();
+  if (this.followUpDate && this.followUpDate < this.appointmentDate) {
+    throw new Error("followUpDate must be on or after appointmentDate");
+  }
 });
 
 export const Appointment = mongoose.model("Appointment", appointmentSchema);

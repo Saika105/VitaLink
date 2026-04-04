@@ -156,4 +156,4 @@ const getPatientPrescriptions = asyncHandler(async (req, res) => {
     );
 });
 
-export { addPatientPrescription, deletePrescription, getPatientPrescriptions };
+export { generatePrescriptionId,addPatientPrescription, deletePrescription, getPatientPrescriptions };
