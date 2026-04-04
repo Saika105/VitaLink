@@ -29,7 +29,7 @@ const EditProfile = () => {
   });
 
   const inputStyle =
-    'w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all font-inter placeholder-slate-300 bg-slate-50/50';
+    'w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all bg-slate-50/50';
   const labelStyle =
     'text-[11px] font-black text-slate-900 uppercase tracking-[0.15em] ml-1 mb-2 block font-inter';
 
@@ -145,11 +145,15 @@ const EditProfile = () => {
   const handleForgotPassword = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/api/v1/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email }),
-      });
+     
+      const response = await fetch(
+        `${apiUrl}/api/v1/patients/forgot-password`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email }),
+        },
+      );
       if (response.ok) {
         setResetSent(true);
         setTimeout(() => setResetSent(false), 5000);
@@ -342,7 +346,7 @@ const EditProfile = () => {
       </main>
 
       {isModalOpen && (
-        <div className='fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm font-inter'>
+        <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm font-inter'>
           <div className='bg-white w-full max-w-md rounded-4xl p-8 shadow-2xl border border-slate-100 font-inter'>
             <div className='mb-6 font-inter flex justify-between items-start'>
               <div className='font-inter'>
