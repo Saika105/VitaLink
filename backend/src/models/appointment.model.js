@@ -130,7 +130,6 @@ const appointmentSchema = new mongoose.Schema(
   baseSchemaOptions
 );
 
-// A doctor can't have two appointments with the same serial on the same day at the same hospital
 appointmentSchema.index(
   { doctor: 1, hospital: 1, appointmentDate: 1, serialNumber: 1 },
   { unique: true }
