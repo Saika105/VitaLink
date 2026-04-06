@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import html2canvas from 'html2canvas';
+import { domToPng } from 'modern-screenshot';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import DashboardNav from '../components/DashboardNav';
@@ -26,13 +26,11 @@ const PatientDashboard = () => {
   });
 
   const [activeUploadType, setActiveUploadType] = useState('');
-  const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchPatientInfo = async () => {
       try {
         const response = await protectedFetch('/api/v1/patients/profile');
-
         if (response.ok) {
           const result = await response.json();
           setPatientData(result.data);
@@ -78,16 +76,21 @@ const PatientDashboard = () => {
 
   const handleShare = async () => {
     if (cardRef.current) {
-      const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: '#F8FAFC',
-        scale: 2,
-        useCORS: true,
-      });
-      const image = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.href = image;
-      link.download = `${patientData.fullName || 'Patient'}_VitaLink_Card.png`;
-      link.click();
+      try {
+        const dataUrl = await domToPng(cardRef.current, {
+          scale: 3,
+          backgroundColor: '#F8FAFC',
+          features: {
+            removeControlCharacters: true,
+          },
+        });
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `${patientData.fullName || 'Patient'}_VitaLink_Card.png`;
+        link.click();
+      } catch (err) {
+        console.error('Share Error:', err);
+      }
     }
   };
 
@@ -110,8 +113,8 @@ const PatientDashboard = () => {
             ref={cardRef}
             className='w-full md:w-95 bg-slate-50 p-6 flex flex-col items-center border-b md:border-b-0 md:border-r border-slate-200'
           >
-            <div className='flex flex-col items-center text-center mb-6'>
-              <div className='w-32 h-32 bg-white rounded-3xl shadow border border-slate-300 mb-4 overflow-hidden flex items-center justify-center'>
+            <div className='flex flex-col items-center text-center mb-6 w-full'>
+              <div className='w-32 h-32 bg-white rounded-3xl shadow border border-slate-300 mb-6 overflow-hidden flex items-center justify-center'>
                 {patientData.profilePhoto ? (
                   <img
                     src={patientData.profilePhoto}
@@ -130,12 +133,15 @@ const PatientDashboard = () => {
                   </div>
                 )}
               </div>
-              <h3 className='text-lg font-bold text-slate-900 uppercase font-inter'>
-                {patientData.fullName || 'Patient Name'}
-              </h3>
-              <p className='text-sm text-blue-600 font-inter mt-0.5'>
-                {patientData.upid || 'PT-XXXXXX'}
-              </p>
+
+              <div className='block w-full'>
+                <h3 className='text-lg font-bold text-slate-900 uppercase font-inter leading-none py-1'>
+                  {patientData.fullName || 'Patient Name'}
+                </h3>
+                <p className='text-sm text-blue-600 font-inter font-bold tracking-tight py-1'>
+                  {patientData.upid || 'PT-XXXXXX'}
+                </p>
+              </div>
             </div>
 
             <div className='grid grid-cols-3 gap-2.5 w-full mb-5 font-inter'>
@@ -244,9 +250,9 @@ const PatientDashboard = () => {
             <div className='flex flex-col items-end gap-3.5 pt-8 mt-auto border-t border-slate-100 font-inter'>
               <button
                 onClick={handleShare}
-                className='w-40 border-2 border-blue-600 text-blue-600 rounded-xl py-2.5 text-[11px] font-bold uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all font-inter'
+                className='w-40 border-2 border-blue-600 text-blue-600 rounded-xl py-2.5 text-[11px] font-bold uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all font-inter shadow-sm'
               >
-                Share Card
+                Download Card
               </button>
               <button
                 onClick={() => navigate('/edit-profile')}
