@@ -12,9 +12,11 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.2.1",
     "html2canvas": "^1.4.1",
+    "modern-screenshot": "^4.6.8",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.1",
+    "react-to-print": "^3.3.0",
     "tailwindcss": "^4.2.1"
   },
   "devDependencies": {
