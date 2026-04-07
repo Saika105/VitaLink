@@ -23,7 +23,7 @@ import {
   getPatientLabReports 
 } from "../controllers/labReport.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyJWT , isPatient} from "../middlewares/auth.middleware.js";
 
 
 const router = Router();
@@ -35,38 +35,41 @@ router
 router.route("/finalize-registration").post(finalizeRegistration);
 router.route("/login").post(loginPatient);
 
-router.route("/logout").post(verifyJWT, logoutPatient);
-router.route("/profile").get(verifyJWT, getPatientProfile);
+router.route("/logout").post(verifyJWT, isPatient, logoutPatient);
+router.route("/profile").get(verifyJWT, isPatient, getPatientProfile);
 router.route("/update-profile").patch(
     verifyJWT, 
+    isPatient,
     upload.single("profilePhoto"), // 'profilePhoto' must match the frontend name
     updatePatientProfile
 );
-router.route("/change-password").post(verifyJWT, changeCurrentPassword);
-router.route("/doctors").get(verifyJWT, getAllDoctors);
-router.route("/my-appointments").get(verifyJWT, getPatientAppointments);
-router.route("/cancel-appointment/:appointmentId").patch(verifyJWT, cancelAppointment);
-router.route("/delete-appointments").delete(verifyJWT, bulkDeleteAppointments);
+router.route("/change-password").post(verifyJWT, isPatient, changeCurrentPassword);
+router.route("/doctors").get(verifyJWT, isPatient, getAllDoctors);
+router.route("/my-appointments").get(verifyJWT, isPatient, getPatientAppointments);
+router.route("/cancel-appointment/:appointmentId").patch(verifyJWT, isPatient, cancelAppointment);
+router.route("/delete-appointments").delete(verifyJWT, isPatient, bulkDeleteAppointments);
 
 //from prescription.controller.js
 router.route("/prescriptions/add").post(
     verifyJWT, 
+    isPatient,
     upload.single("prescriptionFile"), 
     addPatientPrescription
 );
-router.route("/prescriptions/delete/:id").delete(verifyJWT, deletePrescription);
-router.route("/prescriptions").get(verifyJWT, getPatientPrescriptions);
-// router.route("/prescriptions/get/:patientId").get(verifyJWT, getPatientPrescriptions);
+router.route("/prescriptions/delete/:id").delete(verifyJWT, isPatient, deletePrescription);
+router.route("/prescriptions").get(verifyJWT, isPatient, getPatientPrescriptions);
+// router.route("/prescriptions/get/:patientId").get(verifyJWT, isPatient, getPatientPrescriptions);
 
 
 //from labReport.controller.js
 router.route("/lab-reports/add").post(
     verifyJWT, 
+    isPatient,
     upload.single("reportFile"), 
     addPatientLabReport
 );
-router.route("/lab-reports/delete/:id").delete(verifyJWT, deletePatientLabReport);
-router.route("/lab-reports").get(verifyJWT, getPatientLabReports);
+router.route("/lab-reports/delete/:id").delete(verifyJWT, isPatient, deletePatientLabReport);
+router.route("/lab-reports").get(verifyJWT, isPatient, getPatientLabReports);
 
 export default router;
 

@@ -79,3 +79,36 @@ export const isDoctorAssistant = (req, res, next) => {
     throw new ApiError(403, "Access denied. Doctor Assistant rights required.");
   }
 };
+
+export const isPatient = (req, res, next) => {
+    if (req.user && req.role === "patient") {
+        next();
+    } else {
+        throw new ApiError(403, "Access denied. Patient account required.");
+    }
+};
+
+export const isDoctor = (req, res, next) => {
+    if (req.user && req.role === "doctor") {
+        next();
+    } else {
+        throw new ApiError(403, "Access denied. Doctor credentials required.");
+
+    }
+};
+
+export const isLabAssistant = (req, res, next) => {
+    if (req.user && req.role === "lab_assistant") {
+        next();
+    } else {
+        throw new ApiError(403, "Access denied. Lab Assistant rights required.");
+    }
+};
+
+export const isReceptionist = (req, res, next) => {
+    if (req.user && req.role === "receptionist") {
+        next();
+    } else {
+        throw new ApiError(403, "Access denied. Receptionist rights required.");
+    }
+};
