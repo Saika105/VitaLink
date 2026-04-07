@@ -8,6 +8,9 @@ import {
   updatePatientProfile,
   changeCurrentPassword,
   getAllDoctors,
+  getPatientAppointments,
+  cancelAppointment,
+  bulkDeleteAppointments,
 } from "../controllers/patient.controller.js";
 import{ 
   addPatientPrescription, 
@@ -41,6 +44,9 @@ router.route("/update-profile").patch(
 );
 router.route("/change-password").post(verifyJWT, changeCurrentPassword);
 router.route("/doctors").get(verifyJWT, getAllDoctors);
+router.route("/my-appointments").get(verifyJWT, getPatientAppointments);
+router.route("/cancel-appointment/:appointmentId").patch(verifyJWT, cancelAppointment);
+router.route("/delete-appointments").delete(verifyJWT, bulkDeleteAppointments);
 
 //from prescription.controller.js
 router.route("/prescriptions/add").post(

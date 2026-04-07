@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { Patient } from "../models/patient.model.js";
 import { Doctor } from "../models/doctor.model.js";
 import { DoctorSchedule } from "../models/doctorSchedule.model.js";
+import { Appointment } from "../models/appointment.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { deleteFromCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -57,7 +58,7 @@ const initializeRegistration = asyncHandler(async (req, res) => {
   ) {
     age--;
   }
-  // Use explicitly scoped variables to avoid ReferenceError in strict mode.
+
   let finalNid;
   let finalBirthCert;
   if (age >= 18) {
@@ -98,7 +99,7 @@ const initializeRegistration = asyncHandler(async (req, res) => {
     address,
     bloodGroup,
     emergencyContact: {
-      name: "Emergency Contact", // Placeholder as per schema requirement
+      name: "Emergency Contact", 
       phone: emergencyContact,
     },
     password: "TEMP_PASS_" + Math.random().toString(36).slice(-8), // Placeholder
@@ -421,6 +422,85 @@ const getAllDoctors = asyncHandler(async (req, res) => {
   .json(new ApiResponse(200, doctorsWithSchedules, "Doctors and schedules fetched successfully"));
 });
 
+//*******************APPOINTMENT PART***************** */
+//*******************Get Appointments************* */
+const getPatientAppointments = asyncHandler(async (req, res) => {
+  const { status } = req.query; //scheduled, completed, or cancelled
+
+  if (!status) {
+    throw new ApiError(400, "Status query parameter is required (scheduled/completed/cancelled)");
+  }
+
+  const appointments = await Appointment.find({
+    patient: req.user._id,
+    bookingStatus: status.toLowerCase()
+  })
+  .populate("doctor", "fullName specialization") 
+  .populate("hospital", "name location")        
+  .sort({ appointmentDate: -1 });              
+
+  return res.status(200).json(
+    new ApiResponse(200, appointments, `Fetched ${status} appointments successfully`)
+  );
+});
+
+//*******************Cancel Appointment************* */
+const cancelAppointment = asyncHandler(async (req, res) => {
+  const { appointmentId } = req.params;
+
+  const appointment = await Appointment.findOneAndUpdate(
+    {
+      _id: appointmentId,
+      patient: req.user._id,        
+      bookingStatus: "scheduled"    
+    },
+    {
+      $set: { 
+        bookingStatus: "cancelled",
+        queueStatus: "cancelled",   
+        cancellationReason: "Cancelled by Patient via Portal" 
+      }
+    },
+    { new: true }
+  );
+
+  if (!appointment) {
+    throw new ApiError(404, "Appointment not found or is already completed/cancelled.");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, appointment, "Appointment cancelled successfully.")
+  );
+});
+
+//*********************Delete Appointments************* */
+const bulkDeleteAppointments = asyncHandler(async (req, res) => {
+  const { status } = req.query; 
+
+  if (!status) {
+    throw new ApiError(400, "Please specify which status history to clear.");
+  }
+
+  const result = await Appointment.deleteMany({
+    patient: req.user._id,
+    bookingStatus: status.toLowerCase()
+  });
+
+  if (result.deletedCount === 0) {
+    return res.status(200).json(
+      new ApiResponse(200, { deletedCount: 0 }, `No ${status} records found to clear.`)
+    );
+  }
+
+  return res.status(200).json(
+    new ApiResponse(
+      200, 
+      { deletedCount: result.deletedCount }, 
+      `Successfully cleared ${result.deletedCount} records from your ${status} history.`
+    )
+  );
+});
+
 export {
   initializeRegistration,
   finalizeRegistration,
@@ -430,4 +510,7 @@ export {
   updatePatientProfile,
   changeCurrentPassword,
   getAllDoctors,
+  getPatientAppointments,
+  cancelAppointment,
+  bulkDeleteAppointments,
 };
