@@ -176,7 +176,8 @@ const startConsultationSession = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Appointment not found or you are not authorized.");
   }
 
-  appointment.queueStatus = "In_Progress";
+  appointment.queueStatus = "in_consultation";
+
   await appointment.save();
 
   return res

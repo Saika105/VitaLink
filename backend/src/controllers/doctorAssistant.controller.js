@@ -320,6 +320,7 @@ const uploadPrescriptionByAssistant = asyncHandler(async (req, res) => {
     manualHospitalName: appointment.hospital.fullName,
     diagnosis: diagnosis || "Consultation",
     advice: advice || "Follow doctor's instructions",
+    requiredTests: [],
     source: "doctor_assistant",
     prescribedDate: new Date(),
     prescriptionFile: uploadResult

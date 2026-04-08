@@ -72,6 +72,11 @@ const prescriptionSchema = new mongoose.Schema(
       default: null,
     },
 
+    requiredTests: {
+      type: [String], 
+      default: [],
+    },
+
     medications: {
       type: [medicationSchema],
       required: false,

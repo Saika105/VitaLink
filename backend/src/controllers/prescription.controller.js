@@ -25,15 +25,12 @@ const addPatientPrescription = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Only patients can upload to the Health Vault");
   }
 
-  // 2. Extract and Validate Required Text Fields
   const { manualDoctorName, manualHospitalName } = req.body;
 
-  // STRICT VALIDATION: Error if either is missing or just empty spaces
   if (!manualDoctorName?.trim() || !manualHospitalName?.trim()) {
     throw new ApiError(400, "Doctor name and Hospital name are both required");
   }
-
-  // 3. File Validation
+  
   if (!req.file) {
     throw new ApiError(400, "Prescription file is required");
   }
@@ -51,6 +48,7 @@ const addPatientPrescription = asyncHandler(async (req, res) => {
       manualHospitalName: manualHospitalName.trim(),
       diagnosis: "General Health Record",
       advice: "N/A",
+      requiredTests: [],
       prescribedDate: Date.now(),
       source: "imported",
       prescriptionFile: {
