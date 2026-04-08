@@ -73,7 +73,5 @@ const documentSchema = new mongoose.Schema(
 documentSchema.index({ patient: 1, createdAt: -1 });
 documentSchema.index({ appointment: 1, createdAt: -1 });
 
-// ✅ Bug fix: original had `const document` (lowercase) but exported `Document` (capital)
-// which would throw a ReferenceError at runtime
 const Document = mongoose.model("Document", documentSchema);
 export default Document;

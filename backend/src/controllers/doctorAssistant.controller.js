@@ -295,7 +295,8 @@ const uploadPrescriptionByAssistant = asyncHandler(async (req, res) => {
 
   const appointment = await Appointment.findById(appointmentId)
     .populate("patient")
-    .populate("doctor");
+    .populate("doctor")
+    .populate("hospital");
 
   if (!appointment) throw new ApiError(404, "Appointment not found");
 
@@ -312,12 +313,11 @@ const uploadPrescriptionByAssistant = asyncHandler(async (req, res) => {
     prescriptionId: generatePrescriptionId(),
     patient: appointment.patient._id,
     doctor: appointment.doctor._id,
-
-    manualDoctorName: appointment.doctor.fullName,
-
-    hospital: appointment.hospital,
+    hospital: appointment.hospital._id,
     appointment: appointment._id,
     uploadedByAssistant: req.user._id,
+    manualDoctorName: appointment.doctor.fullName,
+    manualHospitalName: appointment.hospital.fullName,
     diagnosis: diagnosis || "Consultation",
     advice: advice || "Follow doctor's instructions",
     source: "doctor_assistant",
