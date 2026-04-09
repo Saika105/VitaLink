@@ -99,7 +99,7 @@ const initializeRegistration = asyncHandler(async (req, res) => {
     address,
     bloodGroup,
     emergencyContact: {
-      name: "Emergency Contact", 
+      name: "Emergency Contact",
       phone: emergencyContact,
     },
     password: "TEMP_PASS_" + Math.random().toString(36).slice(-8), // Placeholder
@@ -221,8 +221,8 @@ const loginPatient = asyncHandler(async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: true, 
-    sameSite: "none", 
+    secure: true,
+    sameSite: "none",
   };
 
   return res
@@ -298,13 +298,26 @@ const updatePatientProfile = asyncHandler(async (req, res) => {
   if (email) updateData.email = email;
   if (phone) updateData.phone = phone;
   if (address) updateData.address = address;
-  if (emergencyContact) updateData.emergencyContact = emergencyContact;
+
+  if (emergencyContact) {
+    updateData["emergencyContact.phone"] = emergencyContact;
+    updateData["emergencyContact.name"] = "Emergency Contact";
+  }
 
   if (req.file?.path) {
     const patient = await Patient.findById(req.user?._id);
 
     if (patient?.profilePhoto) {
-      await deleteFromCloudinary(patient.profilePhoto);
+      try {
+        const publicId = patient.profilePhoto
+          .split("/upload/")[1]
+          .replace(/^v\d+\//, "")
+          .replace(/\.[^/.]+$/, "");
+
+        await deleteFromCloudinary(publicId);
+      } catch (err) {
+        console.error("Cloudinary Delete Error:", err.message);
+      }
     }
 
     const photoUpload = await uploadOnCloudinary(req.file.path);
@@ -326,8 +339,6 @@ const updatePatientProfile = asyncHandler(async (req, res) => {
     {
       returnDocument: "after",
       runValidators: true,
-      //   new: true,
-      //   runValidators: true, 
     },
   ).select("-password -refreshToken");
 
@@ -393,12 +404,12 @@ const getAllDoctors = asyncHandler(async (req, res) => {
 
   let filter = { isActive: true };
 
-  if (specialty && specialty !== 'All') {
-    filter.specialization = specialty; 
+  if (specialty && specialty !== "All") {
+    filter.specialization = specialty;
   }
 
   if (name) {
-    filter.fullName = { $regex: name, $options: "i" }; 
+    filter.fullName = { $regex: name, $options: "i" };
   }
 
   const doctors = await Doctor.find(filter)
@@ -407,19 +418,27 @@ const getAllDoctors = asyncHandler(async (req, res) => {
 
   const doctorsWithSchedules = await Promise.all(
     doctors.map(async (doc) => {
-      const schedule = await DoctorSchedule.findOne({ doctor: doc._id, isActive: true })
-        .select("consultationFee sittingTimeLabel workingDays timeSlots");
-      
+      const schedule = await DoctorSchedule.findOne({
+        doctor: doc._id,
+        isActive: true,
+      }).select("consultationFee sittingTimeLabel workingDays timeSlots");
+
       return {
         ...doc._doc,
-        schedule: schedule || null
+        schedule: schedule || null,
       };
-    })
+    }),
   );
 
   return res
-  .status(200)
-  .json(new ApiResponse(200, doctorsWithSchedules, "Doctors and schedules fetched successfully"));
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        doctorsWithSchedules,
+        "Doctors and schedules fetched successfully",
+      ),
+    );
 });
 
 //*******************APPOINTMENT PART***************** */
@@ -428,20 +447,29 @@ const getPatientAppointments = asyncHandler(async (req, res) => {
   const { status } = req.query; //scheduled, completed, or cancelled
 
   if (!status) {
-    throw new ApiError(400, "Status query parameter is required (scheduled/completed/cancelled)");
+    throw new ApiError(
+      400,
+      "Status query parameter is required (scheduled/completed/cancelled)",
+    );
   }
 
   const appointments = await Appointment.find({
     patient: req.user._id,
-    bookingStatus: status.toLowerCase()
+    bookingStatus: status.toLowerCase(),
   })
-  .populate("doctor", "fullName specialization") 
-  .populate("hospital", "name location")        
-  .sort({ appointmentDate: -1 });              
+    .populate("doctor", "fullName specialization")
+    .populate("hospital", "name location")
+    .sort({ appointmentDate: -1 });
 
-  return res.status(200).json(
-    new ApiResponse(200, appointments, `Fetched ${status} appointments successfully`)
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        appointments,
+        `Fetched ${status} appointments successfully`,
+      ),
+    );
 });
 
 //*******************Cancel Appointment************* */
@@ -451,31 +479,36 @@ const cancelAppointment = asyncHandler(async (req, res) => {
   const appointment = await Appointment.findOneAndUpdate(
     {
       _id: appointmentId,
-      patient: req.user._id,        
-      bookingStatus: "scheduled"    
+      patient: req.user._id,
+      bookingStatus: "scheduled",
     },
     {
-      $set: { 
+      $set: {
         bookingStatus: "cancelled",
-        queueStatus: "cancelled",   
-        cancellationReason: "Cancelled by Patient via Portal" 
-      }
+        queueStatus: "cancelled",
+        cancellationReason: "Cancelled by Patient via Portal",
+      },
     },
-    { new: true }
+    { new: true },
   );
 
   if (!appointment) {
-    throw new ApiError(404, "Appointment not found or is already completed/cancelled.");
+    throw new ApiError(
+      404,
+      "Appointment not found or is already completed/cancelled.",
+    );
   }
 
-  return res.status(200).json(
-    new ApiResponse(200, appointment, "Appointment cancelled successfully.")
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, appointment, "Appointment cancelled successfully."),
+    );
 });
 
 //*********************Delete Appointments************* */
 const bulkDeleteAppointments = asyncHandler(async (req, res) => {
-  const { status } = req.query; 
+  const { status } = req.query;
 
   if (!status) {
     throw new ApiError(400, "Please specify which status history to clear.");
@@ -483,22 +516,30 @@ const bulkDeleteAppointments = asyncHandler(async (req, res) => {
 
   const result = await Appointment.deleteMany({
     patient: req.user._id,
-    bookingStatus: status.toLowerCase()
+    bookingStatus: status.toLowerCase(),
   });
 
   if (result.deletedCount === 0) {
-    return res.status(200).json(
-      new ApiResponse(200, { deletedCount: 0 }, `No ${status} records found to clear.`)
-    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { deletedCount: 0 },
+          `No ${status} records found to clear.`,
+        ),
+      );
   }
 
-  return res.status(200).json(
-    new ApiResponse(
-      200, 
-      { deletedCount: result.deletedCount }, 
-      `Successfully cleared ${result.deletedCount} records from your ${status} history.`
-    )
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { deletedCount: result.deletedCount },
+        `Successfully cleared ${result.deletedCount} records from your ${status} history.`,
+      ),
+    );
 });
 
 export {
