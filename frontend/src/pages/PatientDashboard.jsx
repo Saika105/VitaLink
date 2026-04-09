@@ -30,7 +30,7 @@ const PatientDashboard = () => {
   useEffect(() => {
     const fetchPatientInfo = async () => {
       try {
-        const response = await protectedFetch(`/api/v1/patients/profile`);
+        const response = await protectedFetch('/api/v1/patients/profile');
         if (response.ok) {
           const result = await response.json();
           setPatientData(result.data.patient);
@@ -44,7 +44,7 @@ const PatientDashboard = () => {
 
   const handleLogout = async () => {
     try {
-      await protectedFetch(`/api/v1/patients/logout`, {
+      await protectedFetch('/api/v1/patients/logout', {
         method: 'POST',
       });
     } catch (error) {
