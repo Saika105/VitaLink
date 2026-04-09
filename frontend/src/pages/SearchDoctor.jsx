@@ -28,8 +28,9 @@ const SearchDoctor = () => {
       try {
         const queryParam =
           selectedSpecialty === 'All' ? '' : `?specialty=${selectedSpecialty}`;
+
         const response = await protectedFetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/patients/doctors${queryParam}`,
+          `/api/v1/patients/doctors${queryParam}`,
         );
 
         if (response.ok) {
@@ -39,6 +40,7 @@ const SearchDoctor = () => {
           setDoctors([]);
         }
       } catch (err) {
+        console.error('Fetch Doctors Error:', err);
         setDoctors([]);
       }
     };
@@ -56,12 +58,9 @@ const SearchDoctor = () => {
 
   const handleLogout = async () => {
     try {
-      await protectedFetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/patients/logout`,
-        {
-          method: 'POST',
-        },
-      );
+      await protectedFetch('/api/v1/patients/logout', {
+        method: 'POST',
+      });
     } catch (error) {
       console.error('Logout Error:', error);
     } finally {
@@ -170,7 +169,9 @@ const SearchDoctor = () => {
                         Hospital:
                       </span>
                       <span className='text-xs font-bold'>
-                        {doc.hospital?.fullName}
+                        {doc.hospital?.fullName ||
+                          doc.hospital?.name ||
+                          'Private Practice'}
                       </span>
                     </div>
                     <div className='flex items-center gap-2 text-slate-600'>
@@ -222,8 +223,8 @@ const SearchDoctor = () => {
       </main>
 
       {showPopup && activeDoctor && (
-        <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
-          <div className='bg-white rounded-[40px] p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center animate-in fade-in zoom-in duration-300'>
+        <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-100 flex items-center justify-center p-4'>
+          <div className='bg-white rounded-[40px] p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center'>
             <div className='w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6'>
               <svg
                 className='w-8 h-8'
