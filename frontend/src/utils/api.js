@@ -2,10 +2,11 @@ const apiUrl = import.meta.env.VITE_API_URL;
 
 export const protectedFetch = async (endpoint, options = {}) => {
   let token = localStorage.getItem('token');
+  const isFormData = options.body instanceof FormData;
 
   const defaultHeaders = {
     Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
+    ...(!isFormData && { 'Content-Type': 'application/json' }),
     ...options.headers,
   };
 
@@ -29,7 +30,6 @@ export const protectedFetch = async (endpoint, options = {}) => {
       if (result.data.refreshToken) {
         localStorage.setItem('refreshToken', result.data.refreshToken);
       }
-
       return await fetch(`${apiUrl}${endpoint}`, {
         ...options,
         headers: {
