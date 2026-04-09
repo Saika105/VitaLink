@@ -33,7 +33,7 @@ const PatientDashboard = () => {
         const response = await protectedFetch('/api/v1/patients/profile');
         if (response.ok) {
           const result = await response.json();
-          setPatientData(result.data.patient);
+          setPatientData(result.data);
         }
       } catch (err) {
         console.error('Fetch error:', err);
