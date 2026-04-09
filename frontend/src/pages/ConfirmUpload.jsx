@@ -38,17 +38,18 @@ const ConfirmUpload = () => {
 
       if (uploadType === 'prescription') {
         data.append('prescriptionFile', selectedFile);
-        data.append('diagnosis', recordDetails.title);
+        data.append('manualDoctorName', recordDetails.title); 
+        data.append('manualHospitalName', recordDetails.hospitalName); 
       } else {
-        data.append('file', selectedFile);
-        data.append('reportName', recordDetails.title);
+        data.append('reportFile', selectedFile);
+        data.append('testName', recordDetails.title); 
+        data.append('manualHospitalName', recordDetails.hospitalName); 
       }
 
-      data.append('hospitalName', recordDetails.hospitalName);
-
-        const endpoint = uploadType === 'prescription'
-  ? `${import.meta.env.VITE_API_URL}/api/v1/patients/prescriptions`
-  : `${import.meta.env.VITE_API_URL}/api/v1/patients/reports`;
+      const endpoint =
+        uploadType === 'prescription'
+          ? '/api/v1/patients/prescriptions/add'
+          : '/api/v1/patients/lab-reports/add';
 
       const response = await protectedFetch(endpoint, {
         method: 'POST',
@@ -83,7 +84,7 @@ const ConfirmUpload = () => {
       <Navbar />
       {userRole !== 'assistant' && <DashboardNav />}
 
-      <main className='grow flex items-center justify-center p-4 md:p-12'>
+      <main className='grow flex items-center justify-center p-4 md:p-12 font-inter'>
         <div className='w-full max-w-2xl bg-white rounded-4xl md:rounded-[2.5rem] shadow-2xl border border-slate-100 p-6 md:p-12'>
           <div className='mb-8 text-center md:text-left'>
             <p className='text-[10px] md:text-[12px] font-black text-[#3B82F6] uppercase tracking-[0.25em] mb-2'>
@@ -151,13 +152,7 @@ const ConfirmUpload = () => {
             <div className='flex flex-col-reverse md:flex-row gap-3 md:gap-4 pt-4'>
               <button
                 type='button'
-                onClick={() => {
-                  if (userRole === 'assistant') {
-                    navigate('/assistant');
-                  } else {
-                    navigate('/patient-dashboard');
-                  }
-                }}
+                onClick={() => navigate(-1)}
                 className='w-full md:flex-1 py-4 border-2 border-slate-300 rounded-2xl text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] hover:bg-slate-200 hover:text-slate-900 transition-all active:scale-95'
               >
                 Discard
