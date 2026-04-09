@@ -18,8 +18,9 @@ const HealthVault = () => {
     try {
       const endpoint =
         activeTab === 'Prescriptions'
-          ? `${import.meta.env.VITE_API_URL}/api/v1 / prescriptions / get - patient - prescriptions`
-          : `${import.meta.env.VITE_API_URL}/api/v1/lab-reports/get-patient-lab-reports`;
+          ? '/api/v1/patients/prescriptions'
+          : '/api/v1/patients/lab-reports';
+
       const response = await protectedFetch(endpoint);
 
       if (response.ok) {
@@ -69,12 +70,13 @@ const HealthVault = () => {
       )
     )
       return;
+
     try {
       const endpoint =
         activeTab === 'Prescriptions'
-          ? `${import.meta.env.VITE_API_URL}/api/v1/prescriptions/delete-prescription/${id}`
-          : `${import.meta.env.VITE_API_URL}/api/v1/lab-reports/delete-patient-lab-report/${id}`;
-      
+          ? `/api/v1/patients/prescriptions/delete/${id}`
+          : `/api/v1/patients/lab-reports/delete/${id}`;
+
       const response = await protectedFetch(endpoint, { method: 'DELETE' });
       if (response.ok) {
         setItems(items.filter(item => item.id !== id));
@@ -83,6 +85,7 @@ const HealthVault = () => {
       }
     } catch (err) {
       console.error('Delete error:', err);
+      alert('Failed to delete record');
     }
   };
 
@@ -105,22 +108,6 @@ const HealthVault = () => {
       } catch (err) {
         console.error('Failed to copy:', err);
       }
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await protectedFetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/patients/logout`,
-        {
-          method: 'POST',
-        },
-      );
-    } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('role');
-      navigate('/login-patient');
     }
   };
 
@@ -199,7 +186,7 @@ const HealthVault = () => {
                           {item.title}
                         </span>
                         <span className='text-[10px] block font-black text-blue-600 uppercase tracking-widest'>
-                          Dr. {item.doctor}
+                          {item.doctor}
                         </span>
                         <span className='text-xs text-slate-400 font-medium'>
                           {item.date}
@@ -224,7 +211,7 @@ const HealthVault = () => {
               {selectedItem ? (
                 <div>
                   <div className='w-full aspect-4/3 bg-slate-50 rounded-2xl mb-6 flex items-center justify-center border border-slate-100 overflow-hidden'>
-                    {selectedItem.fileUrl?.endsWith('.pdf') ? (
+                    {selectedItem.fileUrl?.toLowerCase().endsWith('.pdf') ? (
                       <div className='flex flex-col items-center'>
                         <svg
                           className='w-12 h-12 text-red-500 mb-2'
@@ -262,7 +249,7 @@ const HealthVault = () => {
                         Assigned Physician
                       </p>
                       <p className='font-bold text-slate-800 leading-tight uppercase'>
-                        Dr. {selectedItem.doctor}
+                        {selectedItem.doctor}
                       </p>
                     </div>
                     <div>
