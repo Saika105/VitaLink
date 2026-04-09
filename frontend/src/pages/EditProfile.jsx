@@ -36,7 +36,9 @@ const EditProfile = () => {
   useEffect(() => {
     const fetchCurrentData = async () => {
       try {
-        const response = await protectedFetch('/api/v1/patients/profile');
+       const response = await protectedFetch(
+         `${import.meta.env.VITE_API_URL}/api/v1/patients/profile`,
+       );
         if (response.ok) {
           const result = await response.json();
           const data = result.data;
@@ -84,10 +86,13 @@ const EditProfile = () => {
         data.append('profilePhoto', formData.profilePhoto);
       }
 
-      const response = await protectedFetch('/api/v1/patients/update-profile', {
-        method: 'PATCH',
-        body: data,
-      });
+      const response = await protectedFetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/patients/update-profile`,
+        {
+          method: 'PATCH',
+          body: data,
+        },
+      );
 
       if (response.ok) {
         alert('Profile updated successfully!');
@@ -113,7 +118,7 @@ const EditProfile = () => {
     setLoading(true);
     try {
       const response = await protectedFetch(
-        '/api/v1/patients/change-password',
+        `${import.meta.env.VITE_API_URL}/api/v1/patients/change-password`,
         {
           method: 'POST',
           body: JSON.stringify({

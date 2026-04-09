@@ -18,9 +18,8 @@ const HealthVault = () => {
     try {
       const endpoint =
         activeTab === 'Prescriptions'
-          ? '/api/v1/prescriptions/get-patient-prescriptions'
-          : '/api/v1/lab-reports/get-patient-lab-reports';
-
+          ? `${import.meta.env.VITE_API_URL}/api/v1 / prescriptions / get - patient - prescriptions`
+          : `${import.meta.env.VITE_API_URL}/api/v1/lab-reports/get-patient-lab-reports`;
       const response = await protectedFetch(endpoint);
 
       if (response.ok) {
@@ -73,9 +72,9 @@ const HealthVault = () => {
     try {
       const endpoint =
         activeTab === 'Prescriptions'
-          ? `/api/v1/prescriptions/delete-prescription/${id}`
-          : `/api/v1/lab-reports/delete-patient-lab-report/${id}`;
-
+          ? `${import.meta.env.VITE_API_URL}/api/v1/prescriptions/delete-prescription/${id}`
+          : `${import.meta.env.VITE_API_URL}/api/v1/lab-reports/delete-patient-lab-report/${id}`;
+      
       const response = await protectedFetch(endpoint, { method: 'DELETE' });
       if (response.ok) {
         setItems(items.filter(item => item.id !== id));
@@ -111,7 +110,12 @@ const HealthVault = () => {
 
   const handleLogout = async () => {
     try {
-      await protectedFetch('/api/v1/patients/logout', { method: 'POST' });
+      await protectedFetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/patients/logout`,
+        {
+          method: 'POST',
+        },
+      );
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');

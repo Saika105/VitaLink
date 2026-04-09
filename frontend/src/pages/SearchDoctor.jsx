@@ -29,7 +29,7 @@ const SearchDoctor = () => {
         const queryParam =
           selectedSpecialty === 'All' ? '' : `?specialty=${selectedSpecialty}`;
         const response = await protectedFetch(
-          `/api/v1/patients/doctors${queryParam}`,
+          `${import.meta.env.VITE_API_URL}/api/v1/patients/doctors${queryParam}`,
         );
 
         if (response.ok) {
@@ -56,9 +56,12 @@ const SearchDoctor = () => {
 
   const handleLogout = async () => {
     try {
-      await protectedFetch('/api/v1/patients/logout', {
-        method: 'POST',
-      });
+      await protectedFetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/patients/logout`,
+        {
+          method: 'POST',
+        },
+      );
     } catch (error) {
       console.error('Logout Error:', error);
     } finally {

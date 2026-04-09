@@ -11,7 +11,7 @@ const DoctorLogin = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch(`${apiUrl}/doctors/login`, {
+      const response = await fetch(`${apiUrl}/api/v1/doctors/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

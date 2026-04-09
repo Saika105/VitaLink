@@ -59,7 +59,7 @@ const PatientSignUp = () => {
 
     try {
       const response = await fetch(
-        `${apiUrl}/patients/initialize-registration`,
+        `${apiUrl}/api/v1/patients/initialize-registration`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -93,14 +93,17 @@ const PatientSignUp = () => {
     }
 
     try {
-      const response = await fetch(`${apiUrl}/patients/finalize-registration`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          upid: generatedId,
-          password: passwords.password,
-        }),
-      });
+      const response = await fetch(
+        `${apiUrl}/api/v1/patients/finalize-registration`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            upid: generatedId,
+            password: passwords.password,
+          }),
+        },
+      );
 
       if (response.ok) {
         alert('Profile Created Successfully!');

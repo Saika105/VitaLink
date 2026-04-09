@@ -15,7 +15,7 @@ const StaffLogin = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch(`${apiUrl}/${loginData.role}/login`, {
+      const response = await fetch(`${apiUrl}/api/v1/${loginData.role}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

@@ -39,7 +39,7 @@ const AdminStaffManagement = () => {
     const fetchStaff = async () => {
       try {
         const response = await fetch(
-          `${apiUrl}/admin/staff?role=${activeTableTab}`,
+          `${apiUrl}/api/v1/admin/staff?role=${activeTableTab}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -59,7 +59,7 @@ const AdminStaffManagement = () => {
     if (showModal) {
       const fetchDocs = async () => {
         try {
-          const response = await fetch(`${apiUrl}/admin/doctors-list`, {
+          const response = await fetch(`${apiUrl}/api/v1/admin/doctors-list`, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('token')}`,
             },
@@ -105,12 +105,13 @@ const AdminStaffManagement = () => {
   const handleSubmit = async e => {
     e.preventDefault();
     const routeMap = {
-      doctor: '/admin/register-doctor',
-      assistant: '/admin/register-assistant',
-      lab: '/admin/register-lab-assistant',
-      receptionist: '/admin/register-receptionist',
+      doctor: '/api/v1/admin/register-doctors',
+      assistant: '/api/v1/admin/register-assistants',
+      lab: '/api/v1/admin/register-lab-assistants',
+      receptionist: '/api/v1/admin/register-receptionists',
     };
-    const targetRoute = routeMap[formData.role] || '/admin/register-doctor';
+    const targetRoute =
+      routeMap[formData.role] || '/api/v1/admin/register-doctors';
 
     try {
       const dataToSend = new FormData();
@@ -164,7 +165,7 @@ const AdminStaffManagement = () => {
         setImagePreview(null);
 
         const updatedResponse = await fetch(
-          `${apiUrl}/admin/staff?role=${activeTableTab}`,
+          `${apiUrl}/api/v1/admin/staff?role=${activeTableTab}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -187,7 +188,7 @@ const AdminStaffManagement = () => {
       return;
     try {
       const response = await fetch(
-        `${apiUrl}/admin/staff/${id}?role=${activeTableTab}`,
+        `${apiUrl}/api/v1/admin/staff/${id}?role=${activeTableTab}`,
         {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
@@ -206,10 +207,10 @@ const AdminStaffManagement = () => {
   };
 
   return (
-    <div className='min-h-screen bg-[#F0F7FF] flex flex-col text-slate-800'>
+    <div className='min-h-screen bg-[#F0F7FF] flex flex-col text-slate-800 font-inter'>
       <Navbar />
 
-      <main className='grow p-6 md:p-10 max-w-7xl mx-auto w-full space-y-8'>
+      <main className='grow p-6 md:p-10 max-w-7xl mx-auto w-full space-y-8 font-inter'>
         <div className='flex flex-col md:flex-row justify-between items-center gap-6'>
           <div>
             <h2 className='text-4xl font-black text-slate-900 uppercase tracking-tighter'>
@@ -227,7 +228,7 @@ const AdminStaffManagement = () => {
           </button>
         </div>
 
-        <div className='flex items-center gap-4 bg-white w-fit p-2 rounded-2xl border border-slate-200 shadow-sm'>
+        <div className='flex items-center gap-4 bg-white w-fit p-2 rounded-2xl border border-slate-200 shadow-sm font-inter'>
           <span className='pl-4 text-[10px] uppercase font-black text-slate-800 tracking-widest'>
             Identity Filter:
           </span>
@@ -243,7 +244,7 @@ const AdminStaffManagement = () => {
           </select>
         </div>
 
-        <div className='bg-white rounded-[2.5rem] shadow-2xl overflow-x-auto border border-slate-200'>
+        <div className='bg-white rounded-[2.5rem] shadow-2xl overflow-x-auto border border-slate-200 font-inter'>
           <table className='w-full text-left border-collapse min-w-full'>
             <thead>
               <tr className='bg-slate-50 border-b border-slate-100'>
@@ -386,7 +387,7 @@ const AdminStaffManagement = () => {
 
         {showModal && (
           <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
-            <div className='bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]'>
+            <div className='bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] font-inter'>
               <div className='p-8 bg-slate-50 border-b border-slate-100 flex justify-between items-center'>
                 <div>
                   <h3 className='text-2xl font-bold text-slate-800 uppercase tracking-tight'>
@@ -411,7 +412,7 @@ const AdminStaffManagement = () => {
 
               <form
                 onSubmit={handleSubmit}
-                className='p-8 overflow-y-auto space-y-8'
+                className='p-8 overflow-y-auto space-y-8 font-inter'
               >
                 <div className='bg-blue-50/50 p-6 rounded-3xl border border-blue-100 space-y-4'>
                   <p className='text-xs font-black text-[#4486F6] uppercase tracking-widest'>
@@ -531,7 +532,7 @@ const AdminStaffManagement = () => {
                 </div>
 
                 {formData.role === 'doctor' && (
-                  <div className='bg-slate-50 p-8 rounded-3xl border border-slate-200 space-y-6'>
+                  <div className='bg-slate-50 p-8 rounded-3xl border border-slate-200 space-y-6 font-inter'>
                     <div className='flex flex-col items-center gap-4 bg-blue-50/50 p-6 rounded-3xl border border-blue-100'>
                       <label className='text-xs font-black text-slate-800 uppercase tracking-widest'>
                         Professional Photo
@@ -675,7 +676,7 @@ const AdminStaffManagement = () => {
                 )}
 
                 {formData.role === 'assistant' && (
-                  <div className='bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-4'>
+                  <div className='bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-4 font-inter'>
                     <p className='text-xs font-black text-[#4486F6] uppercase tracking-widest'>
                       Assistant Assignment
                     </p>
@@ -700,7 +701,7 @@ const AdminStaffManagement = () => {
                   </div>
                 )}
 
-                <div className='flex flex-col items-center gap-4 pt-4'>
+                <div className='flex flex-col items-center gap-4 pt-4 font-inter'>
                   <button
                     type='submit'
                     className='w-full max-w-md bg-blue-600 hover:bg-[#4486F6] text-white py-4 rounded-2xl font-bold shadow-lg transition-all uppercase text-xs tracking-widest active:scale-95'

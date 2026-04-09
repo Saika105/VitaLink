@@ -13,7 +13,9 @@ const PatientBilling = () => {
   useEffect(() => {
     const fetchBilling = async () => {
       try {
-        const response = await protectedFetch('/api/v1/patients/billing');
+        const response = await protectedFetch(
+          `${import.meta.env.VITE_API_URL}/api/v1/patients/billing`,
+        );
 
         if (response.ok) {
           const result = await response.json();
@@ -50,9 +52,12 @@ const PatientBilling = () => {
 
   const handleLogout = async () => {
     try {
-      await protectedFetch('/api/v1/patients/logout', {
-        method: 'POST',
-      });
+      await protectedFetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/patients/logout`,
+        {
+          method: 'POST',
+        },
+      );
     } catch (error) {
       console.error('Logout Error:', error);
     } finally {

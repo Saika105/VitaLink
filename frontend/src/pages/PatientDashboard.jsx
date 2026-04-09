@@ -30,7 +30,7 @@ const PatientDashboard = () => {
   useEffect(() => {
     const fetchPatientInfo = async () => {
       try {
-        const response = await protectedFetch('/api/v1/patients/profile');
+        const response = await protectedFetch(`${import.meta.env.VITE_API_URL}/api/v1/patients/profile`);
         if (response.ok) {
           const result = await response.json();
           setPatientData(result.data);
@@ -44,9 +44,12 @@ const PatientDashboard = () => {
 
   const handleLogout = async () => {
     try {
-      await protectedFetch('/api/v1/patients/logout', {
-        method: 'POST',
-      });
+      await protectedFetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/patients/logout`,
+        {
+          method: 'POST',
+        },
+      );
     } catch (error) {
       console.error('Logout Error:', error);
     } finally {

@@ -46,10 +46,9 @@ const ConfirmUpload = () => {
 
       data.append('hospitalName', recordDetails.hospitalName);
 
-      const endpoint =
-        uploadType === 'prescription'
-          ? '/api/v1/patients/prescriptions'
-          : '/api/v1/patients/reports';
+        const endpoint = uploadType === 'prescription'
+  ? `${import.meta.env.VITE_API_URL}/api/v1/patients/prescriptions`
+  : `${import.meta.env.VITE_API_URL}/api/v1/patients/reports`;
 
       const response = await protectedFetch(endpoint, {
         method: 'POST',

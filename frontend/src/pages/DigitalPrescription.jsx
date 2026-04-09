@@ -40,7 +40,9 @@ const DigitalPrescription = () => {
   useEffect(() => {
     const fetchDoctorProfile = async () => {
       try {
-        const response = await protectedFetch('/api/v1/doctor/profile');
+        const response = await protectedFetch(
+          `${import.meta.env.VITE_API_URL}/api/v1/doctors/profile`,
+        );
         if (response.ok) {
           const result = await response.json();
           setDoctorInfo(result.data);
@@ -84,7 +86,7 @@ const DigitalPrescription = () => {
 
     try {
       const response = await protectedFetch(
-        `/api/v1/doctor/patient/${id}/save-prescription`,
+        `${import.meta.env.VITE_API_URL}/api/v1/doctors/patient/${id}/save-prescription`,
         {
           method: 'POST',
           body: JSON.stringify(finalData),
