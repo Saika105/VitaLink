@@ -29,9 +29,8 @@ const SearchDoctor = () => {
         const queryParam =
           selectedSpecialty === 'All' ? '' : `?specialty=${selectedSpecialty}`;
 
-        const response = await protectedFetch(
-          `/api/v1/patients/doctors${queryParam}`,
-        );
+        const endpoint = `/api/v1/patients/doctors${queryParam}`;
+        const response = await protectedFetch(endpoint);
 
         if (response.ok) {
           const result = await response.json();
@@ -40,7 +39,6 @@ const SearchDoctor = () => {
           setDoctors([]);
         }
       } catch (err) {
-        console.error('Fetch Doctors Error:', err);
         setDoctors([]);
       }
     };
@@ -62,7 +60,7 @@ const SearchDoctor = () => {
         method: 'POST',
       });
     } catch (error) {
-      console.error('Logout Error:', error);
+      console.error(error);
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
@@ -76,20 +74,20 @@ const SearchDoctor = () => {
       <Navbar />
       <DashboardNav />
 
-      <main className='grow max-w-7xl mx-auto w-full p-4 md:p-8 flex flex-col md:flex-row gap-8'>
-        <aside className='w-full md:w-72 shrink-0 space-y-6'>
+      <main className='grow max-w-7xl mx-auto w-full p-4 md:p-8 flex flex-col md:flex-row gap-8 font-inter'>
+        <aside className='w-full md:w-72 shrink-0 space-y-6 font-inter'>
           <div>
-            <h2 className='text-2xl font-extrabold text-slate-900 tracking-tight uppercase'>
+            <h2 className='text-2xl font-extrabold text-slate-900 tracking-tight uppercase font-inter'>
               Specialties
             </h2>
           </div>
 
-          <div className='bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl'>
+          <div className='bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl font-inter'>
             {specialties.map(spec => (
               <button
                 key={spec}
                 onClick={() => setSelectedSpecialty(spec)}
-                className={`w-full text-left px-6 py-4 text-xs font-bold transition-all border-b border-slate-50 last:border-b-0 uppercase tracking-widest ${
+                className={`w-full text-left px-6 py-4 text-xs font-bold transition-all border-b border-slate-50 last:border-b-0 uppercase tracking-widest font-inter ${
                   selectedSpecialty === spec
                     ? 'bg-blue-600 text-white'
                     : 'text-slate-600 hover:bg-blue-50'
@@ -101,46 +99,46 @@ const SearchDoctor = () => {
           </div>
         </aside>
 
-        <section className='grow space-y-8'>
-          <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-6'>
+        <section className='grow space-y-8 font-inter'>
+          <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-6 font-inter'>
             <div>
-              <h2 className='text-3xl font-black text-slate-900 tracking-tight uppercase'>
+              <h2 className='text-3xl font-black text-slate-900 tracking-tight uppercase font-inter'>
                 Find Specialists
               </h2>
-              <p className='text-sm font-bold text-blue-700 uppercase tracking-widest mt-0.5'>
+              <p className='text-sm font-bold text-blue-700 uppercase tracking-widest mt-0.5 font-inter'>
                 Book Verified Professionals
               </p>
             </div>
 
-            <div className='flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-slate-400 shadow-sm w-full md:w-auto'>
-              <span className='text-[12px] font-black text-black uppercase tracking-tighter'>
+            <div className='flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-slate-400 shadow-sm w-full md:w-auto font-inter'>
+              <span className='text-[12px] font-black text-black uppercase tracking-tighter font-inter'>
                 Search
               </span>
               <input
                 type='text'
-                className='bg-transparent border-none outline-none text-sm font-medium w-full md:w-60'
+                className='bg-transparent border-none outline-none text-sm font-medium w-full md:w-60 font-inter'
                 placeholder='Doctor name...'
                 onChange={e => setSearchQuery(e.target.value)}
               />
             </div>
           </div>
 
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 font-inter'>
             {filteredDoctors.map(doc => (
               <div
                 key={doc._id}
-                className='bg-white border border-slate-200 rounded-3xl p-6 shadow-lg hover:shadow-2xl transition-all border-b-4 border-b-transparent hover:border-b-blue-600 flex flex-col'
+                className='bg-white border border-slate-200 rounded-3xl p-6 shadow-lg hover:shadow-2xl transition-all border-b-4 border-b-transparent hover:border-b-blue-600 flex flex-col font-inter'
               >
-                <div className='w-full h-32 bg-slate-50 rounded-2xl mb-5 flex items-center justify-center border border-slate-100 overflow-hidden'>
+                <div className='w-full h-32 bg-slate-50 rounded-2xl mb-5 flex items-center justify-center border border-slate-100 overflow-hidden font-inter'>
                   {doc.profilePhoto?.url ? (
                     <img
                       src={doc.profilePhoto.url}
                       alt={doc.fullName}
-                      className='w-full h-full object-cover'
+                      className='w-full h-full object-cover font-inter'
                     />
                   ) : (
                     <svg
-                      className='w-12 h-12 text-blue-600/20'
+                      className='w-12 h-12 text-blue-600/20 font-inter'
                       fill='currentColor'
                       viewBox='0 0 20 20'
                     >
@@ -153,40 +151,38 @@ const SearchDoctor = () => {
                   )}
                 </div>
 
-                <div className='space-y-4 grow'>
+                <div className='space-y-4 grow font-inter'>
                   <div>
-                    <h3 className='text-xl font-black text-slate-900 leading-tight'>
+                    <h3 className='text-xl font-black text-slate-900 leading-tight font-inter'>
                       {doc.fullName}
                     </h3>
-                    <p className='text-blue-600 font-bold text-[10px] uppercase tracking-widest mt-1'>
+                    <p className='text-blue-600 font-bold text-[10px] uppercase tracking-widest mt-1 font-inter'>
                       {doc.specialization}
                     </p>
                   </div>
 
-                  <div className='space-y-2'>
-                    <div className='flex items-center gap-2 text-slate-600'>
-                      <span className='text-[10px] font-black uppercase text-slate-400'>
+                  <div className='space-y-2 font-inter'>
+                    <div className='flex items-center gap-2 text-slate-600 font-inter'>
+                      <span className='text-[10px] font-black uppercase text-slate-400 font-inter'>
                         Hospital:
                       </span>
-                      <span className='text-xs font-bold'>
-                        {doc.hospital?.fullName ||
-                          doc.hospital?.name ||
-                          'Private Practice'}
+                      <span className='text-xs font-bold font-inter'>
+                        {doc.hospital?.fullName || 'Private Clinic'}
                       </span>
                     </div>
-                    <div className='flex items-center gap-2 text-slate-600'>
-                      <span className='text-[10px] font-black uppercase text-slate-400'>
+                    <div className='flex items-center gap-2 text-slate-600 font-inter'>
+                      <span className='text-[10px] font-black uppercase text-slate-400 font-inter'>
                         Designation:
                       </span>
-                      <span className='text-xs font-medium'>
+                      <span className='text-xs font-medium font-inter'>
                         {doc.designation}
                       </span>
                     </div>
-                    <div className='flex items-center gap-2 text-slate-600'>
-                      <span className='text-[10px] font-black uppercase text-slate-400'>
+                    <div className='flex items-center gap-2 text-slate-600 font-inter'>
+                      <span className='text-[10px] font-black uppercase text-slate-400 font-inter'>
                         Experience:
                       </span>
-                      <span className='text-xs font-medium'>
+                      <span className='text-xs font-medium font-inter'>
                         {doc.yearsExperience} Years
                       </span>
                     </div>
@@ -195,7 +191,7 @@ const SearchDoctor = () => {
 
                 <button
                   onClick={() => handleBookNow(doc)}
-                  className='w-full mt-6 bg-blue-600 text-white py-3.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md active:scale-95'
+                  className='w-full mt-6 bg-blue-600 text-white py-3.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md active:scale-95 font-inter'
                 >
                   Book Appointment
                 </button>
@@ -203,18 +199,18 @@ const SearchDoctor = () => {
             ))}
 
             {filteredDoctors.length === 0 && (
-              <div className='col-span-full py-20 text-center text-slate-400 bg-white border-2 border-dashed border-slate-200 rounded-3xl'>
-                <p className='text-xs font-bold uppercase tracking-widest'>
+              <div className='col-span-full py-20 text-center text-slate-400 bg-white border-2 border-dashed border-slate-200 rounded-3xl font-inter'>
+                <p className='text-xs font-bold uppercase tracking-widest font-inter'>
                   No specialists found
                 </p>
               </div>
             )}
           </div>
 
-          <div className='flex justify-end pt-12'>
+          <div className='flex justify-end pt-12 font-inter'>
             <button
               onClick={handleLogout}
-              className='w-48 border-2 border-red-200 text-red-700 rounded-xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all focus:ring-2 focus:ring-red-500 outline-none'
+              className='w-48 border-2 border-red-200 text-red-700 rounded-xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all focus:ring-2 focus:ring-red-500 outline-none font-inter'
             >
               LogOut
             </button>
@@ -223,11 +219,11 @@ const SearchDoctor = () => {
       </main>
 
       {showPopup && activeDoctor && (
-        <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-100 flex items-center justify-center p-4'>
-          <div className='bg-white rounded-[40px] p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center'>
-            <div className='w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6'>
+        <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-100 flex items-center justify-center p-4 font-inter'>
+          <div className='bg-white rounded-[40px] p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center font-inter'>
+            <div className='w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 font-inter'>
               <svg
-                className='w-8 h-8'
+                className='w-8 h-8 font-inter'
                 fill='none'
                 stroke='currentColor'
                 viewBox='0 0 24 24'
@@ -240,27 +236,27 @@ const SearchDoctor = () => {
                 />
               </svg>
             </div>
-            <h3 className='text-2xl font-black text-slate-900 uppercase'>
+            <h3 className='text-2xl font-black text-slate-900 uppercase font-inter'>
               Book Slot
             </h3>
-            <p className='text-slate-500 text-sm mt-2'>
+            <p className='text-slate-500 text-sm mt-2 font-inter'>
               Contact the assistant of <b>{activeDoctor.fullName}</b>.
             </p>
 
-            <div className='my-8 space-y-3'>
+            <div className='my-8 space-y-3 font-inter'>
               <a
                 href={`tel:${activeDoctor.phone}`}
-                className='flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-200 hover:border-blue-400 transition-all group'
+                className='flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-200 hover:border-blue-400 transition-all group font-inter'
               >
-                <div className='text-left'>
-                  <p className='text-[10px] font-black text-slate-400 uppercase tracking-widest'>
+                <div className='text-left font-inter'>
+                  <p className='text-[10px] font-black text-slate-400 uppercase tracking-widest font-inter'>
                     Call Assistant
                   </p>
-                  <p className='text-sm font-bold text-slate-900'>
+                  <p className='text-sm font-bold text-slate-900 font-inter'>
                     {activeDoctor.phone}
                   </p>
                 </div>
-                <div className='w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center'>
+                <div className='w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-inter'>
                   →
                 </div>
               </a>
@@ -269,17 +265,17 @@ const SearchDoctor = () => {
                 href={`https://wa.me/${activeDoctor.phone?.replace(/\D/g, '')}`}
                 target='_blank'
                 rel='noreferrer'
-                className='flex items-center justify-between p-5 bg-green-50 rounded-2xl border border-green-100 hover:border-green-400 transition-all group'
+                className='flex items-center justify-between p-5 bg-green-50 rounded-2xl border border-green-100 hover:border-green-400 transition-all group font-inter'
               >
-                <div className='text-left'>
-                  <p className='text-[10px] font-black text-green-600/60 uppercase tracking-widest'>
+                <div className='text-left font-inter'>
+                  <p className='text-[10px] font-black text-green-600/60 uppercase tracking-widest font-inter'>
                     WhatsApp Chat
                   </p>
-                  <p className='text-sm font-bold text-slate-900'>
+                  <p className='text-sm font-bold text-slate-900 font-inter'>
                     {activeDoctor.phone}
                   </p>
                 </div>
-                <div className='w-8 h-8 bg-green-500 text-white rounded-lg flex items-center justify-center'>
+                <div className='w-8 h-8 bg-green-500 text-white rounded-lg flex items-center justify-center font-inter'>
                   →
                 </div>
               </a>
@@ -287,7 +283,7 @@ const SearchDoctor = () => {
 
             <button
               onClick={() => setShowPopup(false)}
-              className='w-full bg-slate-900 text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 transition-all'
+              className='w-full bg-slate-900 text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 transition-all font-inter'
             >
               Got it
             </button>
