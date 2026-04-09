@@ -79,7 +79,6 @@ const EditProfile = () => {
       data.append('phone', formData.phone);
       data.append('address', formData.address);
 
-       
       const phoneOnly =
         typeof formData.emergencyContact === 'object'
           ? formData.emergencyContact.phone
@@ -90,13 +89,14 @@ const EditProfile = () => {
         data.append('profilePhoto', formData.profilePhoto);
       }
 
+      // With your new api.js fix, you don't need manual headers here!
       const response = await protectedFetch('/api/v1/patients/update-profile', {
         method: 'PATCH',
         body: data,
       });
 
       if (response.ok) {
-        alert('Profile updated successfully!');
+        alert('Health Vault updated successfully!');
         navigate('/patient-dashboard');
       } else {
         const contentType = response.headers.get('content-type');
@@ -104,9 +104,7 @@ const EditProfile = () => {
           const errorData = await response.json();
           alert(errorData.message || 'Update failed');
         } else {
-          alert(
-            'Server error: Backend returned an invalid response (Check Render logs).',
-          );
+          alert('Server error: Backend returned an invalid response.');
         }
       }
     } catch (err) {
@@ -129,11 +127,7 @@ const EditProfile = () => {
         '/api/v1/patients/change-password',
         {
           method: 'POST',
-          body: JSON.stringify({
-            oldPassword: passwordData.oldPassword,
-            newPassword: passwordData.newPassword,
-            confirmPassword: passwordData.confirmPassword,
-          }),
+          body: JSON.stringify(passwordData),
         },
       );
       if (response.ok) {
@@ -165,17 +159,17 @@ const EditProfile = () => {
           className='w-full max-w-3xl bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 p-8 md:p-14'
         >
           <div className='mb-10 text-center md:text-left'>
-            <p className='text-[12px] font-black text-[#3B82F6] uppercase tracking-[0.25em] mb-2'>
+            <p className='text-[12px] font-black text-[#3B82F6] uppercase tracking-[0.25em] mb-2 font-inter'>
               Identity Vault
             </p>
-            <h2 className='text-3xl font-black text-slate-900 uppercase tracking-tighter'>
+            <h2 className='text-3xl font-black text-slate-900 uppercase tracking-tighter font-inter'>
               Edit Profile
             </h2>
           </div>
           <div className='flex flex-col md:flex-row gap-12'>
             <div className='flex flex-col items-center gap-4'>
               <div className='relative group'>
-                <div className='w-40 h-40 rounded-4xl overflow-hidden border-4 border-slate-50 shadow-xl bg-slate-100 flex items-center justify-center'>
+                <div className='w-40 h-40 rounded-4xl overflow-hidden border-4 border-slate-50 shadow-xl bg-slate-100 flex items-center justify-center font-inter'>
                   {imagePreview ? (
                     <img
                       src={imagePreview}
@@ -183,11 +177,11 @@ const EditProfile = () => {
                       className='w-full h-full object-cover'
                     />
                   ) : (
-                    <div className='text-slate-300'>No Photo</div>
+                    <div className='text-slate-300 font-inter'>No Photo</div>
                   )}
                 </div>
                 <label className='absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-4xl'>
-                  <span className='text-[10px] font-black text-white uppercase'>
+                  <span className='text-[10px] font-black text-white uppercase font-inter'>
                     Change
                   </span>
                   <input
@@ -201,7 +195,7 @@ const EditProfile = () => {
               <button
                 type='button'
                 onClick={() => setIsModalOpen(true)}
-                className='mt-6 w-full h-12 bg-[#3B82F6] text-white text-[10px] rounded-xl font-black uppercase tracking-widest'
+                className='mt-6 w-full h-12 bg-[#3B82F6] text-white text-[10px] rounded-xl font-black uppercase tracking-widest font-inter'
               >
                 Password
               </button>
@@ -270,14 +264,14 @@ const EditProfile = () => {
             <button
               type='button'
               onClick={() => navigate('/patient-dashboard')}
-              className='w-32 h-12 border-2 rounded-xl text-[11px] font-black uppercase'
+              className='w-32 h-12 border-2 rounded-xl text-[11px] font-black uppercase font-inter'
             >
               Cancel
             </button>
             <button
               type='submit'
               disabled={loading}
-              className='w-64 h-12 bg-[#3B82F6] text-white text-[11px] rounded-xl font-black uppercase shadow-lg disabled:opacity-50'
+              className='w-64 h-12 bg-[#3B82F6] text-white text-[11px] rounded-xl font-black uppercase shadow-lg disabled:opacity-50 font-inter'
             >
               {loading ? 'Saving...' : 'Save Changes'}
             </button>
@@ -287,7 +281,9 @@ const EditProfile = () => {
       {isModalOpen && (
         <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm'>
           <div className='bg-white w-full max-w-md rounded-4xl p-8 shadow-2xl'>
-            <h3 className='text-xl font-black mb-6 uppercase'>Credentials</h3>
+            <h3 className='text-xl font-black mb-6 uppercase font-inter'>
+              Credentials
+            </h3>
             <form onSubmit={handleChangePassword} className='space-y-4'>
               <input
                 type='password'
@@ -330,14 +326,14 @@ const EditProfile = () => {
               />
               <button
                 type='submit'
-                className='w-full h-12 bg-[#3B82F6] text-white rounded-xl uppercase font-black'
+                className='w-full h-12 bg-[#3B82F6] text-white rounded-xl uppercase font-black font-inter'
               >
                 Update
               </button>
               <button
                 type='button'
                 onClick={() => setIsModalOpen(false)}
-                className='w-full h-12 border-2 rounded-xl uppercase font-black'
+                className='w-full h-12 border-2 rounded-xl uppercase font-black font-inter'
               >
                 Close
               </button>
