@@ -87,9 +87,6 @@ const EditProfile = () => {
       const response = await protectedFetch('/api/v1/patients/update-profile', {
         method: 'PATCH',
         body: data,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
       });
 
       if (response.ok) {
@@ -97,11 +94,11 @@ const EditProfile = () => {
         navigate('/patient-dashboard');
       } else {
         const errorData = await response.json();
-        alert(errorData.message || 'Failed to update profile');
+        alert(errorData.message || 'Update failed');
       }
     } catch (err) {
       console.error(err);
-      alert('Update failed. Please try again.');
+      alert('Update failed. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -254,7 +251,6 @@ const EditProfile = () => {
                     setFormData({ ...formData, fullName: e.target.value })
                   }
                   className={inputStyle}
-                  placeholder='Full Name'
                 />
               </div>
 
@@ -267,7 +263,6 @@ const EditProfile = () => {
                     setFormData({ ...formData, email: e.target.value })
                   }
                   className={inputStyle}
-                  placeholder='email@example.com'
                 />
               </div>
 
@@ -280,7 +275,6 @@ const EditProfile = () => {
                     setFormData({ ...formData, phone: e.target.value })
                   }
                   className={inputStyle}
-                  placeholder='Contact Number'
                 />
               </div>
 
@@ -296,7 +290,6 @@ const EditProfile = () => {
                     })
                   }
                   className={inputStyle}
-                  placeholder='Emergency Contact'
                 />
               </div>
 
@@ -308,7 +301,6 @@ const EditProfile = () => {
                     setFormData({ ...formData, address: e.target.value })
                   }
                   className={`${inputStyle} h-28 resize-none`}
-                  placeholder='Enter your full address...'
                 />
               </div>
             </div>
@@ -318,14 +310,14 @@ const EditProfile = () => {
             <button
               type='button'
               onClick={() => navigate('/patient-dashboard')}
-              className='w-32 h-12 border-2 rounded-xl border-slate-100 text-[11px] font-black text-slate-700 uppercase tracking-widest hover:bg-slate-200 hover:border-slate-400 transition-all active:scale-[0.98] font-inter'
+              className='w-32 h-12 border-2 rounded-xl border-slate-100 text-[11px] font-black text-slate-700 uppercase tracking-widest hover:bg-slate-200 transition-all font-inter'
             >
               Cancel
             </button>
             <button
               type='submit'
               disabled={loading}
-              className='w-64 h-12 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[11px] rounded-xl font-black uppercase tracking-widest shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98] disabled:opacity-50 font-inter'
+              className='w-64 h-12 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[11px] rounded-xl font-black uppercase tracking-widest shadow-lg shadow-blue-500/30 transition-all disabled:opacity-50 font-inter'
             >
               {loading ? 'Processing...' : 'Secure & Save Changes'}
             </button>
@@ -388,19 +380,11 @@ const EditProfile = () => {
               </button>
             </div>
 
-            {resetSent && (
-              <div className='mb-6 p-4 bg-blue-50 border border-blue-100 rounded-2xl animate-pulse'>
-                <p className='text-[11px] font-bold text-[#3B82F6] uppercase tracking-wider text-center'>
-                  Recovery link sent to your vault email!
-                </p>
-              </div>
-            )}
-
             <form
               onSubmit={handleChangePassword}
               className='space-y-4 font-inter'
             >
-              <div className='font-inter'>
+              <div>
                 <label className={labelStyle}>Current Password</label>
                 <input
                   type={showPasswords ? 'text' : 'password'}
@@ -415,7 +399,7 @@ const EditProfile = () => {
                   }
                 />
               </div>
-              <div className='font-inter'>
+              <div>
                 <label className={labelStyle}>New Password</label>
                 <input
                   type={showPasswords ? 'text' : 'password'}
@@ -430,7 +414,7 @@ const EditProfile = () => {
                   }
                 />
               </div>
-              <div className='font-inter'>
+              <div>
                 <label className={labelStyle}>Confirm New Password</label>
                 <input
                   type={showPasswords ? 'text' : 'password'}
@@ -454,15 +438,6 @@ const EditProfile = () => {
                 >
                   {loading ? 'Validating...' : 'Update Password'}
                 </button>
-                {!resetSent && (
-                  <button
-                    type='button'
-                    onClick={handleForgotPassword}
-                    className='text-[10px] font-bold text-slate-600 uppercase tracking-widest hover:text-black transition-all text-center font-inter'
-                  >
-                    Forgot Current Password?
-                  </button>
-                )}
                 <button
                   type='button'
                   onClick={() => setIsModalOpen(false)}
