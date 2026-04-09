@@ -36,16 +36,18 @@ const ConfirmUpload = () => {
     try {
       const data = new FormData();
 
+     
       if (uploadType === 'prescription') {
         data.append('prescriptionFile', selectedFile);
         data.append('manualDoctorName', recordDetails.title); 
-        data.append('manualHospitalName', recordDetails.hospitalName); 
+        data.append('manualHospitalName', recordDetails.hospitalName);
       } else {
-        data.append('reportFile', selectedFile);
+        data.append('reportFile', selectedFile); 
         data.append('testName', recordDetails.title); 
         data.append('manualHospitalName', recordDetails.hospitalName); 
       }
 
+     
       const endpoint =
         uploadType === 'prescription'
           ? '/api/v1/patients/prescriptions/add'
@@ -66,12 +68,17 @@ const ConfirmUpload = () => {
           navigate('/my-records');
         }
       } else {
-        const error = await response.json();
-        alert(error.message || 'Upload failed');
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.indexOf('application/json') !== -1) {
+          const errorData = await response.json();
+          alert(errorData.message || 'Upload failed');
+        } else {
+          alert('Server Error: Backend returned an invalid response.');
+        }
       }
     } catch (err) {
       console.error('Upload error:', err);
-      alert('Connection to server failed');
+      alert('Connection to server failed. Please check your internet.');
     } finally {
       setLoading(false);
     }
@@ -153,7 +160,7 @@ const ConfirmUpload = () => {
               <button
                 type='button'
                 onClick={() => navigate(-1)}
-                className='w-full md:flex-1 py-4 border-2 border-slate-300 rounded-2xl text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] hover:bg-slate-200 hover:text-slate-900 transition-all active:scale-95'
+                className='w-full md:flex-1 py-4 border-2 border-slate-300 rounded-2xl text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] hover:bg-slate-200 transition-all active:scale-95'
               >
                 Discard
               </button>
