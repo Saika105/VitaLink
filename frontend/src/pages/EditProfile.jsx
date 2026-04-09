@@ -51,7 +51,7 @@ const EditProfile = () => {
           if (data.profilePhoto) setImagePreview(data.profilePhoto);
         }
       } catch (err) {
-        console.error('Fetch Error:', err);
+        console.error('Fetch error:', err);
       }
     };
     fetchCurrentData();
@@ -79,11 +79,11 @@ const EditProfile = () => {
       data.append('phone', formData.phone);
       data.append('address', formData.address);
 
-      const contactPhone =
+      const phoneOnly =
         typeof formData.emergencyContact === 'object'
           ? formData.emergencyContact.phone
           : formData.emergencyContact;
-      data.append('emergencyContact', contactPhone || '');
+      data.append('emergencyContact', phoneOnly || '');
 
       if (formData.profilePhoto instanceof File) {
         data.append('profilePhoto', formData.profilePhoto);
@@ -92,28 +92,23 @@ const EditProfile = () => {
       const response = await protectedFetch('/api/v1/patients/update-profile', {
         method: 'PATCH',
         body: data,
-        headers: {
-          'Content-Type': undefined,
-        },
       });
 
       if (response.ok) {
         alert('Profile updated successfully!');
         navigate('/patient-dashboard');
       } else {
-        const text = await response.text();
-        try {
-          const errorData = JSON.parse(text);
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.indexOf('application/json') !== -1) {
+          const errorData = await response.json();
           alert(errorData.message || 'Update failed');
-        } catch (e) {
-          alert(
-            'Server Error: Backend returned an invalid response. Check Render logs.',
-          );
+        } else {
+          alert('Server error: Backend returned an invalid response.');
         }
       }
     } catch (err) {
-      console.error('Submit Error:', err);
-      alert('Network error. Please try again.');
+      console.error(err);
+      alert('Network error. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -137,12 +132,17 @@ const EditProfile = () => {
       if (response.ok) {
         alert('Password updated!');
         setIsModalOpen(false);
+        setPasswordData({
+          oldPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
       } else {
-        const err = await response.json();
-        alert(err.message || 'Failed');
+        const error = await response.json();
+        alert(error.message || 'Update failed');
       }
     } catch (err) {
-      alert('Error');
+      alert('Connection error');
     } finally {
       setLoading(false);
     }
@@ -152,7 +152,6 @@ const EditProfile = () => {
     <div className='min-h-screen bg-[#F8FAFC] flex flex-col font-inter text-slate-900'>
       <Navbar />
       <DashboardNav />
-
       <main className='grow flex items-center justify-center p-6 md:p-12'>
         <form
           onSubmit={handleSubmit}
@@ -160,13 +159,12 @@ const EditProfile = () => {
         >
           <div className='mb-10 text-center md:text-left'>
             <p className='text-[12px] font-black text-[#3B82F6] uppercase tracking-[0.25em] mb-2'>
-              Health Vault
+              Identity Vault
             </p>
             <h2 className='text-3xl font-black text-slate-900 uppercase tracking-tighter'>
               Edit Profile
             </h2>
           </div>
-
           <div className='flex flex-col md:flex-row gap-12'>
             <div className='flex flex-col items-center gap-4'>
               <div className='relative group'>
@@ -183,7 +181,7 @@ const EditProfile = () => {
                 </div>
                 <label className='absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-4xl'>
                   <span className='text-[10px] font-black text-white uppercase'>
-                    Change Photo
+                    Change
                   </span>
                   <input
                     type='file'
@@ -201,7 +199,6 @@ const EditProfile = () => {
                 Password
               </button>
             </div>
-
             <div className='flex-1 grid grid-cols-1 md:grid-cols-2 gap-6'>
               <div className='md:col-span-2'>
                 <label className={labelStyle}>Full Name</label>
@@ -237,7 +234,7 @@ const EditProfile = () => {
                 />
               </div>
               <div className='md:col-span-2'>
-                <label className={labelStyle}>Emergency Contact Number</label>
+                <label className={labelStyle}>Emergency Number</label>
                 <input
                   type='text'
                   value={formData.emergencyContact}
@@ -262,27 +259,24 @@ const EditProfile = () => {
               </div>
             </div>
           </div>
-
           <div className='mt-12 flex gap-4 justify-end'>
             <button
               type='button'
               onClick={() => navigate('/patient-dashboard')}
-              className='w-32 h-12 border-2 rounded-xl text-[11px] font-black text-slate-700 uppercase'
+              className='w-32 h-12 border-2 rounded-xl text-[11px] font-black uppercase'
             >
               Cancel
             </button>
             <button
               type='submit'
               disabled={loading}
-              className='w-64 h-12 bg-[#3B82F6] text-white text-[11px] rounded-xl font-black uppercase'
+              className='w-64 h-12 bg-[#3B82F6] text-white text-[11px] rounded-xl font-black uppercase shadow-lg disabled:opacity-50'
             >
-              {loading ? 'Processing...' : 'Save Changes'}
+              {loading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>
       </main>
-
-      {/* Simplified Modal logic */}
       {isModalOpen && (
         <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm'>
           <div className='bg-white w-full max-w-md rounded-4xl p-8 shadow-2xl'>
