@@ -87,6 +87,9 @@ const EditProfile = () => {
       const response = await protectedFetch('/api/v1/patients/update-profile', {
         method: 'PATCH',
         body: data,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
       if (response.ok) {
@@ -98,7 +101,7 @@ const EditProfile = () => {
       }
     } catch (err) {
       console.error(err);
-      alert('Server connection failed');
+      alert('Update failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -397,7 +400,7 @@ const EditProfile = () => {
               onSubmit={handleChangePassword}
               className='space-y-4 font-inter'
             >
-              <div>
+              <div className='font-inter'>
                 <label className={labelStyle}>Current Password</label>
                 <input
                   type={showPasswords ? 'text' : 'password'}
@@ -412,7 +415,7 @@ const EditProfile = () => {
                   }
                 />
               </div>
-              <div>
+              <div className='font-inter'>
                 <label className={labelStyle}>New Password</label>
                 <input
                   type={showPasswords ? 'text' : 'password'}
@@ -427,7 +430,7 @@ const EditProfile = () => {
                   }
                 />
               </div>
-              <div>
+              <div className='font-inter'>
                 <label className={labelStyle}>Confirm New Password</label>
                 <input
                   type={showPasswords ? 'text' : 'password'}
