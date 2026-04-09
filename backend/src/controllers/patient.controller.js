@@ -288,7 +288,6 @@ const updatePatientProfile = asyncHandler(async (req, res) => {
   if (phone) updateData.phone = phone;
   if (address) updateData.address = address;
 
-  // Handle emergencyContact safely
   if (emergencyContact) {
     const phoneValue = typeof emergencyContact === 'object' 
         ? emergencyContact.phone 
@@ -300,12 +299,10 @@ const updatePatientProfile = asyncHandler(async (req, res) => {
     }
   }
 
-  // Handle Profile Photo Update with Try-Catch
   if (req.file?.path) {
     try {
       const patient = await Patient.findById(req.user?._id);
 
-      // Delete old photo if it exists
       if (patient?.profilePhoto) {
         try {
           const publicId = patient.profilePhoto
@@ -316,11 +313,9 @@ const updatePatientProfile = asyncHandler(async (req, res) => {
           await deleteFromCloudinary(publicId);
         } catch (delErr) {
           console.error("Cloudinary Old Image Delete Error (Non-Fatal):", delErr.message);
-          // We don't throw here so the new upload can still happen
         }
       }
 
-      // Upload new photo
       const photoUpload = await uploadOnCloudinary(req.file.path);
 
       if (!photoUpload?.secure_url) {
@@ -334,7 +329,6 @@ const updatePatientProfile = asyncHandler(async (req, res) => {
     }
   }
 
-  // Final check if any data was actually provided
   if (Object.keys(updateData).length === 0) {
     throw new ApiError(400, "No changes provided for update");
   }
@@ -344,7 +338,7 @@ const updatePatientProfile = asyncHandler(async (req, res) => {
       req.user?._id,
       { $set: updateData },
       {
-        new: true, // same as returnDocument: "after"
+        new: true, 
         runValidators: true,
       },
     ).select("-password -refreshToken");
