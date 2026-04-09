@@ -19,7 +19,7 @@ const PatientDashboard = () => {
     gender: '',
     profilePhoto: '',
     phone: '',
-    emergencyContact: '',
+    emergencyContact: { name: '', phone: '' },
     address: '',
     dateOfBirth: '',
     bloodGroup: '',
@@ -187,7 +187,7 @@ const PatientDashboard = () => {
                   Emergency Contact
                 </p>
                 <div className='bg-red-50 border border-red-200 rounded-lg px-3.5 py-1.5 text-xs font-bold text-red-700 font-inter'>
-                  {patientData.emergencyContact || '---'}
+                  {patientData.emergencyContact?.phone || '---'}
                 </div>
               </div>
               <div>
