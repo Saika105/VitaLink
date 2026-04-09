@@ -27,6 +27,14 @@ const PatientDashboard = () => {
 
   const [activeUploadType, setActiveUploadType] = useState('');
 
+  const calculateAge = dob => {
+    if (!dob) return '--';
+    const birthDate = new Date(dob);
+    const difference = Date.now() - birthDate.getTime();
+    const ageDate = new Date(difference);
+    return Math.abs(ageDate.getUTCFullYear() - 1970);
+  };
+
   useEffect(() => {
     const fetchPatientInfo = async () => {
       try {
@@ -148,7 +156,7 @@ const PatientDashboard = () => {
               <div className='bg-white border rounded-xl p-2.5 text-center shadow-sm'>
                 <p className='text-[13px] text-black font-inter'>Age</p>
                 <p className='text-sm font-bold text-slate-900 font-inter'>
-                  {patientData.age || '--'}
+                  {calculateAge(patientData.dateOfBirth)}
                 </p>
               </div>
               <div className='bg-white border rounded-xl p-2.5 text-center shadow-sm'>
