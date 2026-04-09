@@ -221,8 +221,8 @@ const loginPatient = asyncHandler(async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: true, // Must be true for HTTPS/Production
-    sameSite: "none", // Required for cross-site (Vercel to Render)
+    secure: true, 
+    sameSite: "none", 
   };
 
   return res
