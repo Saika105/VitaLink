@@ -279,17 +279,6 @@ const getPatientProfile = asyncHandler(async (req, res) => {
 //DASHBOARD PROFILE EDIT PART
 //*****************update patient profile*****************
 const updatePatientProfile = asyncHandler(async (req, res) => {
-  // 1. Get text fields from request body
-  // 2. Prepare an empty update object
-  // 3. Handle Profile Photo Update
-  //    a. If new photo is uploaded, find the patient record to get existing photo URL
-  //    b. Delete existing photo from Cloudinary (if exists)
-  //    c. Upload new photo to Cloudinary and get the URL
-  //    d. Add new photo URL to update object
-  // 4. If no fields are provided for update, return an error
-  // 5. Update patient record in DB with the update object
-  // 6. Return updated patient profile in response
-
   const { fullName, email, phone, address, emergencyContact } = req.body;
 
   const updateData = {};
@@ -299,6 +288,7 @@ const updatePatientProfile = asyncHandler(async (req, res) => {
   if (phone) updateData.phone = phone;
   if (address) updateData.address = address;
 
+  // Handle emergencyContact safely
   if (emergencyContact) {
     const phoneValue = typeof emergencyContact === 'object' 
         ? emergencyContact.phone 
@@ -308,55 +298,70 @@ const updatePatientProfile = asyncHandler(async (req, res) => {
         updateData["emergencyContact.phone"] = phoneValue;
         updateData["emergencyContact.name"] = "Emergency Contact"; 
     }
-}
-
-  if (req.file?.path) {
-    const patient = await Patient.findById(req.user?._id);
-
-    if (patient?.profilePhoto) {
-      try {
-        const publicId = patient.profilePhoto
-          .split("/upload/")[1]
-          .replace(/^v\d+\//, "")
-          .replace(/\.[^/.]+$/, "");
-
-        await deleteFromCloudinary(publicId);
-      } catch (err) {
-        console.error("Cloudinary Delete Error:", err.message);
-      }
-    }
-
-    const photoUpload = await uploadOnCloudinary(req.file.path);
-
-    if (!photoUpload?.secure_url) {
-      throw new ApiError(400, "Failed to upload new profile photo");
-    }
-
-    updateData.profilePhoto = photoUpload.secure_url;
   }
 
+  // Handle Profile Photo Update with Try-Catch
+  if (req.file?.path) {
+    try {
+      const patient = await Patient.findById(req.user?._id);
+
+      // Delete old photo if it exists
+      if (patient?.profilePhoto) {
+        try {
+          const publicId = patient.profilePhoto
+            .split("/upload/")[1]
+            .replace(/^v\d+\//, "")
+            .replace(/\.[^/.]+$/, "");
+
+          await deleteFromCloudinary(publicId);
+        } catch (delErr) {
+          console.error("Cloudinary Old Image Delete Error (Non-Fatal):", delErr.message);
+          // We don't throw here so the new upload can still happen
+        }
+      }
+
+      // Upload new photo
+      const photoUpload = await uploadOnCloudinary(req.file.path);
+
+      if (!photoUpload?.secure_url) {
+        throw new ApiError(400, "Failed to upload new profile photo to Cloudinary");
+      }
+
+      updateData.profilePhoto = photoUpload.secure_url;
+    } catch (uploadErr) {
+      console.error("Cloudinary Upload Process Error:", uploadErr);
+      throw new ApiError(500, uploadErr.message || "Error processing image upload");
+    }
+  }
+
+  // Final check if any data was actually provided
   if (Object.keys(updateData).length === 0) {
     throw new ApiError(400, "No changes provided for update");
   }
 
-  const updatedPatient = await Patient.findByIdAndUpdate(
-    req.user?._id,
-    { $set: updateData },
-    {
-      returnDocument: "after",
-      runValidators: true,
-    },
-  ).select("-password -refreshToken");
+  try {
+    const updatedPatient = await Patient.findByIdAndUpdate(
+      req.user?._id,
+      { $set: updateData },
+      {
+        new: true, // same as returnDocument: "after"
+        runValidators: true,
+      },
+    ).select("-password -refreshToken");
 
-  if (!updatedPatient) {
-    throw new ApiError(404, "Patient record not found");
+    if (!updatedPatient) {
+      throw new ApiError(404, "Patient record not found");
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, updatedPatient, "Health Vault updated successfully"),
+      );
+  } catch (dbErr) {
+    console.error("Database Update Error:", dbErr);
+    throw new ApiError(500, "Internal Server Error during profile update");
   }
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, updatedPatient, "Health Vault updated successfully"),
-    );
 });
 
 //*****************update patient password*****************
