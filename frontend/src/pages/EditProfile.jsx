@@ -7,12 +7,12 @@ import { protectedFetch } from '../utils/api';
 
 const EditProfile = () => {
   const navigate = useNavigate();
-  const apiUrl = import.meta.env.VITE_API_URL;
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
+
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -36,9 +36,7 @@ const EditProfile = () => {
   useEffect(() => {
     const fetchCurrentData = async () => {
       try {
-       const response = await protectedFetch(
-         `${import.meta.env.VITE_API_URL}/api/v1/patients/profile`,
-       );
+        const response = await protectedFetch('/api/v1/patients/profile');
         if (response.ok) {
           const result = await response.json();
           const data = result.data;
@@ -46,7 +44,7 @@ const EditProfile = () => {
             fullName: data.fullName || '',
             email: data.email || '',
             phone: data.phone || '',
-            emergencyContact: data.emergencyContact || '',
+            emergencyContact: data.emergencyContact?.phone || '',
             address: data.address || '',
             profilePhoto: data.profilePhoto || null,
           });
@@ -86,13 +84,10 @@ const EditProfile = () => {
         data.append('profilePhoto', formData.profilePhoto);
       }
 
-      const response = await protectedFetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/patients/update-profile`,
-        {
-          method: 'PATCH',
-          body: data,
-        },
-      );
+      const response = await protectedFetch('/api/v1/patients/update-profile', {
+        method: 'PATCH',
+        body: data,
+      });
 
       if (response.ok) {
         alert('Profile updated successfully!');
@@ -118,7 +113,7 @@ const EditProfile = () => {
     setLoading(true);
     try {
       const response = await protectedFetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/patients/change-password`,
+        '/api/v1/patients/change-password',
         {
           method: 'POST',
           body: JSON.stringify({
@@ -150,12 +145,10 @@ const EditProfile = () => {
   const handleForgotPassword = async () => {
     setLoading(true);
     try {
-     
-      const response = await fetch(
-        `${apiUrl}/api/v1/patients/forgot-password`,
+      const response = await protectedFetch(
+        '/api/v1/patients/forgot-password',
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: formData.email }),
         },
       );
@@ -163,7 +156,7 @@ const EditProfile = () => {
         setResetSent(true);
         setTimeout(() => setResetSent(false), 5000);
       } else {
-        alert('Failed to initiate reset. Please check your internet.');
+        alert('Failed to initiate reset.');
       }
     } catch (err) {
       alert('Connection error');
@@ -244,19 +237,6 @@ const EditProfile = () => {
                 onClick={() => setIsModalOpen(true)}
                 className='mt-6 w-full h-12 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[10px] rounded-xl font-black uppercase tracking-widest shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2 font-inter'
               >
-                <svg
-                  className='w-4 h-4'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    d='M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z'
-                  />
-                </svg>
                 Change Password
               </button>
             </div>
@@ -417,7 +397,7 @@ const EditProfile = () => {
               onSubmit={handleChangePassword}
               className='space-y-4 font-inter'
             >
-              <div className='font-inter'>
+              <div>
                 <label className={labelStyle}>Current Password</label>
                 <input
                   type={showPasswords ? 'text' : 'password'}
@@ -432,7 +412,7 @@ const EditProfile = () => {
                   }
                 />
               </div>
-              <div className='font-inter'>
+              <div>
                 <label className={labelStyle}>New Password</label>
                 <input
                   type={showPasswords ? 'text' : 'password'}
@@ -447,7 +427,7 @@ const EditProfile = () => {
                   }
                 />
               </div>
-              <div className='font-inter'>
+              <div>
                 <label className={labelStyle}>Confirm New Password</label>
                 <input
                   type={showPasswords ? 'text' : 'password'}
