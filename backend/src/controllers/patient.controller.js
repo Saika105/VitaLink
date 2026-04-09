@@ -300,9 +300,15 @@ const updatePatientProfile = asyncHandler(async (req, res) => {
   if (address) updateData.address = address;
 
   if (emergencyContact) {
-    updateData["emergencyContact.phone"] = emergencyContact;
-    updateData["emergencyContact.name"] = "Emergency Contact";
-  }
+    const phoneValue = typeof emergencyContact === 'object' 
+        ? emergencyContact.phone 
+        : emergencyContact;
+
+    if (phoneValue) {
+        updateData["emergencyContact.phone"] = phoneValue;
+        updateData["emergencyContact.name"] = "Emergency Contact"; 
+    }
+}
 
   if (req.file?.path) {
     const patient = await Patient.findById(req.user?._id);
