@@ -79,6 +79,7 @@ const EditProfile = () => {
       data.append('phone', formData.phone);
       data.append('address', formData.address);
 
+       
       const phoneOnly =
         typeof formData.emergencyContact === 'object'
           ? formData.emergencyContact.phone
@@ -103,7 +104,9 @@ const EditProfile = () => {
           const errorData = await response.json();
           alert(errorData.message || 'Update failed');
         } else {
-          alert('Server error: Backend returned an invalid response.');
+          alert(
+            'Server error: Backend returned an invalid response (Check Render logs).',
+          );
         }
       }
     } catch (err) {
@@ -126,7 +129,11 @@ const EditProfile = () => {
         '/api/v1/patients/change-password',
         {
           method: 'POST',
-          body: JSON.stringify(passwordData),
+          body: JSON.stringify({
+            oldPassword: passwordData.oldPassword,
+            newPassword: passwordData.newPassword,
+            confirmPassword: passwordData.confirmPassword,
+          }),
         },
       );
       if (response.ok) {
@@ -234,7 +241,7 @@ const EditProfile = () => {
                 />
               </div>
               <div className='md:col-span-2'>
-                <label className={labelStyle}>Emergency Number</label>
+                <label className={labelStyle}>Emergency Contact Number</label>
                 <input
                   type='text'
                   value={formData.emergencyContact}
@@ -248,7 +255,7 @@ const EditProfile = () => {
                 />
               </div>
               <div className='md:col-span-2'>
-                <label className={labelStyle}>Address</label>
+                <label className={labelStyle}>Permanent Address</label>
                 <textarea
                   value={formData.address}
                   onChange={e =>
