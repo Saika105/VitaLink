@@ -44,7 +44,8 @@ const EditProfile = () => {
             fullName: data.fullName || '',
             email: data.email || '',
             phone: data.phone || '',
-            emergencyContact: data.emergencyContact?.phone || '',
+            emergencyContact:
+              data.emergencyContact?.phone || data.emergencyContact || '',
             address: data.address || '',
             profilePhoto: data.profilePhoto || null,
           });
@@ -78,7 +79,13 @@ const EditProfile = () => {
       data.append('email', formData.email);
       data.append('phone', formData.phone);
       data.append('address', formData.address);
-      data.append('emergencyContact', formData.emergencyContact);
+
+      // FIX: Ensure emergencyContact is sent as a string, not an object
+      const contactValue =
+        typeof formData.emergencyContact === 'object'
+          ? formData.emergencyContact.phone
+          : formData.emergencyContact;
+      data.append('emergencyContact', contactValue || '');
 
       if (formData.profilePhoto instanceof File) {
         data.append('profilePhoto', formData.profilePhoto);
