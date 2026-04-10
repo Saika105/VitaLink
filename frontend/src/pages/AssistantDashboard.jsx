@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import DashboardNav from '../components/DashboardNav';
 import { protectedFetch } from '../utils/api';
 
 const AssistantDashboard = () => {
@@ -44,11 +43,11 @@ const AssistantDashboard = () => {
     const fetchAssistantProfile = async () => {
       try {
         const response = await protectedFetch(
-          `/api/v1/doctor-assistants/profile`,
+          `/api/v1/doctor-assistants/daily-list`,
         );
         if (response.ok) {
           const result = await response.json();
-          setAssistantData(result.data);
+          setAssistantData(result.data[0]?.addedToQueueByAssistant || {});
         }
       } catch (err) {
         console.error(err);
@@ -58,7 +57,7 @@ const AssistantDashboard = () => {
     const fetchTodaysQueue = async () => {
       try {
         const response = await protectedFetch(
-          `/api/v1/doctor-assistants/queue`,
+          `/api/v1/doctor-assistants/daily-list`,
         );
         if (response.ok) {
           const result = await response.json();
@@ -101,7 +100,7 @@ const AssistantDashboard = () => {
     if (!patientId) return;
     try {
       const response = await protectedFetch(
-        `/api/v1/doctor-assistants/patient-check/${patientId}`,
+        `/api/v1/doctor-assistants/search-patient/${patientId}`,
       );
       if (response.ok) {
         const result = await response.json();
@@ -147,7 +146,7 @@ const AssistantDashboard = () => {
     const appointment = sessionList[index];
     try {
       const response = await protectedFetch(
-        `/api/v1/doctor-assistants/appointments/${appointment._id}/status`,
+        `/api/v1/doctor-assistants/status/${appointment._id}`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -168,9 +167,9 @@ const AssistantDashboard = () => {
     const appointment = sessionList[index];
     try {
       const response = await protectedFetch(
-        `/api/v1/doctor-assistants/appointments/${appointment._id}/followup`,
+        `/api/v1/doctor-assistants/follow-up/${appointment._id}`,
         {
-          method: 'PATCH',
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ followUpDate: date }),
         },
@@ -212,18 +211,18 @@ const AssistantDashboard = () => {
   };
 
   const handleLogout = async () => {
-        try {
-          await protectedFetch('/api/v1/doctor-assistants/logout', {
-            method: 'POST',
-          });
-        } catch (error) {
-          console.error('Logout Error:', error);
-        } finally {
-          localStorage.clear();
-          navigate('/login-staff', { replace: true });
-          window.location.reload();
-        }
-      };
+    try {
+      await protectedFetch('/api/v1/doctor-assistants/logout', {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Logout Error:', error);
+    } finally {
+      localStorage.clear();
+      navigate('/login-staff', { replace: true });
+      window.location.reload();
+    }
+  };
 
   return (
     <div className='min-h-screen bg-[#F8FAFC] flex flex-col font-inter text-slate-900'>
@@ -351,13 +350,6 @@ const AssistantDashboard = () => {
               </p>
               <p className='text-sm font-bold text-slate-900 mt-1'>
                 {assistantData.fullName || 'User'}
-              </p>
-              <div className='h-px bg-slate-100 my-4'></div>
-              <p className='text-[10px] font-black text-slate-400 uppercase tracking-widest'>
-                Assigned Unit
-              </p>
-              <p className='text-sm font-bold text-slate-900 mt-1 uppercase'>
-                {assistantData.hospital?.name || 'N/A'}
               </p>
             </div>
           </aside>
