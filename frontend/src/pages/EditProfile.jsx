@@ -44,8 +44,7 @@ const EditProfile = () => {
             fullName: data.fullName || '',
             email: data.email || '',
             phone: data.phone || '',
-            emergencyC
-            ontact:
+            emergencyContact:
               data.emergencyContact?.phone || data.emergencyContact || '',
             address: data.address || '',
             profilePhoto: data.profilePhoto || null,
