@@ -40,7 +40,7 @@ const DoctorNavbar = ({ doctorName: propName, doctorPhoto: propPhoto }) => {
       localStorage.removeItem('role');
       localStorage.removeItem('user');
       setIsDropdownOpen(false);
-      navigate('/login-doctor');
+      navigate('/login-doctor', { replace: true });
     }
   };
 

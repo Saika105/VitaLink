@@ -17,6 +17,14 @@ const DoctorDashboard = () => {
   const [selectedPatient, setSelectedPatient] = useState(null);
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    if (!token || role !== 'doctor') {
+      navigate('/login-doctor', { replace: true });
+    }
+  }, [navigate]);
+  
+  useEffect(() => {
     const today = new Date();
     setCurrentDate(
       today.toLocaleDateString('en-GB', {
@@ -103,24 +111,25 @@ const DoctorDashboard = () => {
       navigate(`/doctor/patient-view/${selectedPatient.patient._id}`);
       return;
     }
-
     try {
       const response = await protectedFetch(
-        `/api/v1/appointments/${selectedPatient._id}/status`,
+        `/api/v1/doctors/start-consultation/${selectedPatient._id}`,
         {
-          method: 'PATCH',
-          body: JSON.stringify({ status: 'in_consultation' }),
+          method: 'POST', 
         },
       );
 
       if (response.ok) {
         navigate(`/doctor/patient-view/${selectedPatient.patient._id}`);
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || 'Failed to start session');
       }
     } catch (err) {
       console.error(err);
+      alert('An error occurred while starting the session');
     }
   };
-
   return (
     <div className='min-h-screen bg-[#F8FAFC] flex flex-col font-inter text-black'>
       <DoctorNavbar
