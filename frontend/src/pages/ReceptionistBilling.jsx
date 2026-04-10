@@ -29,9 +29,7 @@ const ReceptionistBilling = () => {
 
     const fetchTests = async () => {
       try {
-        const res = await protectedFetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/reception/tests`,
-        );
+        const res = await protectedFetch(`/api/v1/reception/tests`);
         if (res.ok) {
           const result = await res.json();
           setTestCatalog(result.data);
@@ -59,7 +57,7 @@ const ReceptionistBilling = () => {
     if (!patientIdSearch.trim()) return;
     try {
       const res = await protectedFetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/reception/patient/${patientIdSearch}`,
+        `/api/v1/reception/patient/${patientIdSearch}`,
       );
       if (res.ok) {
         const result = await res.json();
@@ -113,10 +111,7 @@ const ReceptionistBilling = () => {
 
   const handleLogout = async () => {
     try {
-      await protectedFetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/staff/logout`,
-        { method: 'POST' },
-      );
+      await protectedFetch(`/api/v1/staff/logout`, { method: 'POST' });
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
@@ -152,13 +147,10 @@ const ReceptionistBilling = () => {
     };
 
     try {
-      const res = await protectedFetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/reception/create-bill`,
-        {
-          method: 'POST',
-          body: JSON.stringify(payload),
-        },
-      );
+      const res = await protectedFetch(`/api/v1/reception/create-bill`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
 
       if (res.ok) {
         alert('✅ Transaction Successful');

@@ -28,9 +28,7 @@ const DoctorDashboard = () => {
 
     const fetchDoctorData = async () => {
       try {
-        const response = await protectedFetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/doctors/profile`,
-        );
+        const response = await protectedFetch(`/api/v1/doctors/profile`);
         if (response.ok) {
           const result = await response.json();
           setDoctorInfo({
@@ -45,9 +43,7 @@ const DoctorDashboard = () => {
 
     const fetchDailyQueue = async () => {
       try {
-        const response = await protectedFetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/doctors/queue`,
-        );
+        const response = await protectedFetch(`/api/v1/doctors/queue`);
         if (response.ok) {
           const result = await response.json();
           const apiData = result.data.filter(
@@ -74,7 +70,7 @@ const DoctorDashboard = () => {
 
     try {
       const response = await protectedFetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/doctors/patient-check/${patientIdSearch}`,
+        `/api/v1/doctors/patient-check/${patientIdSearch}`,
       );
       if (response.ok) {
         const result = await response.json();

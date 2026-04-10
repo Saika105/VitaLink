@@ -35,7 +35,7 @@ const AssistantDashboard = () => {
     const fetchAssistantProfile = async () => {
       try {
         const response = await protectedFetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/doctor-assistants/profile`,
+          `/api/v1/doctor-assistants/profile`,
         );
         if (response.ok) {
           const result = await response.json();
@@ -49,7 +49,7 @@ const AssistantDashboard = () => {
     const fetchTodaysQueue = async () => {
       try {
         const response = await protectedFetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/doctor-assistants/queue`,
+          `/api/v1/doctor-assistants/queue`,
         );
         if (response.ok) {
           const result = await response.json();
@@ -92,7 +92,7 @@ const AssistantDashboard = () => {
     if (!patientId) return;
     try {
       const response = await protectedFetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/doctor-assistants/patient-check/${patientId}`,
+        `/api/v1/doctor-assistants/patient-check/${patientId}`,
       );
       if (response.ok) {
         const result = await response.json();
@@ -113,7 +113,7 @@ const AssistantDashboard = () => {
     };
     try {
       const response = await protectedFetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/doctor-assistants/add-to-queue`,
+        `/api/v1/doctor-assistants/add-to-queue`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -138,7 +138,7 @@ const AssistantDashboard = () => {
     const appointment = sessionList[index];
     try {
       const response = await protectedFetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/doctor-assistants/appointments/${appointment._id}/status`,
+        `/api/v1/doctor-assistants/appointments/${appointment._id}/status`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -159,7 +159,7 @@ const AssistantDashboard = () => {
     const appointment = sessionList[index];
     try {
       const response = await protectedFetch(
-`${import.meta.env.VITE_API_URL}/api/v1/doctor-assistants/appointments/${appointment._id}/followup`,
+        `/api/v1/doctor-assistants/appointments/${appointment._id}/followup`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -191,12 +191,9 @@ const AssistantDashboard = () => {
 
   const handleClearSessionFinal = async () => {
     try {
-      await protectedFetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/doctor-assistants/clear-session`,
-        {
-          method: 'PATCH',
-        },
-      );
+      await protectedFetch(`/api/v1/doctor-assistants/clear-session`, {
+        method: 'PATCH',
+      });
       setSessionList([]);
       setShowClearModal(false);
     } catch (err) {
@@ -207,10 +204,9 @@ const AssistantDashboard = () => {
 
   const handleLogout = async () => {
     try {
-      await protectedFetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/doctor-assistants/logout`,
-        { method: 'POST' },
-      );
+      await protectedFetch(`/api/v1/doctor-assistants/logout`, {
+        method: 'POST',
+      });
     } catch (error) {
       console.error(error);
     } finally {

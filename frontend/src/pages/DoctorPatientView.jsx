@@ -20,9 +20,7 @@ const DoctorPatientView = () => {
   useEffect(() => {
     const fetchDoctorProfile = async () => {
       try {
-        const response = await protectedFetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/doctors/profile`,
-        );
+        const response = await protectedFetch(`/api/v1/doctors/profile`);
         if (response.ok) {
           const result = await response.json();
           setDoctorInfo(result.data);
@@ -34,9 +32,7 @@ const DoctorPatientView = () => {
 
     const fetchPatientDetails = async () => {
       try {
-        const response = await protectedFetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/doctors/patient/${id}`,
-        );
+        const response = await protectedFetch(`/api/v1/doctors/patient/${id}`);
         if (response.ok) {
           const result = await response.json();
           setPatientData(result.data);
@@ -60,8 +56,8 @@ const DoctorPatientView = () => {
       try {
         const endpoint =
           activeTab === 'Prescriptions'
-            ? `${import.meta.env.VITE_API_URL}/api/v1/doctors/patient/${id}/prescriptions`
-            : `${import.meta.env.VITE_API_URL}/api/v1/doctors/patient/${id}/reports`;
+            ? `/api/v1/doctors/patient/${id}/prescriptions`
+            : `/api/v1/doctors/patient/${id}/reports`;
 
         const response = await protectedFetch(endpoint);
         if (response.ok) {

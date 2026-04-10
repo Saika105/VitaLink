@@ -17,9 +17,7 @@ const ChangePassword = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await protectedFetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/doctors/profile`,
-        );
+        const response = await protectedFetch(`/api/v1/doctors/profile`);
         if (response.ok) {
           const result = await response.json();
           setDoctorInfo({
@@ -44,16 +42,13 @@ const ChangePassword = () => {
     }
 
     try {
-      const response = await protectedFetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/doctors/change-password`,
-        {
-          method: 'PATCH',
-          body: JSON.stringify({
-            oldPassword: formData.oldPassword,
-            newPassword: formData.newPassword,
-          }),
-        },
-      );
+      const response = await protectedFetch(`/api/v1/doctors/change-password`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          oldPassword: formData.oldPassword,
+          newPassword: formData.newPassword,
+        }),
+      });
 
       if (response.ok) {
         setStatus('success');

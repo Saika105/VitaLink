@@ -17,7 +17,7 @@ const PatientAppointments = () => {
     const fetchAppointments = async () => {
       try {
         const response = await protectedFetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/patients/appointments?status=${activeTab}`,
+          `/api/v1/patients/appointments?status=${activeTab}`,
         );
 
         if (response.ok) {
@@ -62,7 +62,7 @@ const PatientAppointments = () => {
     ) {
       try {
         const response = await protectedFetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/patients/appointments/${id}/cancel`,
+          `/api/v1/patients/appointments/${id}/cancel`,
           {
             method: 'PATCH',
           },
@@ -79,7 +79,7 @@ const PatientAppointments = () => {
   const handleClearTable = async () => {
     try {
       const response = await protectedFetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/patients/appointments/clear?status=${activeTab}`,
+        `/api/v1/patients/appointments/clear?status=${activeTab}`,
         {
           method: 'DELETE',
         },
@@ -95,12 +95,9 @@ const PatientAppointments = () => {
 
   const handleLogout = async () => {
     try {
-      await protectedFetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/patients/logout`,
-        {
-          method: 'POST',
-        },
-      );
+      await protectedFetch(`/api/v1/patients/logout`, {
+        method: 'POST',
+      });
     } catch (error) {
       console.error('Logout Error:', error);
     } finally {
