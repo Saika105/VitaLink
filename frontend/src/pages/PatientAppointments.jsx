@@ -17,7 +17,7 @@ const PatientAppointments = () => {
     const fetchAppointments = async () => {
       try {
         const response = await protectedFetch(
-          `/api/v1/patients/appointments?status=${activeTab}`,
+          `/api/v1/patients/my-appointments?status=${activeTab}`,
         );
 
         if (response.ok) {
