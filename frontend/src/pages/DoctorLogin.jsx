@@ -5,34 +5,45 @@ import logo from '../assets/logo black.png';
 const DoctorLogin = () => {
   const navigate = useNavigate();
   const [loginData, setLoginData] = useState({ doctorId: '', password: '' });
+  const [loading, setLoading] = useState(false);
   const apiUrl = import.meta.env.VITE_API_URL;
 
   const handleLogin = async e => {
     e.preventDefault();
+    setLoading(true);
 
     try {
       const response = await fetch(`${apiUrl}/api/v1/doctors/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
         body: JSON.stringify({
-          upid: loginData.doctorId,
+          doctorId: loginData.doctorId,
           password: loginData.password,
         }),
       });
 
-      const data = await response.json();
+      const result = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', data.data.accessToken);
+        localStorage.setItem('token', result.data.token);
         localStorage.setItem('role', 'doctor');
+
+        if (result.data.doctor) {
+          localStorage.setItem('user', JSON.stringify(result.data.doctor));
+        }
+
         navigate('/doctor-dashboard');
       } else {
-        alert(data.message || 'Invalid Practitioner Credentials');
+        alert(result.message || 'Invalid Practitioner Credentials');
       }
     } catch (error) {
       console.error('Login Error:', error);
-      alert('Server Connection Failed');
+      alert('Server Connection Failed. Check your backend status.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -58,6 +69,7 @@ const DoctorLogin = () => {
                 type='text'
                 className='border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all font-inter placeholder-slate-300 bg-slate-50/50'
                 placeholder='Enter your ID'
+                value={loginData.doctorId}
                 onChange={e =>
                   setLoginData({ ...loginData, doctorId: e.target.value })
                 }
@@ -73,6 +85,7 @@ const DoctorLogin = () => {
                 type='password'
                 className='border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#3B82F6] transition-all placeholder-slate-300 bg-slate-50/50 font-inter'
                 placeholder='********'
+                value={loginData.password}
                 onChange={e =>
                   setLoginData({ ...loginData, password: e.target.value })
                 }
@@ -82,9 +95,10 @@ const DoctorLogin = () => {
 
             <button
               type='submit'
-              className='w-full bg-[#3B82F6] hover:bg-[#1E40AF] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-200 active:scale-[0.98] transition-all text-xs uppercase tracking-[0.2em] mt-2 font-inter'
+              disabled={loading}
+              className='w-full bg-[#3B82F6] hover:bg-[#1E40AF] disabled:bg-slate-400 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-200 active:scale-[0.98] transition-all text-xs uppercase tracking-[0.2em] mt-2 font-inter'
             >
-              Secure Login
+              {loading ? 'Authenticating...' : 'Secure Login'}
             </button>
           </form>
 
