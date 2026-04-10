@@ -5,6 +5,7 @@ import { Hospital } from "../models/hospital.model.js";
 import { Doctor } from "../models/doctor.model.js";
 import { DoctorSchedule } from "../models/doctorSchedule.model.js";
 import { DoctorAssistant } from "../models/doctorAssistant.model.js";
+import { Appointment } from "../models/appointment.model.js";
 import { LabAssistant } from "../models/labAssistant.model.js";
 import { Receptionist } from "../models/receptionist.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
@@ -529,9 +530,13 @@ const getHospitalStaff = asyncHandler(async (req, res) => {
 
 //-------------------- DELETE ----------------------
 const deleteStaff = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const { role } = req.query;
+  const { id } = req.params; 
+  const { role } = req.query; 
   const hospitalId = req.user.hospital;
+
+  if (!role) {
+    throw new ApiError(400, "Role query parameter is required for deletion");
+  }
 
   let Model;
   const normalizedRole = role.toUpperCase();
@@ -559,15 +564,33 @@ const deleteStaff = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Staff member not found or permission denied");
   }
 
-  if (normalizedRole === "DOCTORS" && staffMember.avatar?.url) {
-    await deleteFromCloudinary(staffMember.avatar.url);
+  if (normalizedRole === "DOCTORS") {
+    console.log(`Cascading delete started for Doctor: ${staffMember.fullName}`);
+
+    await DoctorSchedule.deleteMany({ doctor: id });
+
+    await Appointment.deleteMany({ doctor: id });
+
+    await DoctorAssistant.deleteMany({ doctor: id });
+
+    if (staffMember.profilePhoto?.publicId) {
+      await deleteFromCloudinary(staffMember.profilePhoto.publicId);
+    }
+    
+    console.log("Schedules, Appointments, Assistants, and Images cleared.");
   }
 
   await Model.findByIdAndDelete(id);
 
   return res
     .status(200)
-    .json(new ApiResponse(200, {}, `${role} removed successfully`));
+    .json(
+      new ApiResponse(
+        200, 
+        {}, 
+        `${role} and all associated data (Schedules, Appointments, Assistants) removed successfully`
+      )
+    );
 });
 
 export {
