@@ -115,9 +115,9 @@ const createDoctor = asyncHandler(async (req, res) => {
     phone,
     gender,
     dateOfBirth,
-    address,          
-    nid,             
-    emergencyContact, 
+    address,
+    nid,
+    emergencyContact,
     licenseNumber,
     specialization,
     designation,
@@ -145,8 +145,20 @@ const createDoctor = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All profile and availability fields are required");
   }
 
-  let parsedWorkingDays = typeof workingDays === "string" ? JSON.parse(workingDays) : workingDays;
-  let parsedTimeSlots = typeof timeSlots === "string" ? JSON.parse(timeSlots) : timeSlots;
+  let parsedWorkingDays =
+    typeof workingDays === "string" ? JSON.parse(workingDays) : workingDays;
+  let parsedTimeSlots =
+    typeof timeSlots === "string" ? JSON.parse(timeSlots) : timeSlots;
+
+  let parsedEmergencyContact;
+  try {
+    parsedEmergencyContact =
+      typeof emergencyContact === "string"
+        ? JSON.parse(emergencyContact)
+        : emergencyContact;
+  } catch {
+    throw new ApiError(400, "Invalid emergencyContact format");
+  }
 
   if (!Array.isArray(parsedWorkingDays) || parsedWorkingDays.length === 0) {
     throw new ApiError(400, "At least one working day is required");
@@ -178,11 +190,11 @@ const createDoctor = asyncHandler(async (req, res) => {
     phone,
     gender: gender.toLowerCase(),
     dateOfBirth,
-    address,           
-    nidNumber: nid,    
+    address,
+    nidNumber: nid,
     emergencyContact: {
-      phone: emergencyContact,
-      name: "Emergency Contact"
+      name: parsedEmergencyContact.name || "Emergency Contact",
+      phone: parsedEmergencyContact.phone,
     },
     licenseNumber,
     specialization,
@@ -207,7 +219,7 @@ const createDoctor = asyncHandler(async (req, res) => {
     hospital: req.user.hospital,
     sittingTimeLabel,
     workingDays: parsedWorkingDays,
-    consultationFee: Number(consultationFee) || 0, 
+    consultationFee: Number(consultationFee) || 0,
     timeSlots: parsedTimeSlots || [],
   });
 
@@ -248,25 +260,31 @@ const createDoctorAssistant = asyncHandler(async (req, res) => {
     gender,
     dateOfBirth,
     doctor,
-    emergencyPhone, 
+    emergencyPhone,
     nidNumber,
     address,
   } = req.body;
 
   if (
     [fullName, email, password, phone, doctor, emergencyPhone].some(
-      (f) => f?.trim() === ""
+      (f) => f?.trim() === "",
     )
   ) {
-    throw new ApiError(400, "All profile fields and emergency phone are required");
+    throw new ApiError(
+      400,
+      "All profile fields and emergency phone are required",
+    );
   }
 
   const existedAssistant = await DoctorAssistant.findOne({
     $or: [{ email }, { phone }],
   });
-  
+
   if (existedAssistant)
-    throw new ApiError(409, "Assistant with this email or phone already exists");
+    throw new ApiError(
+      409,
+      "Assistant with this email or phone already exists",
+    );
 
   const assistant = await DoctorAssistant.create({
     assistantId: generateAssistantId(),
@@ -279,7 +297,7 @@ const createDoctorAssistant = asyncHandler(async (req, res) => {
     address,
     nidNumber,
     emergencyContact: {
-      name: "Emergency Contact", 
+      name: "Emergency Contact",
       phone: emergencyPhone,
     },
     doctor,
@@ -288,14 +306,25 @@ const createDoctorAssistant = asyncHandler(async (req, res) => {
   });
 
   if (!assistant) {
-    throw new ApiError(500, "Internal Server Error: Failed to register assistant.");
+    throw new ApiError(
+      500,
+      "Internal Server Error: Failed to register assistant.",
+    );
   }
 
-  const createdAssistant = await DoctorAssistant.findById(assistant._id).select("-password");
-
-  return res.status(201).json(
-    new ApiResponse(201, createdAssistant, "Doctor Assistant registered successfully")
+  const createdAssistant = await DoctorAssistant.findById(assistant._id).select(
+    "-password",
   );
+
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(
+        201,
+        createdAssistant,
+        "Doctor Assistant registered successfully",
+      ),
+    );
 });
 
 //************** Create lab assistant ********** */
@@ -319,11 +348,20 @@ const createLabAssistant = asyncHandler(async (req, res) => {
   } = req.body;
 
   if (
-    [fullName, email, password, phone, gender, dateOfBirth, emergencyPhone].some(
-      (f) => !f || f.trim() === ""
-    )
+    [
+      fullName,
+      email,
+      password,
+      phone,
+      gender,
+      dateOfBirth,
+      emergencyPhone,
+    ].some((f) => !f || f.trim() === "")
   ) {
-    throw new ApiError(400, "All personal fields and emergency phone are required");
+    throw new ApiError(
+      400,
+      "All personal fields and emergency phone are required",
+    );
   }
 
   const existedAssistant = await LabAssistant.findOne({
@@ -345,7 +383,7 @@ const createLabAssistant = asyncHandler(async (req, res) => {
     address,
     nidNumber,
     emergencyContact: {
-      name: "Emergency Contact", 
+      name: "Emergency Contact",
       phone: emergencyPhone,
     },
     hospital: req.user.hospital,
@@ -353,12 +391,18 @@ const createLabAssistant = asyncHandler(async (req, res) => {
   });
 
   const createdAssistant = await LabAssistant.findById(labAssistant._id).select(
-    "-password -refreshToken"
+    "-password -refreshToken",
   );
 
-  return res.status(201).json(
-    new ApiResponse(201, createdAssistant, "Lab Assistant registered successfully")
-  );
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(
+        201,
+        createdAssistant,
+        "Lab Assistant registered successfully",
+      ),
+    );
 });
 
 //************** Create Receptionist ********** */
@@ -382,11 +426,20 @@ const createReceptionist = asyncHandler(async (req, res) => {
   } = req.body;
 
   if (
-    [fullName, email, password, phone, gender, dateOfBirth, emergencyPhone].some(
-      (f) => !f || f.trim() === ""
-    )
+    [
+      fullName,
+      email,
+      password,
+      phone,
+      gender,
+      dateOfBirth,
+      emergencyPhone,
+    ].some((f) => !f || f.trim() === "")
   ) {
-    throw new ApiError(400, "All personal fields and emergency phone are required");
+    throw new ApiError(
+      400,
+      "All personal fields and emergency phone are required",
+    );
   }
 
   const existedReceptionist = await Receptionist.findOne({
@@ -408,20 +461,26 @@ const createReceptionist = asyncHandler(async (req, res) => {
     address,
     nidNumber,
     emergencyContact: {
-      name: "Emergency Contact", 
+      name: "Emergency Contact",
       phone: emergencyPhone,
     },
     hospital: req.user.hospital,
     createdByAdmin: req.user._id,
   });
 
-  const createdReceptionist = await Receptionist.findById(receptionist._id).select(
-    "-password -refreshToken"
-  );
+  const createdReceptionist = await Receptionist.findById(
+    receptionist._id,
+  ).select("-password -refreshToken");
 
-  return res.status(201).json(
-    new ApiResponse(201, createdReceptionist, "Receptionist registered successfully")
-  );
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(
+        201,
+        createdReceptionist,
+        "Receptionist registered successfully",
+      ),
+    );
 });
 
 //-------------------- FETCH ----------------------
