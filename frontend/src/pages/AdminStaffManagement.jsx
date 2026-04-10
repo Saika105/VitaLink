@@ -22,7 +22,7 @@ const AdminStaffManagement = () => {
     licenseNumber: '',
     specialization: '',
     consultationFee: '',
-    emergencyContact: '',
+    emergencyContact: { name: 'Emergency', phone: '' },
     hospitalName: '',
     sittingTime: '',
     sittingDays: [],
@@ -108,6 +108,14 @@ const AdminStaffManagement = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleEmergencyPhoneChange = e => {
+    const { value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      emergencyContact: { ...prev.emergencyContact, phone: value },
+    }));
+  };
+
   const handleImageChange = e => {
     const file = e.target.files[0];
     if (file) {
@@ -147,7 +155,13 @@ const AdminStaffManagement = () => {
       dataToSend.append('phone', formData.phone);
       dataToSend.append('gender', formData.gender);
       dataToSend.append('dateOfBirth', formData.dateOfBirth);
-      dataToSend.append('emergencyContact', formData.emergencyContact);
+
+      const phoneOnly =
+        typeof formData.emergencyContact === 'object'
+          ? formData.emergencyContact.phone
+          : formData.emergencyContact;
+      dataToSend.append('emergencyContact', phoneOnly || '');
+
       dataToSend.append('nidNumber', formData.nid);
       dataToSend.append('address', formData.address);
 
@@ -331,8 +345,9 @@ const AdminStaffManagement = () => {
                       </div>
                       <div className='text-[10px] font-bold text-red-500 mt-1 uppercase font-inter'>
                         SOS:{' '}
-                        {staff.emergencyContact ||
+                        {staff.emergencyContact?.phone ||
                           staff.emergencyPhone ||
+                          staff.emergencyContact ||
                           'N/A'}
                       </div>
                     </td>
@@ -546,8 +561,8 @@ const AdminStaffManagement = () => {
                       </label>
                       <input
                         name='emergencyContact'
-                        value={formData.emergencyContact}
-                        onChange={handleInputChange}
+                        value={formData.emergencyContact.phone}
+                        onChange={handleEmergencyPhoneChange}
                         className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
                         required
                       />
