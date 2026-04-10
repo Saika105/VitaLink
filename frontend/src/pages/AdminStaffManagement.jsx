@@ -158,7 +158,9 @@ const AdminStaffManagement = () => {
         dataToSend.append('sittingTimeLabel', formData.sittingTime);
         dataToSend.append('workingDays', JSON.stringify(formData.sittingDays));
         dataToSend.append('timeSlots', JSON.stringify([]));
-        if (formData.photo) dataToSend.append('profilePhoto', formData.photo);
+        if (formData.photo) {
+          dataToSend.append('profilePhoto', formData.photo);
+        }
       }
 
       if (formData.role === 'ASSISTANTS') {
@@ -175,11 +177,12 @@ const AdminStaffManagement = () => {
 
       if (response.ok) {
         alert('Staff Added Successfully!');
-        if (formData.role === 'DOCTORS' && result.data?.doctor) {
-          setStaffList(prev => [result.data.doctor, ...prev]);
-        } else if (formData.role === activeTableTab) {
-          setStaffList(prev => [result.data, ...prev]);
+        const newEntry =
+          formData.role === 'DOCTORS' ? result.data.doctor : result.data;
+        if (formData.role === activeTableTab) {
+          setStaffList(prev => [newEntry, ...prev]);
         }
+
         setShowModal(false);
         resetForm();
       } else {
@@ -295,9 +298,9 @@ const AdminStaffManagement = () => {
                         )}
                         <div className='font-inter'>
                           <div className='font-bold text-slate-800 uppercase font-inter'>
-                            {staff.fullName || staff.name}
+                            {staff.fullName || staff.name || 'N/A'}
                           </div>
-                          <div className='text-[10px] text-[#4486F6] font-bold font-inter'>
+                          <div className='text-[10px] text-[#4486F6] font-mono font-bold font-inter'>
                             {staff.doctorId ||
                               staff.assistantId ||
                               staff.labAssistantId ||
@@ -310,7 +313,7 @@ const AdminStaffManagement = () => {
                     </td>
                     <td className='p-6 font-inter'>
                       <div className='text-xs font-bold text-slate-600 font-inter'>
-                        NID: {staff.nidNumber || 'N/A'}
+                        NID: {staff.nidNumber || staff.nid || 'N/A'}
                       </div>
                       <div className='text-[10px] text-slate-800 font-inter'>
                         {staff.phone} | {staff.gender}
@@ -324,7 +327,7 @@ const AdminStaffManagement = () => {
                         className='text-[10px] text-slate-500 truncate w-48 font-inter'
                         title={staff.address}
                       >
-                        {staff.address || 'No Address Provided'}
+                        {staff.address || 'N/A'}
                       </div>
                       <div className='text-[10px] font-bold text-red-500 mt-1 uppercase font-inter'>
                         SOS:{' '}
@@ -336,12 +339,13 @@ const AdminStaffManagement = () => {
                     <td className='p-6 font-inter'>
                       {activeTableTab === 'DOCTORS' && (
                         <div className='font-inter'>
-                          <div className='text-[11px] font-black text-[#4486F6] uppercase font-inter'>
-                            {staff.specialization || 'General'}
+                          <div className='text-[12px] font-black text-[#4486F6] uppercase font-inter'>
+                            {staff.specialization || 'N/A'}
                           </div>
                           <div className='text-[10px] font-black text-green-600 mt-0.5 uppercase font-inter'>
                             Fee: ৳
                             {staff.consultationFee ||
+                              staff.fee ||
                               staff.schedule?.consultationFee ||
                               '0'}
                           </div>
@@ -349,7 +353,7 @@ const AdminStaffManagement = () => {
                       )}
                       {activeTableTab !== 'DOCTORS' && (
                         <span className='bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter font-inter'>
-                          {activeTableTab.replace('_', ' ')}
+                          {activeTableTab}
                         </span>
                       )}
                     </td>
@@ -588,7 +592,7 @@ const AdminStaffManagement = () => {
                       <input
                         disabled
                         placeholder='Auto-generated on save'
-                        className='w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 outline-none font-inter text-xs italic'
+                        className='w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 outline-none font-mono text-xs font-inter italic'
                       />
                     </div>
                     <div className='space-y-1 font-inter'>
