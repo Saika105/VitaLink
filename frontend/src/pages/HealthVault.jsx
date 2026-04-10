@@ -32,11 +32,11 @@ const HealthVault = () => {
               activeTab === 'Prescriptions'
                 ? item.diagnosis || 'Prescription Record'
                 : item.testName || 'Lab Report',
-            doctor: item.manualDoctorName || 'Not Specified',
+            doctor: item.manualDoctorName || 'NOT SPECIFIED',
             hospital:
               item.hospital?.fullName ||
               item.manualHospitalName ||
-              'Private Clinic',
+              'NOT SPECIFIED',
             date: new Date(
               item.prescribedDate || item.reportDate || item.createdAt,
             ).toLocaleDateString(),
@@ -85,7 +85,6 @@ const HealthVault = () => {
       }
     } catch (err) {
       console.error('Delete error:', err);
-      alert('Failed to delete record');
     }
   };
 
@@ -108,6 +107,17 @@ const HealthVault = () => {
       } catch (err) {
         console.error('Failed to copy:', err);
       }
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await protectedFetch('/api/v1/patients/logout', { method: 'POST' });
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('role');
+      navigate('/login-patient');
     }
   };
 
@@ -140,7 +150,7 @@ const HealthVault = () => {
             <input
               type='text'
               className='bg-transparent border-none outline-none text-sm font-medium w-full md:w-60'
-              placeholder='Search by diagnosis or doctor...'
+              placeholder='Search records...'
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
@@ -151,13 +161,13 @@ const HealthVault = () => {
             <div className='flex w-fit bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner'>
               <button
                 onClick={() => setActiveTab('Prescriptions')}
-                className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'Prescriptions' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'Prescriptions' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
               >
                 Prescriptions
               </button>
               <button
                 onClick={() => setActiveTab('Reports')}
-                className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'Reports' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'Reports' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
               >
                 Medical Reports
               </button>
@@ -166,12 +176,12 @@ const HealthVault = () => {
             <div className='grid grid-cols-1 gap-3'>
               {isLoading ? (
                 <div className='text-center py-20'>
-                  <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4'></div>
+                  <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
                 </div>
               ) : filteredItems.length > 0 ? (
                 filteredItems.map((item, index) => (
                   <button
-                    key={item.id || index}
+                    key={item.id}
                     onClick={() => setSelectedItem(item)}
                     className={`group w-full text-left bg-white border rounded-2xl p-5 flex items-center justify-between transition-all ${selectedItem?.id === item.id ? 'border-blue-600 ring-4 ring-blue-50 shadow-md' : 'border-slate-200 hover:border-blue-300 hover:shadow-lg'}`}
                   >
@@ -186,7 +196,9 @@ const HealthVault = () => {
                           {item.title}
                         </span>
                         <span className='text-[10px] block font-black text-blue-600 uppercase tracking-widest'>
-                          {item.doctor}
+                          {activeTab === 'Prescriptions'
+                            ? `Dr. ${item.doctor}`
+                            : item.hospital}
                         </span>
                         <span className='text-xs text-slate-400 font-medium'>
                           {item.date}
@@ -210,59 +222,78 @@ const HealthVault = () => {
             <div className='bg-white rounded-3xl border border-slate-200 p-6 shadow-xl sticky top-24'>
               {selectedItem ? (
                 <div>
-                  <div className='w-full aspect-4/3 bg-slate-50 rounded-2xl mb-6 flex items-center justify-center border border-slate-100 overflow-hidden'>
+                  <div className='w-full aspect-4/3 bg-slate-50 rounded-2xl mb-6 flex items-center justify-center border border-slate-100 overflow-hidden relative group'>
                     {selectedItem.fileUrl?.toLowerCase().endsWith('.pdf') ? (
-                      <div className='flex flex-col items-center'>
-                        <svg
-                          className='w-12 h-12 text-red-500 mb-2'
-                          fill='currentColor'
-                          viewBox='0 0 20 20'
-                        >
-                          <path d='M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z' />
-                        </svg>
-                        <span className='text-[10px] font-black text-slate-400 uppercase'>
-                          PDF Document
+                      <div className='flex flex-col items-center justify-center w-full h-full bg-linear-to-b from-slate-50 to-slate-100'>
+                        <div className='absolute inset-0 opacity-[0.03] pointer-events-none flex flex-wrap gap-4 p-4 overflow-hidden'>
+                          {[...Array(20)].map((_, i) => (
+                            <span
+                              key={i}
+                              className='text-[8px] font-black uppercase rotate-12 select-none'
+                            >
+                              VitaLink Vault
+                            </span>
+                          ))}
+                        </div>
+                        <div className='w-20 h-24 bg-white rounded-lg shadow-xl border border-slate-200 flex flex-col items-center justify-center relative transition-transform group-hover:scale-105 duration-500'>
+                          <div className='absolute top-0 left-0 right-0 h-1.5 bg-red-500 rounded-t-lg'></div>
+                          <svg
+                            className='w-10 h-10 text-red-500 mb-1'
+                            fill='currentColor'
+                            viewBox='0 0 20 20'
+                          >
+                            <path d='M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z' />
+                          </svg>
+                          <span className='text-[8px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded uppercase tracking-tighter'>
+                            PDF
+                          </span>
+                        </div>
+                        <span className='text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 z-10'>
+                          Secure Document
                         </span>
                       </div>
                     ) : (
                       <img
                         src={selectedItem.fileUrl}
                         alt='Preview'
-                        className='w-full h-full object-cover opacity-80'
+                        className='w-full h-full object-cover transition-opacity duration-500 group-hover:opacity-100 opacity-90'
                       />
                     )}
                   </div>
 
                   <div className='space-y-4 mb-8'>
+                    {activeTab === 'Prescriptions' ? (
+                      <div>
+                        <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
+                          ASSIGNED DOCTOR
+                        </p>
+                        <p className='font-bold text-slate-800 leading-tight uppercase'>
+                          DR. {selectedItem.doctor}
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
+                          TEST NAME
+                        </p>
+                        <p className='font-bold text-slate-800 leading-tight uppercase'>
+                          {selectedItem.title}
+                        </p>
+                      </div>
+                    )}
+
                     <div>
                       <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
-                        {activeTab === 'Prescriptions'
-                          ? 'Diagnosis / Subject'
-                          : 'Test Name'}
-                      </p>
-                      <p className='font-bold text-slate-800 leading-tight'>
-                        {selectedItem.title}
-                      </p>
-                    </div>
-                    <div>
-                      <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
-                        Assigned Physician
-                      </p>
-                      <p className='font-bold text-slate-800 leading-tight uppercase'>
-                        {selectedItem.doctor}
-                      </p>
-                    </div>
-                    <div>
-                      <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
-                        Medical Facility
+                        HOSPITAL NAME
                       </p>
                       <p className='font-bold text-slate-800 leading-tight uppercase'>
                         {selectedItem.hospital}
                       </p>
                     </div>
+
                     <div>
                       <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
-                        Date of Record
+                        DATE OF RECORD
                       </p>
                       <p className='font-bold text-slate-800'>
                         {selectedItem.date}
@@ -275,7 +306,7 @@ const HealthVault = () => {
                       onClick={() =>
                         window.open(selectedItem.fileUrl, '_blank')
                       }
-                      className='w-full bg-blue-600 text-white rounded-xl py-3 text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md'
+                      className='w-full bg-blue-600 text-white rounded-xl py-3 text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md active:scale-95'
                     >
                       Open File
                     </button>
@@ -301,6 +332,12 @@ const HealthVault = () => {
                 </div>
               )}
             </div>
+            <button
+              onClick={handleLogout}
+              className='w-full mt-6 bg-white border-2 border-red-100 text-red-700 rounded-2xl py-4 text-xs font-black uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-sm active:scale-95'
+            >
+              Logout
+            </button>
           </aside>
         </div>
       </main>
