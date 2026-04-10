@@ -9,19 +9,10 @@ const SearchDoctor = () => {
   const navigate = useNavigate();
   const [selectedSpecialty, setSelectedSpecialty] = useState('All');
   const [doctors, setDoctors] = useState([]);
+  const [specialties, setSpecialties] = useState(['All']);
   const [searchQuery, setSearchQuery] = useState('');
   const [showPopup, setShowPopup] = useState(false);
   const [activeDoctor, setActiveDoctor] = useState(null);
-
-  const specialties = [
-    'All',
-    'Cardiologists',
-    'Nutritionists',
-    'Gynac',
-    'Neurologists',
-    'Pediatricians',
-    'Dermatologists',
-  ];
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -34,7 +25,18 @@ const SearchDoctor = () => {
 
         if (response.ok) {
           const result = await response.json();
-          setDoctors(Array.isArray(result.data) ? result.data : []);
+          const doctorData = Array.isArray(result.data) ? result.data : [];
+          setDoctors(doctorData);
+
+          if (selectedSpecialty === 'All') {
+            const uniqueSpecialties = [
+              'All',
+              ...new Set(
+                doctorData.map(doc => doc.specialization).filter(Boolean),
+              ),
+            ];
+            setSpecialties(uniqueSpecialties);
+          }
         } else {
           setDoctors([]);
         }
@@ -167,7 +169,9 @@ const SearchDoctor = () => {
                         Hospital:
                       </span>
                       <span className='text-xs font-bold font-inter'>
-                        {doc.hospital?.fullName || 'Private Clinic'}
+                        {doc.hospital?.fullName ||
+                          doc.hospitalName ||
+                          'Private Clinic'}
                       </span>
                     </div>
                     <div className='flex items-center gap-2 text-slate-600 font-inter'>
@@ -180,10 +184,23 @@ const SearchDoctor = () => {
                     </div>
                     <div className='flex items-center gap-2 text-slate-600 font-inter'>
                       <span className='text-[10px] font-black uppercase text-slate-400 font-inter'>
-                        Experience:
+                        Sitting Time:
                       </span>
                       <span className='text-xs font-medium font-inter'>
-                        {doc.yearsExperience} Years
+                        {doc.schedule?.sittingTimeLabel ||
+                          doc.sittingTime ||
+                          'TBA'}
+                      </span>
+                    </div>
+                    <div className='flex items-center gap-2 text-slate-600 font-inter'>
+                      <span className='text-[10px] font-black uppercase text-blue-500 font-inter'>
+                        Fee:
+                      </span>
+                      <span className='text-xs font-black text-slate-900 font-inter'>
+                        ৳{' '}
+                        {doc.schedule?.consultationFee ||
+                          doc.consultationFee ||
+                          '0'}
                       </span>
                     </div>
                   </div>
