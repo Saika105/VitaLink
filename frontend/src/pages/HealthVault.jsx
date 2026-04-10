@@ -219,125 +219,126 @@ const HealthVault = () => {
           </div>
 
           <aside className='md:w-85 shrink-0'>
-            <div className='bg-white rounded-3xl border border-slate-200 p-6 shadow-xl sticky top-24'>
-              {selectedItem ? (
-                <div>
-                  <div className='w-full aspect-4/3 bg-slate-50 rounded-2xl mb-6 flex items-center justify-center border border-slate-100 overflow-hidden relative group'>
-                    {selectedItem.fileUrl?.toLowerCase().endsWith('.pdf') ? (
-                      <div className='flex flex-col items-center justify-center w-full h-full bg-linear-to-b from-slate-50 to-slate-100'>
-                        <div className='absolute inset-0 opacity-[0.03] pointer-events-none flex flex-wrap gap-4 p-4 overflow-hidden'>
-                          {[...Array(20)].map((_, i) => (
-                            <span
-                              key={i}
-                              className='text-[8px] font-black uppercase rotate-12 select-none'
+            <div className='sticky top-24 space-y-6'>
+              <div className='bg-white rounded-3xl border border-slate-200 p-6 shadow-xl'>
+                {selectedItem ? (
+                  <div>
+                    <div className='w-full aspect-4/3 bg-slate-50 rounded-2xl mb-6 flex items-center justify-center border border-slate-100 overflow-hidden relative group'>
+                      {selectedItem.fileUrl?.toLowerCase().endsWith('.pdf') ? (
+                        <div className='flex flex-col items-center justify-center w-full h-full bg-linear-to-b from-slate-50 to-slate-100'>
+                          <div className='absolute inset-0 opacity-[0.03] pointer-events-none flex flex-wrap gap-4 p-4 overflow-hidden'>
+                            {[...Array(20)].map((_, i) => (
+                              <span
+                                key={i}
+                                className='text-[8px] font-black uppercase rotate-12 select-none'
+                              >
+                                VitaLink Vault
+                              </span>
+                            ))}
+                          </div>
+                          <div className='w-20 h-24 bg-white rounded-lg shadow-xl border border-slate-200 flex flex-col items-center justify-center relative transition-transform group-hover:scale-105 duration-500'>
+                            <div className='absolute top-0 left-0 right-0 h-1.5 bg-red-500 rounded-t-lg'></div>
+                            <svg
+                              className='w-10 h-10 text-red-500 mb-1'
+                              fill='currentColor'
+                              viewBox='0 0 20 20'
                             >
-                              VitaLink Vault
+                              <path d='M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z' />
+                            </svg>
+                            <span className='text-[8px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded uppercase tracking-tighter'>
+                              PDF
                             </span>
-                          ))}
-                        </div>
-                        <div className='w-20 h-24 bg-white rounded-lg shadow-xl border border-slate-200 flex flex-col items-center justify-center relative transition-transform group-hover:scale-105 duration-500'>
-                          <div className='absolute top-0 left-0 right-0 h-1.5 bg-red-500 rounded-t-lg'></div>
-                          <svg
-                            className='w-10 h-10 text-red-500 mb-1'
-                            fill='currentColor'
-                            viewBox='0 0 20 20'
-                          >
-                            <path d='M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z' />
-                          </svg>
-                          <span className='text-[8px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded uppercase tracking-tighter'>
-                            PDF
+                          </div>
+                          <span className='text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 z-10'>
+                            Secure Document
                           </span>
                         </div>
-                        <span className='text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 z-10'>
-                          Secure Document
-                        </span>
-                      </div>
-                    ) : (
-                      <img
-                        src={selectedItem.fileUrl}
-                        alt='Preview'
-                        className='w-full h-full object-cover transition-opacity duration-500 group-hover:opacity-100 opacity-90'
-                      />
-                    )}
-                  </div>
-
-                  <div className='space-y-4 mb-8'>
-                    {activeTab === 'Prescriptions' ? (
-                      <div>
-                        <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
-                          ASSIGNED DOCTOR
-                        </p>
-                        <p className='font-bold text-slate-800 leading-tight uppercase'>
-                          DR. {selectedItem.doctor}
-                        </p>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
-                          TEST NAME
-                        </p>
-                        <p className='font-bold text-slate-800 leading-tight uppercase'>
-                          {selectedItem.title}
-                        </p>
-                      </div>
-                    )}
-
-                    <div>
-                      <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
-                        HOSPITAL NAME
-                      </p>
-                      <p className='font-bold text-slate-800 leading-tight uppercase'>
-                        {selectedItem.hospital}
-                      </p>
+                      ) : (
+                        <img
+                          src={selectedItem.fileUrl}
+                          alt='Preview'
+                          className='w-full h-full object-cover transition-opacity duration-500 group-hover:opacity-100 opacity-90'
+                        />
+                      )}
                     </div>
 
-                    <div>
-                      <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
-                        DATE OF RECORD
-                      </p>
-                      <p className='font-bold text-slate-800'>
-                        {selectedItem.date}
-                      </p>
+                    <div className='space-y-4 mb-8'>
+                      {activeTab === 'Prescriptions' ? (
+                        <div>
+                          <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
+                            ASSIGNED DOCTOR
+                          </p>
+                          <p className='font-bold text-slate-800 leading-tight uppercase'>
+                            DR. {selectedItem.doctor}
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
+                            TEST NAME
+                          </p>
+                          <p className='font-bold text-slate-800 leading-tight uppercase'>
+                            {selectedItem.title}
+                          </p>
+                        </div>
+                      )}
+                      <div>
+                        <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
+                          HOSPITAL NAME
+                        </p>
+                        <p className='font-bold text-slate-800 leading-tight uppercase'>
+                          {selectedItem.hospital}
+                        </p>
+                      </div>
+                      <div>
+                        <p className='text-[10px] uppercase font-black tracking-widest text-slate-400'>
+                          DATE OF RECORD
+                        </p>
+                        <p className='font-bold text-slate-800'>
+                          {selectedItem.date}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className='flex flex-col gap-3'>
+                      <button
+                        onClick={() =>
+                          window.open(selectedItem.fileUrl, '_blank')
+                        }
+                        className='w-full bg-blue-600 text-white rounded-xl py-3 text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md active:scale-95'
+                      >
+                        Open File
+                      </button>
+                      <button
+                        onClick={() => handleShare(selectedItem)}
+                        className='w-full bg-white border-2 border-slate-200 text-slate-600 rounded-xl py-3 text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all'
+                      >
+                        Share Record
+                      </button>
+                      <button
+                        onClick={() => handleDelete(selectedItem.id)}
+                        className='w-full mt-4 text-[10px] font-black text-red-400 hover:text-red-600 transition-colors uppercase tracking-widest'
+                      >
+                        Delete Permanent
+                      </button>
                     </div>
                   </div>
-
-                  <div className='flex flex-col gap-3'>
-                    <button
-                      onClick={() =>
-                        window.open(selectedItem.fileUrl, '_blank')
-                      }
-                      className='w-full bg-blue-600 text-white rounded-xl py-3 text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md active:scale-95'
-                    >
-                      Open File
-                    </button>
-                    <button
-                      onClick={() => handleShare(selectedItem)}
-                      className='w-full bg-white border-2 border-slate-200 text-slate-600 rounded-xl py-3 text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all'
-                    >
-                      Share Record
-                    </button>
-                    <button
-                      onClick={() => handleDelete(selectedItem.id)}
-                      className='w-full mt-4 text-[10px] font-black text-red-400 hover:text-red-600 transition-colors uppercase tracking-widest'
-                    >
-                      Delete Permanent
-                    </button>
+                ) : (
+                  <div className='flex flex-col items-center justify-center min-h-80 text-center'>
+                    <p className='text-xs font-bold text-slate-400 uppercase tracking-widest'>
+                      Select a record to preview
+                    </p>
                   </div>
-                </div>
-              ) : (
-                <div className='flex flex-col items-center justify-center min-h-80 text-center'>
-                  <p className='text-xs font-bold text-slate-400 uppercase tracking-widest'>
-                    Select a record to preview
-                  </p>
-                </div>
-              )}
+                )}
+              </div>
+
+              <button
+                onClick={handleLogout}
+                className='w-full bg-white border-2 border-red-100 text-red-700 rounded-2xl py-4 text-xs font-black uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-sm active:scale-95'
+              >
+                Logout
+              </button>
             </div>
-            <button
-              onClick={handleLogout}
-              className='w-full mt-6 bg-white border-2 border-red-100 text-red-700 rounded-2xl py-4 text-xs font-black uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-sm active:scale-95'
-            >
-              Logout
-            </button>
           </aside>
         </div>
       </main>
