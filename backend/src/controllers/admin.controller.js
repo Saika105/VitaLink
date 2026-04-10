@@ -118,7 +118,7 @@ const createDoctor = asyncHandler(async (req, res) => {
     dateOfBirth,
     address,
     nid,
-    emergencyContact,
+    emergencyContact, 
     licenseNumber,
     specialization,
     designation,
@@ -130,55 +130,54 @@ const createDoctor = asyncHandler(async (req, res) => {
     timeSlots,
   } = req.body;
 
-  if (
-    [
-      fullName,
-      email,
-      password,
-      phone,
-      gender,
-      dateOfBirth,
-      licenseNumber,
-      specialization,
-      sittingTimeLabel,
-    ].some((f) => f?.trim() === "")
-  ) {
+  const requiredStrings = [
+    fullName, email, password, phone, gender, 
+    dateOfBirth, address, nid, licenseNumber, 
+    specialization, sittingTimeLabel
+  ];
+
+  if (requiredStrings.some((f) => !f || f.toString().trim() === "")) {
     throw new ApiError(400, "All profile and availability fields are required");
   }
 
-  let parsedWorkingDays =
-    typeof workingDays === "string" ? JSON.parse(workingDays) : workingDays;
-  let parsedTimeSlots =
-    typeof timeSlots === "string" ? JSON.parse(timeSlots) : timeSlots;
+  if (consultationFee === undefined || consultationFee === null || consultationFee === "") {
+    throw new ApiError(400, "Consultation fee is required");
+  }
 
   let parsedEmergencyContact;
   try {
-    parsedEmergencyContact =
-      typeof emergencyContact === "string"
-        ? JSON.parse(emergencyContact)
-        : emergencyContact;
-  } catch {
-    throw new ApiError(400, "Invalid emergencyContact format");
+    parsedEmergencyContact = typeof emergencyContact === "string" 
+      ? JSON.parse(emergencyContact) 
+      : emergencyContact;
+      
+    if (!parsedEmergencyContact?.phone || parsedEmergencyContact.phone.trim() === "") {
+      throw new Error();
+    }
+  } catch (error) {
+    throw new ApiError(400, "Valid Emergency Contact phone is required");
   }
+
+  let parsedWorkingDays = typeof workingDays === "string" ? JSON.parse(workingDays) : workingDays;
+  let parsedTimeSlots = typeof timeSlots === "string" ? JSON.parse(timeSlots) : timeSlots;
 
   if (!Array.isArray(parsedWorkingDays) || parsedWorkingDays.length === 0) {
     throw new ApiError(400, "At least one working day is required");
   }
-
+  
+  if (!Array.isArray(parsedTimeSlots) || parsedTimeSlots.length === 0) {
+    throw new ApiError(400, "At least one time slot is required");
+  }
+ 
   const existedDoctor = await Doctor.findOne({
     $or: [{ email }, { licenseNumber }, { phone }],
   });
 
   if (existedDoctor) {
-    throw new ApiError(
-      409,
-      "Doctor with this email, license, or phone already exists",
-    );
+    throw new ApiError(409, "Doctor with this email, license, or phone already exists");
   }
 
   const photoLocalPath = req.file?.path;
-  if (!photoLocalPath)
-    throw new ApiError(400, "Doctor profile photo is required");
+  if (!photoLocalPath) throw new ApiError(400, "Doctor profile photo is required");
 
   const photo = await uploadOnCloudinary(photoLocalPath);
   if (!photo) throw new ApiError(500, "Error while uploading profile photo");
@@ -221,7 +220,7 @@ const createDoctor = asyncHandler(async (req, res) => {
     sittingTimeLabel,
     workingDays: parsedWorkingDays,
     consultationFee: Number(consultationFee) || 0,
-    timeSlots: parsedTimeSlots || [],
+    timeSlots: parsedTimeSlots,
   });
 
   if (!schedule) {
@@ -230,19 +229,11 @@ const createDoctor = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Error while creating doctor schedule");
   }
 
-  const createdDoctor = await Doctor.findById(doctor._id).select(
-    "-password -refreshToken",
-  );
+  const createdDoctor = await Doctor.findById(doctor._id).select("-password -refreshToken");
 
-  return res
-    .status(201)
-    .json(
-      new ApiResponse(
-        201,
-        { doctor: createdDoctor, schedule },
-        "Doctor account and schedule created successfully",
-      ),
-    );
+  return res.status(201).json(
+    new ApiResponse(201, { doctor: createdDoctor, schedule }, "Doctor account and schedule created successfully")
+  );
 });
 
 //************** Create doctor assistant ********** */
@@ -530,8 +521,8 @@ const getHospitalStaff = asyncHandler(async (req, res) => {
 
 //-------------------- DELETE ----------------------
 const deleteStaff = asyncHandler(async (req, res) => {
-  const { id } = req.params; 
-  const { role } = req.query; 
+  const { id } = req.params;
+  const { role } = req.query;
   const hospitalId = req.user.hospital;
 
   if (!role) {
@@ -576,7 +567,7 @@ const deleteStaff = asyncHandler(async (req, res) => {
     if (staffMember.profilePhoto?.publicId) {
       await deleteFromCloudinary(staffMember.profilePhoto.publicId);
     }
-    
+
     console.log("Schedules, Appointments, Assistants, and Images cleared.");
   }
 
@@ -586,10 +577,10 @@ const deleteStaff = asyncHandler(async (req, res) => {
     .status(200)
     .json(
       new ApiResponse(
-        200, 
-        {}, 
-        `${role} and all associated data (Schedules, Appointments, Assistants) removed successfully`
-      )
+        200,
+        {},
+        `${role} and all associated data (Schedules, Appointments, Assistants) removed successfully`,
+      ),
     );
 });
 
