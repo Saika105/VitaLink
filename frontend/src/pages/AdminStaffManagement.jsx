@@ -173,8 +173,8 @@ const AdminStaffManagement = () => {
         dataToSend.append('specialization', formData.specialization);
         dataToSend.append('consultationFee', Number(formData.consultationFee));
         dataToSend.append('sittingTimeLabel', formData.sittingTime);
-        dataToSend.append('workingDays', JSON.stringify(formData.sittingDays));
 
+        dataToSend.append('workingDays', JSON.stringify(formData.sittingDays));
         const defaultSlots = [
           { start: '06:00 PM', end: '09:00 PM', isAvailable: true },
         ];
@@ -360,13 +360,27 @@ const AdminStaffManagement = () => {
                           <div className='text-[12px] font-black text-[#4486F6] uppercase'>
                             {staff.specialization || 'N/A'}
                           </div>
-                          <div className='text-[10px] text-slate-500 font-bold uppercase mt-0.5'>
+                          <div className='text-[10px] text-slate-500 font-bold uppercase mt-1'>
                             🕒{' '}
                             {staff.sittingTimeLabel ||
                               staff.schedule?.sittingTimeLabel ||
                               'TBD'}
                           </div>
-                          <div className='text-[11px] font-black text-green-600 mt-1 uppercase'>
+                          <div className='flex flex-wrap gap-1 mt-1'>
+                            {(
+                              staff.workingDays ||
+                              staff.schedule?.workingDays ||
+                              []
+                            ).map(day => (
+                              <span
+                                key={day}
+                                className='text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-md font-bold border border-blue-100'
+                              >
+                                {day}
+                              </span>
+                            ))}
+                          </div>
+                          <div className='text-[11px] font-black text-green-600 mt-1.5 uppercase'>
                             Fee: ৳
                             {staff.consultationFee ||
                               staff.schedule?.consultationFee ||
@@ -404,7 +418,7 @@ const AdminStaffManagement = () => {
           </table>
         </div>
 
-        <div className='flex justify-end font-inter'>
+        <div className='flex justify-end'>
           <button
             onClick={handleLogout}
             className='px-10 border-2 border-red-200 text-red-700 rounded-2xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all'
@@ -414,7 +428,7 @@ const AdminStaffManagement = () => {
         </div>
 
         {showModal && (
-          <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 font-inter'>
+          <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
             <div className='bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]'>
               <div className='p-8 bg-slate-50 border-b border-slate-100 flex justify-between items-center'>
                 <div>
@@ -760,7 +774,7 @@ const AdminStaffManagement = () => {
                   </div>
                 )}
 
-                <div className='flex flex-col items-center gap-4 pt-4 font-inter'>
+                <div className='flex flex-col items-center gap-4 pt-4'>
                   <button
                     type='submit'
                     className='w-full max-w-md bg-blue-600 hover:bg-[#4486F6] text-white py-4 rounded-2xl font-bold shadow-lg transition-all uppercase text-xs tracking-widest active:scale-95'
