@@ -11,9 +11,8 @@ const AdminStaffManagement = () => {
   const [doctors, setDoctors] = useState([]);
   const [imagePreview, setImagePreview] = useState(null);
 
-  const [formData, setFormData] = useState({
+  const initialFormState = {
     role: 'DOCTORS',
-    upid: '',
     name: '',
     nid: '',
     dateOfBirth: '',
@@ -31,9 +30,15 @@ const AdminStaffManagement = () => {
     password: '',
     assignedDoctorId: '',
     photo: null,
-  });
+  };
 
+  const [formData, setFormData] = useState(initialFormState);
   const apiUrl = import.meta.env.VITE_API_URL;
+
+  const resetForm = (targetRole = 'DOCTORS') => {
+    setFormData({ ...initialFormState, role: targetRole });
+    setImagePreview(null);
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -54,7 +59,6 @@ const AdminStaffManagement = () => {
     const fetchStaff = async () => {
       const token = localStorage.getItem('token');
       if (!token) return;
-
       try {
         const response = await fetch(
           `${apiUrl}/api/v1/admins/staff?role=${activeTableTab}`,
@@ -137,25 +141,25 @@ const AdminStaffManagement = () => {
 
     try {
       const dataToSend = new FormData();
-      dataToSend.append('upid', formData.upid);
+
       dataToSend.append('fullName', formData.name);
-      dataToSend.append('nidNumber', formData.nid);
-      dataToSend.append('dateOfBirth', formData.dateOfBirth);
-      dataToSend.append('phone', formData.phone);
-      dataToSend.append('gender', formData.gender);
-      dataToSend.append('address', formData.address);
       dataToSend.append('email', formData.email);
       dataToSend.append('password', formData.password);
-      dataToSend.append('emergencyPhone', formData.emergencyContact);
+      dataToSend.append('phone', formData.phone);
+      dataToSend.append('gender', formData.gender);
+      dataToSend.append('dateOfBirth', formData.dateOfBirth);
+      dataToSend.append('emergencyContact', formData.emergencyContact);  
+      dataToSend.append('nidNumber', formData.nid);
+      dataToSend.append('address', formData.address);
 
       if (formData.role === 'DOCTORS') {
         dataToSend.append('licenseNumber', formData.licenseNumber);
         dataToSend.append('specialization', formData.specialization);
         dataToSend.append('consultationFee', formData.consultationFee);
-        dataToSend.append('hospitalName', formData.hospitalName);
-        dataToSend.append('sittingTimeLabel', formData.sittingTime);
+        dataToSend.append('sittingTimeLabel', formData.sittingTime); 
         dataToSend.append('workingDays', JSON.stringify(formData.sittingDays));
         dataToSend.append('timeSlots', JSON.stringify([]));
+
         if (formData.photo) {
           dataToSend.append('profilePhoto', formData.photo);
         }
@@ -175,30 +179,15 @@ const AdminStaffManagement = () => {
 
       if (response.ok) {
         alert('Staff Added Successfully!');
+
+        if (formData.role === 'DOCTORS' && result.data?.doctor) {
+          setStaffList(prev => [result.data.doctor, ...prev]);
+        } else if (formData.role === activeTableTab) {
+          setStaffList(prev => [result.data, ...prev]);
+        }
+
         setShowModal(false);
-        setImagePreview(null);
-        setActiveTableTab(formData.role);
-        setFormData({
-          role: 'DOCTORS',
-          upid: '',
-          name: '',
-          nid: '',
-          dateOfBirth: '',
-          phone: '',
-          gender: 'male',
-          address: '',
-          licenseNumber: '',
-          specialization: '',
-          consultationFee: '',
-          emergencyContact: '',
-          hospitalName: '',
-          sittingTime: '',
-          sittingDays: [],
-          email: '',
-          password: '',
-          assignedDoctorId: '',
-          photo: null,
-        });
+        resetForm();
       } else {
         alert(result.message || 'Registration failed');
       }
@@ -345,7 +334,7 @@ const AdminStaffManagement = () => {
                       <div className='text-[9px] font-black text-red-400 uppercase mt-1 font-inter'>
                         SOS:{' '}
                         {staff.emergencyPhone ||
-                          staff.emergencyContact?.phone ||
+                          staff.emergencyContact ||
                           'N/A'}
                       </div>
                     </td>
@@ -429,7 +418,7 @@ const AdminStaffManagement = () => {
                 <select
                   name='role'
                   value={formData.role}
-                  onChange={handleInputChange}
+                  onChange={e => resetForm(e.target.value)}
                   className='bg-white border border-slate-200 rounded-xl px-4 py-2 font-bold text-slate-600 text-sm outline-none focus:ring-2 ring-blue-500 font-inter'
                 >
                   <option value='DOCTORS'>Doctor</option>
@@ -504,14 +493,15 @@ const AdminStaffManagement = () => {
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-6 font-inter'>
                     <div className='space-y-1 font-inter'>
                       <label className='text-[12px] uppercase font-black text-slate-800 ml-1 font-inter'>
-                        Unique ID
+                        Login Email
                       </label>
                       <input
-                        name='upid'
-                        value={formData.upid}
+                        name='email'
+                        type='email'
+                        value={formData.email}
                         onChange={handleInputChange}
-                        placeholder='XXX'
-                        className='w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-[#4486F6] font-mono font-inter'
+                        placeholder='staff@hospital.com'
+                        className='w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-[#4486F6] font-inter'
                         required
                       />
                     </div>
@@ -621,19 +611,6 @@ const AdminStaffManagement = () => {
                       />
                     </div>
                   </div>
-                  <div className='space-y-1 font-inter'>
-                    <label className='text-[12px] font-bold text-slate-800 font-inter'>
-                      Email Address:
-                    </label>
-                    <input
-                      type='email'
-                      name='email'
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
-                      required
-                    />
-                  </div>
                 </div>
 
                 {formData.role === 'DOCTORS' && (
@@ -687,7 +664,7 @@ const AdminStaffManagement = () => {
                       <div className='space-y-4 font-inter'>
                         <div className='space-y-1 font-inter'>
                           <label className='text-[10px] uppercase font-black text-slate-800 ml-1 font-inter'>
-                            Hospital & Time
+                            Hospital Name
                           </label>
                           <input
                             name='hospitalName'
@@ -696,12 +673,15 @@ const AdminStaffManagement = () => {
                             onChange={handleInputChange}
                             className='w-full border border-slate-300 rounded-lg px-3 py-3 outline-none focus:ring-1 ring-blue-500 bg-white font-inter'
                           />
+                          <label className='text-[10px] uppercase font-black text-slate-800 ml-1 mt-2 block font-inter'>
+                            Sitting Time
+                          </label>
                           <input
                             name='sittingTime'
                             value={formData.sittingTime}
-                            placeholder='Sitting Time (e.g. 5-9 PM)'
+                            placeholder='e.g. 5-9 PM'
                             onChange={handleInputChange}
-                            className='w-full border border-slate-300 rounded-lg px-3 py-3 outline-none focus:ring-1 ring-blue-500 bg-white mt-2 font-inter'
+                            className='w-full border border-slate-300 rounded-lg px-3 py-3 outline-none focus:ring-1 ring-blue-500 bg-white font-inter'
                           />
                         </div>
                         <div className='space-y-2 font-inter'>
@@ -770,7 +750,10 @@ const AdminStaffManagement = () => {
                   </button>
                   <button
                     type='button'
-                    onClick={() => setShowModal(false)}
+                    onClick={() => {
+                      setShowModal(false);
+                      resetForm();
+                    }}
                     className='text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-800 font-inter'
                   >
                     Close Window
