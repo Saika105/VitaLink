@@ -16,7 +16,7 @@ const AdminLogin = () => {
     setError('');
 
     try {
-      const response = await fetch(`${apiUrl}/api/v1/admin/login`, {
+      const response = await fetch(`${apiUrl}/api/v1/admins/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -35,18 +35,17 @@ const AdminLogin = () => {
           localStorage.setItem('role', 'admin');
           navigate('/admin-staff');
         } else {
-          setError(
-            'Security protocol error: Access token not found in response.',
-          );
+          setError('Authorization failed: No access token provided by server.');
         }
       } else {
         if (response.status === 404) {
           setError(
-            'Endpoint mismatch (404). Check if backend uses /admin/ or /admins/.',
+            'Server Endpoint Error: The URL /api/v1/admins/login was not found.',
           );
         } else {
           setError(
-            data.message || 'Authorization failed. Invalid credentials.',
+            data.message ||
+              'Authorization failed. Please check your credentials.',
           );
         }
       }
