@@ -44,7 +44,7 @@ const AdminStaffManagement = () => {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
     if (!token || role !== 'admin') {
-      navigate('/login-admin');
+      navigate('/login-admin', { replace: true });
     }
   }, [navigate]);
 
@@ -52,7 +52,10 @@ const AdminStaffManagement = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     localStorage.removeItem('refreshToken');
-    navigate('/login-admin');
+    localStorage.removeItem('user');
+
+    navigate('/login-admin', { replace: true });
+    window.location.reload();
   };
 
   useEffect(() => {
