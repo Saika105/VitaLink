@@ -108,6 +108,7 @@ const generateScheduleId = () => {
 };
 
 const createDoctor = asyncHandler(async (req, res) => {
+  // 1. Destructure all fields from req.body
   const {
     fullName,
     email,
@@ -115,7 +116,9 @@ const createDoctor = asyncHandler(async (req, res) => {
     phone,
     gender,
     dateOfBirth,
-    emergencyContact,
+    address,          // Added
+    nid,              // Added (frontend calls it nid)
+    emergencyContact, // This is the phone number string from frontend
     licenseNumber,
     specialization,
     designation,
@@ -127,6 +130,7 @@ const createDoctor = asyncHandler(async (req, res) => {
     timeSlots,
   } = req.body;
 
+  // 2. Comprehensive Validation
   if (
     [
       fullName,
@@ -143,15 +147,15 @@ const createDoctor = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All profile and availability fields are required");
   }
 
-  let parsedWorkingDays =
-    typeof workingDays === "string" ? JSON.parse(workingDays) : workingDays;
-  let parsedTimeSlots =
-    typeof timeSlots === "string" ? JSON.parse(timeSlots) : timeSlots;
+  // 3. Parse Array fields from FormData (which come as strings)
+  let parsedWorkingDays = typeof workingDays === "string" ? JSON.parse(workingDays) : workingDays;
+  let parsedTimeSlots = typeof timeSlots === "string" ? JSON.parse(timeSlots) : timeSlots;
 
   if (!Array.isArray(parsedWorkingDays) || parsedWorkingDays.length === 0) {
     throw new ApiError(400, "At least one working day is required");
   }
 
+  // 4. Check for existing doctor
   const existedDoctor = await Doctor.findOne({
     $or: [{ email }, { licenseNumber }, { phone }],
   });
@@ -163,6 +167,7 @@ const createDoctor = asyncHandler(async (req, res) => {
     );
   }
 
+  // 5. Handle Profile Photo upload
   const photoLocalPath = req.file?.path;
   if (!photoLocalPath)
     throw new ApiError(400, "Doctor profile photo is required");
@@ -178,7 +183,12 @@ const createDoctor = asyncHandler(async (req, res) => {
     phone,
     gender: gender.toLowerCase(),
     dateOfBirth,
-    emergencyContact,
+    address,           
+    nidNumber: nid,    
+    emergencyContact: {
+      phone: emergencyContact,
+      name: "Emergency Contact"
+    },
     licenseNumber,
     specialization,
     designation,
@@ -193,9 +203,6 @@ const createDoctor = asyncHandler(async (req, res) => {
   });
 
   if (!doctor) {
-    if (photo.publicId) {
-      await deleteFromCloudinary(photo.publicId);
-    }
     throw new ApiError(500, "Error while creating doctor account");
   }
 
@@ -205,15 +212,13 @@ const createDoctor = asyncHandler(async (req, res) => {
     hospital: req.user.hospital,
     sittingTimeLabel,
     workingDays: parsedWorkingDays,
-    consultationFee: Number(consultationFee) || 0,
-    timeSlots: parsedTimeSlots,
+    consultationFee: Number(consultationFee) || 0, 
+    timeSlots: parsedTimeSlots || [],
   });
 
   if (!schedule) {
     await Doctor.findByIdAndDelete(doctor._id);
-    if (photo.publicId) {
-      await deleteFromCloudinary(photo.publicId);
-    }
+    if (photo.public_id) await deleteFromCloudinary(photo.public_id);
     throw new ApiError(500, "Error while creating doctor schedule");
   }
 

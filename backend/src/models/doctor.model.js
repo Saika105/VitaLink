@@ -40,6 +40,18 @@ const doctorSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    address: {
+      type: String,
+      trim: true,
+    },
+    nidNumber: {
+      type: String,
+      trim: true,
+    },
+    emergencyContact: {
+      name: { type: String, default: "Emergency Contact" },
+      phone: { type: String, required: true, trim: true },
+    },
     licenseNumber: {
       type: String,
       required: true,
