@@ -6,11 +6,21 @@ const DoctorNavbar = ({ doctorName, doctorPhoto }) => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    navigate('/login-doctor');
-  };
+ const handleLogout = async () => {
+       try {
+         await protectedFetch('/api/v1/doctors/logout', {
+           method: 'POST',
+         });
+       } catch (error) {
+         console.error('Logout Error:', error);
+       } finally {
+         localStorage.removeItem('token');
+         localStorage.removeItem('refreshToken');
+         localStorage.removeItem('role');
+         navigate('/login-doctor');
+       }
+     };
+ 
 
   const fallbackPhoto = `https://ui-avatars.com/api/?name=${doctorName || 'Doctor'}&background=fff&color=2563eb&bold=true`;
 
