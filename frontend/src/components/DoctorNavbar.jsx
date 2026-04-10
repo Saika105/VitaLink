@@ -1,28 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo white.png';
+import { protectedFetch } from '../utils/api';
 
-const DoctorNavbar = ({ doctorName, doctorPhoto }) => {
+const DoctorNavbar = ({ doctorName: propName, doctorPhoto: propPhoto }) => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
- const handleLogout = async () => {
-       try {
-         await protectedFetch('/api/v1/doctors/logout', {
-           method: 'POST',
-         });
-       } catch (error) {
-         console.error('Logout Error:', error);
-       } finally {
-         localStorage.removeItem('token');
-         localStorage.removeItem('refreshToken');
-         localStorage.removeItem('role');
-         navigate('/login-doctor');
-       }
-     };
- 
+  const [displayName, setDisplayName] = useState('');
+  const [displayPhoto, setDisplayPhoto] = useState('');
 
-  const fallbackPhoto = `https://ui-avatars.com/api/?name=${doctorName || 'Doctor'}&background=fff&color=2563eb&bold=true`;
+  useEffect(() => {
+    if (propName) {
+      setDisplayName(propName);
+    } else {
+      const savedUser = JSON.parse(localStorage.getItem('user'));
+      if (savedUser) setDisplayName(savedUser.fullName || savedUser.name);
+    }
+
+    if (propPhoto) {
+      setDisplayPhoto(propPhoto);
+    } else {
+      const savedUser = JSON.parse(localStorage.getItem('user'));
+      if (savedUser)
+        setDisplayPhoto(savedUser.profilePhoto?.url || savedUser.profilePhoto);
+    }
+  }, [propName, propPhoto]);
+
+  const handleLogout = async () => {
+    try {
+      await protectedFetch('/api/v1/doctors/logout', {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Logout Error:', error);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('role');
+      localStorage.removeItem('user');
+      setIsDropdownOpen(false);
+      navigate('/login-doctor');
+    }
+  };
+
+  const fallbackPhoto = `https://ui-avatars.com/api/?name=${displayName || 'Doctor'}&background=fff&color=2563eb&bold=true`;
 
   return (
     <nav className='bg-blue-600 px-4 md:px-8 py-1 flex justify-between items-center shadow-lg sticky top-0 z-50 font-inter w-full h-16 md:h-20'>
@@ -44,14 +66,14 @@ const DoctorNavbar = ({ doctorName, doctorPhoto }) => {
         >
           <div className='w-7 h-7 md:w-9 md:h-9 rounded-lg overflow-hidden border-2 border-white/30 shadow-sm bg-white shrink-0'>
             <img
-              src={doctorPhoto?.url || doctorPhoto || fallbackPhoto}
+              src={displayPhoto || fallbackPhoto}
               alt='Doctor Profile'
               className='w-full h-full object-cover'
             />
           </div>
 
           <span className='text-[10px] md:text-xs font-black text-white uppercase tracking-widest hidden xs:block'>
-            {doctorName ? doctorName.split(' ')[0] : 'Doctor'}
+            {displayName ? displayName.split(' ')[0] : 'Doctor'}
           </span>
 
           <svg
@@ -80,7 +102,7 @@ const DoctorNavbar = ({ doctorName, doctorPhoto }) => {
               <div className='px-4 md:px-6 py-4 border-b border-slate-50 flex items-center gap-3'>
                 <div className='w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden border border-slate-100 shrink-0'>
                   <img
-                    src={doctorPhoto?.url || doctorPhoto || fallbackPhoto}
+                    src={displayPhoto || fallbackPhoto}
                     alt='Doctor'
                     className='w-full h-full object-cover'
                   />
@@ -90,7 +112,7 @@ const DoctorNavbar = ({ doctorName, doctorPhoto }) => {
                     Doctor
                   </p>
                   <p className='text-[10px] md:text-[11px] font-bold text-slate-900 truncate uppercase'>
-                    {doctorName || 'Loading...'}
+                    {displayName || 'Loading...'}
                   </p>
                 </div>
               </div>

@@ -95,21 +95,7 @@ const DoctorDashboard = () => {
     }
     setShowConfirmModal(true);
   };
-  const handleLogout = async () => {
-      try {
-        await protectedFetch('/api/v1/doctors/logout', {
-          method: 'POST',
-        });
-      } catch (error) {
-        console.error('Logout Error:', error);
-      } finally {
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('role');
-        navigate('/login-doctor');
-      }
-    };
-
+  
   const handleConfirmConsultation = async () => {
     const isManual = selectedPatient._id.toString().startsWith('manual');
 
