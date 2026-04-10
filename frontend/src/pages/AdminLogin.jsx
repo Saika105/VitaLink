@@ -16,20 +16,20 @@ const AdminLogin = () => {
     setError('');
 
     try {
-      const response = await fetch(`${apiUrl}/api/v1/auth/login`, {
+      const response = await fetch(`${apiUrl}/api/v1/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: loginData.email,
           password: loginData.password,
-          role: 'admin',
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', data.token);
+        const token = data.data?.token || data.token;
+        localStorage.setItem('token', token);
         localStorage.setItem('role', 'admin');
         navigate('/admin-staff');
       } else {
@@ -70,6 +70,7 @@ const AdminLogin = () => {
                 type='email'
                 className='border border-slate-200 bg-slate-50/50 rounded-xl p-4 text-sm outline-none focus:bg-white focus:border-[#4486F6] transition-all shadow-inner font-inter'
                 placeholder='admin@vitalink.com'
+                value={loginData.email}
                 onChange={e =>
                   setLoginData({ ...loginData, email: e.target.value })
                 }
@@ -85,6 +86,7 @@ const AdminLogin = () => {
                 type='password'
                 className='border border-slate-200 bg-slate-50/50 rounded-xl p-4 text-sm outline-none focus:bg-white focus:border-[#4486F6] transition-all shadow-inner font-inter'
                 placeholder='********'
+                value={loginData.password}
                 onChange={e =>
                   setLoginData({ ...loginData, password: e.target.value })
                 }
