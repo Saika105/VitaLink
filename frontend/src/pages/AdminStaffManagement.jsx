@@ -157,14 +157,9 @@ const AdminStaffManagement = () => {
       dataToSend.append('dateOfBirth', formData.dateOfBirth);
 
       dataToSend.append(
-        'emergencyContact[name]',
-        formData.emergencyContact.name,
+        'emergencyContact',
+        JSON.stringify(formData.emergencyContact),
       );
-      dataToSend.append(
-        'emergencyContact[phone]',
-        formData.emergencyContact.phone,
-      );
-
       dataToSend.append('nidNumber', formData.nid);
       dataToSend.append('address', formData.address);
 
@@ -173,8 +168,8 @@ const AdminStaffManagement = () => {
         dataToSend.append('specialization', formData.specialization);
         dataToSend.append('consultationFee', Number(formData.consultationFee));
         dataToSend.append('sittingTimeLabel', formData.sittingTime);
-
         dataToSend.append('workingDays', JSON.stringify(formData.sittingDays));
+
         const defaultSlots = [
           { start: '06:00 PM', end: '09:00 PM', isAvailable: true },
         ];
@@ -195,7 +190,7 @@ const AdminStaffManagement = () => {
         body: dataToSend,
       });
 
-      if (response.ok || response.status === 500) {
+      if (response.ok) {
         alert('Staff Added Successfully!');
         setShowModal(false);
         resetForm();
@@ -242,7 +237,7 @@ const AdminStaffManagement = () => {
       <Navbar />
 
       <main className='grow p-6 md:p-10 max-w-7xl mx-auto w-full space-y-8 font-inter'>
-        <div className='flex flex-col md:flex-row justify-between items-center gap-6'>
+        <div className='flex flex-col md:flex-row justify-between items-center gap-6 font-inter'>
           <div>
             <h2 className='text-4xl font-black text-slate-900 uppercase tracking-tighter'>
               Staff Directory
@@ -259,7 +254,7 @@ const AdminStaffManagement = () => {
           </button>
         </div>
 
-        <div className='flex items-center gap-4 bg-white w-fit p-2 rounded-2xl border border-slate-200 shadow-sm'>
+        <div className='flex items-center gap-4 bg-white w-fit p-2 rounded-2xl border border-slate-200 shadow-sm font-inter'>
           <span className='pl-4 text-[11px] uppercase font-black text-slate-800 tracking-widest'>
             Identity Filter:
           </span>
@@ -275,10 +270,10 @@ const AdminStaffManagement = () => {
           </select>
         </div>
 
-        <div className='bg-white rounded-[2.5rem] shadow-2xl overflow-x-auto border border-slate-200'>
+        <div className='bg-white rounded-[2.5rem] shadow-2xl overflow-x-auto border border-slate-200 font-inter'>
           <table className='w-full text-left border-collapse min-w-full'>
             <thead>
-              <tr className='bg-slate-50 border-b border-slate-100'>
+              <tr className='bg-slate-50 border-b border-slate-100 font-inter'>
                 <th className='p-6 text-[12px] uppercase font-black text-slate-900 tracking-widest'>
                   Identity
                 </th>
@@ -296,14 +291,14 @@ const AdminStaffManagement = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className='divide-y divide-slate-50'>
+            <tbody className='divide-y divide-slate-50 font-inter'>
               {staffList.length > 0 ? (
                 staffList.map(staff => (
                   <tr
                     key={staff._id}
-                    className='hover:bg-blue-50/30 transition-colors group'
+                    className='hover:bg-blue-50/30 transition-colors group font-inter'
                   >
-                    <td className='p-6'>
+                    <td className='p-6 font-inter'>
                       <div className='flex items-center gap-3'>
                         {activeTableTab === 'DOCTORS' && (
                           <img
@@ -329,7 +324,7 @@ const AdminStaffManagement = () => {
                         </div>
                       </div>
                     </td>
-                    <td className='p-6'>
+                    <td className='p-6 font-inter'>
                       <div className='text-xs font-bold text-slate-600'>
                         NID: {staff.nidNumber || staff.nid || 'N/A'}
                       </div>
@@ -340,7 +335,7 @@ const AdminStaffManagement = () => {
                         {staff.email}
                       </div>
                     </td>
-                    <td className='p-6'>
+                    <td className='p-6 font-inter'>
                       <div className='text-[11px] text-slate-500 max-w-50 leading-relaxed'>
                         {staff.address || 'N/A'}
                       </div>
@@ -354,18 +349,20 @@ const AdminStaffManagement = () => {
                           'N/A'}
                       </div>
                     </td>
-                    <td className='p-6'>
+                    <td className='p-6 font-inter'>
                       {activeTableTab === 'DOCTORS' && (
-                        <div>
+                        <div className='font-inter'>
                           <div className='text-[12px] font-black text-[#4486F6] uppercase'>
                             {staff.specialization || 'N/A'}
                           </div>
+
                           <div className='text-[10px] text-slate-500 font-bold uppercase mt-1'>
                             🕒{' '}
                             {staff.sittingTimeLabel ||
                               staff.schedule?.sittingTimeLabel ||
                               'TBD'}
                           </div>
+
                           <div className='flex flex-wrap gap-1 mt-1'>
                             {(
                               staff.workingDays ||
@@ -374,12 +371,13 @@ const AdminStaffManagement = () => {
                             ).map(day => (
                               <span
                                 key={day}
-                                className='text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-md font-bold border border-blue-100'
+                                className='text-[8px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-md font-bold border border-blue-100'
                               >
                                 {day}
                               </span>
                             ))}
                           </div>
+
                           <div className='text-[11px] font-black text-green-600 mt-1.5 uppercase'>
                             Fee: ৳
                             {staff.consultationFee ||
@@ -394,7 +392,7 @@ const AdminStaffManagement = () => {
                         </span>
                       )}
                     </td>
-                    <td className='p-6 text-center'>
+                    <td className='p-6 text-center font-inter'>
                       <button
                         onClick={() => handleDelete(staff._id)}
                         className='bg-red-50 text-red-400 px-4 py-2 rounded-xl text-[11px] font-black uppercase hover:bg-red-400 hover:text-white transition-all'
@@ -421,16 +419,16 @@ const AdminStaffManagement = () => {
         <div className='flex justify-end'>
           <button
             onClick={handleLogout}
-            className='px-10 border-2 border-red-200 text-red-700 rounded-2xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all'
+            className='px-10 border-2 border-red-200 text-red-700 rounded-2xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all font-inter'
           >
             LogOut
           </button>
         </div>
 
         {showModal && (
-          <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
-            <div className='bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]'>
-              <div className='p-8 bg-slate-50 border-b border-slate-100 flex justify-between items-center'>
+          <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 font-inter'>
+            <div className='bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] font-inter'>
+              <div className='p-8 bg-slate-50 border-b border-slate-100 flex justify-between items-center font-inter'>
                 <div>
                   <h3 className='text-2xl font-bold text-slate-800 uppercase tracking-tight'>
                     Onboard New Staff
@@ -443,7 +441,7 @@ const AdminStaffManagement = () => {
                   name='role'
                   value={formData.role}
                   onChange={e => resetForm(e.target.value)}
-                  className='bg-white border border-slate-200 rounded-xl px-4 py-2 font-bold text-slate-600 text-sm outline-none focus:ring-2 ring-blue-500'
+                  className='bg-white border border-slate-200 rounded-xl px-4 py-2 font-bold text-slate-600 text-sm outline-none focus:ring-2 ring-blue-500 font-inter'
                 >
                   <option value='DOCTORS'>Doctor</option>
                   <option value='ASSISTANTS'>Doctor's Assistant</option>
@@ -454,11 +452,11 @@ const AdminStaffManagement = () => {
 
               <form
                 onSubmit={handleSubmit}
-                className='p-8 overflow-y-auto space-y-8'
+                className='p-8 overflow-y-auto space-y-8 font-inter'
               >
                 {formData.role === 'DOCTORS' && (
                   <div className='flex flex-col items-center gap-4 bg-blue-50/50 p-6 rounded-3xl border border-blue-100'>
-                    <label className='text-xs font-black text-slate-800 uppercase tracking-widest'>
+                    <label className='text-xs font-black text-slate-800 uppercase tracking-widest font-inter'>
                       Professional Photo
                     </label>
                     <div className='relative group'>
@@ -467,7 +465,7 @@ const AdminStaffManagement = () => {
                           <img
                             src={imagePreview}
                             alt='Preview'
-                            className='w-full h-full object-cover'
+                            className='w-full h-full object-cover font-inter'
                           />
                         ) : (
                           <svg
@@ -485,9 +483,9 @@ const AdminStaffManagement = () => {
                           </svg>
                         )}
                       </div>
-                      <label className='absolute bottom-0 right-0 bg-blue-600 p-2 rounded-full text-white cursor-pointer shadow-lg hover:bg-blue-700 transition-colors'>
+                      <label className='absolute bottom-0 right-0 bg-blue-600 p-2 rounded-full text-white cursor-pointer shadow-lg hover:bg-blue-700 transition-colors font-inter'>
                         <svg
-                          className='w-4 h-4'
+                          className='w-4 h-4 font-inter'
                           fill='none'
                           stroke='currentColor'
                           viewBox='0 0 24 24'
@@ -510,9 +508,9 @@ const AdminStaffManagement = () => {
                   </div>
                 )}
 
-                <div className='bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm space-y-6'>
+                <div className='bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm space-y-6 font-inter'>
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6'>
-                    <div className='space-y-1'>
+                    <div className='space-y-1 font-inter'>
                       <label className='text-[12px] font-bold text-slate-800'>
                         Full Name:
                       </label>
@@ -520,11 +518,11 @@ const AdminStaffManagement = () => {
                         name='name'
                         value={formData.name}
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner uppercase'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner uppercase font-inter'
                         required
                       />
                     </div>
-                    <div className='space-y-1'>
+                    <div className='space-y-1 font-inter'>
                       <label className='text-[12px] font-bold text-slate-800'>
                         NID Number:
                       </label>
@@ -532,11 +530,11 @@ const AdminStaffManagement = () => {
                         name='nid'
                         value={formData.nid}
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
                         required
                       />
                     </div>
-                    <div className='space-y-1'>
+                    <div className='space-y-1 font-inter'>
                       <label className='text-[12px] font-bold text-slate-800'>
                         Date of Birth:
                       </label>
@@ -545,11 +543,11 @@ const AdminStaffManagement = () => {
                         name='dateOfBirth'
                         value={formData.dateOfBirth}
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
                         required
                       />
                     </div>
-                    <div className='space-y-1'>
+                    <div className='space-y-1 font-inter'>
                       <label className='text-[12px] font-bold text-slate-800'>
                         Phone Number:
                       </label>
@@ -557,11 +555,11 @@ const AdminStaffManagement = () => {
                         name='phone'
                         value={formData.phone}
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
                         required
                       />
                     </div>
-                    <div className='space-y-1'>
+                    <div className='space-y-1 font-inter'>
                       <label className='text-[12px] font-bold text-slate-800'>
                         Gender:
                       </label>
@@ -569,13 +567,13 @@ const AdminStaffManagement = () => {
                         name='gender'
                         value={formData.gender}
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
                       >
                         <option value='male'>Male</option>
                         <option value='female'>Female</option>
                       </select>
                     </div>
-                    <div className='space-y-1'>
+                    <div className='space-y-1 font-inter'>
                       <label className='text-[12px] font-bold text-slate-800'>
                         Emergency Contact:
                       </label>
@@ -583,11 +581,11 @@ const AdminStaffManagement = () => {
                         name='emergencyContact'
                         value={formData.emergencyContact.phone}
                         onChange={handleEmergencyPhoneChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
                         required
                       />
                     </div>
-                    <div className='space-y-1'>
+                    <div className='space-y-1 font-inter'>
                       <label className='text-[12px] font-bold text-slate-800'>
                         Email Address:
                       </label>
@@ -596,11 +594,11 @@ const AdminStaffManagement = () => {
                         type='email'
                         value={formData.email}
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
                         required
                       />
                     </div>
-                    <div className='space-y-1'>
+                    <div className='space-y-1 font-inter'>
                       <label className='text-[12px] font-bold text-slate-800'>
                         Address:
                       </label>
@@ -608,18 +606,18 @@ const AdminStaffManagement = () => {
                         name='address'
                         value={formData.address}
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
                         required
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className='bg-blue-50/50 p-6 rounded-3xl border border-blue-100 space-y-4'>
+                <div className='bg-blue-50/50 p-6 rounded-3xl border border-blue-100 space-y-4 font-inter'>
                   <p className='text-xs font-black text-[#4486F6] uppercase tracking-widest'>
                     Security & Identity
                   </p>
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6 font-inter'>
                     <div className='space-y-1'>
                       <label className='text-[12px] uppercase font-black text-slate-800 ml-1'>
                         System Identity
@@ -627,7 +625,7 @@ const AdminStaffManagement = () => {
                       <input
                         disabled
                         placeholder='Auto-generated on save'
-                        className='w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 outline-none font-mono text-xs italic'
+                        className='w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 outline-none text-xs italic font-inter'
                       />
                     </div>
                     <div className='space-y-1'>
@@ -639,7 +637,7 @@ const AdminStaffManagement = () => {
                         name='password'
                         value={formData.password}
                         onChange={handleInputChange}
-                        className='w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-[#4486F6]'
+                        className='w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-[#4486F6] font-inter'
                         required
                       />
                     </div>
@@ -647,11 +645,11 @@ const AdminStaffManagement = () => {
                 </div>
 
                 {formData.role === 'DOCTORS' && (
-                  <div className='bg-slate-50 p-8 rounded-3xl border border-slate-200 space-y-6'>
+                  <div className='bg-slate-50 p-8 rounded-3xl border border-slate-200 space-y-6 font-inter'>
                     <p className='text-xs font-black text-[#4486F6] uppercase tracking-widest'>
                       Doctor Availability
                     </p>
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-8 font-inter'>
                       <div className='space-y-4'>
                         <div className='space-y-1'>
                           <label className='text-[11px] uppercase font-black text-slate-800 ml-1'>
@@ -662,7 +660,7 @@ const AdminStaffManagement = () => {
                             value={formData.specialization}
                             placeholder='Cardiologist'
                             onChange={handleInputChange}
-                            className='w-full border border-slate-300 rounded-lg px-3 py-3 outline-none focus:ring-1 ring-blue-500 bg-white'
+                            className='w-full border border-slate-300 rounded-lg px-3 py-3 outline-none focus:ring-1 ring-blue-500 bg-white font-inter'
                             required
                           />
                         </div>
@@ -675,7 +673,7 @@ const AdminStaffManagement = () => {
                             value={formData.licenseNumber}
                             placeholder='BMDC Reg'
                             onChange={handleInputChange}
-                            className='w-full border border-slate-300 rounded-lg px-3 py-3 outline-none focus:ring-1 ring-blue-500 bg-white'
+                            className='w-full border border-slate-300 rounded-lg px-3 py-3 outline-none focus:ring-1 ring-blue-500 bg-white font-inter'
                             required
                           />
                         </div>
@@ -689,12 +687,12 @@ const AdminStaffManagement = () => {
                             value={formData.consultationFee}
                             placeholder='1000'
                             onChange={handleInputChange}
-                            className='w-full border-2 border-blue-200 rounded-lg px-3 py-3 outline-none focus:ring-1 ring-blue-500 bg-white font-bold'
+                            className='w-full border-2 border-blue-200 rounded-lg px-3 py-3 outline-none focus:ring-1 ring-blue-500 bg-white font-bold font-inter'
                             required
                           />
                         </div>
                       </div>
-                      <div className='space-y-4'>
+                      <div className='space-y-4 font-inter'>
                         <div className='space-y-1'>
                           <label className='text-[11px] uppercase font-black text-slate-800 ml-1'>
                             Hospital Name
@@ -704,7 +702,7 @@ const AdminStaffManagement = () => {
                             value={formData.hospitalName}
                             placeholder='Hospital Name'
                             onChange={handleInputChange}
-                            className='w-full border border-slate-300 rounded-lg px-3 py-3 outline-none focus:ring-1 ring-blue-500 bg-white'
+                            className='w-full border border-slate-300 rounded-lg px-3 py-3 outline-none focus:ring-1 ring-blue-500 bg-white font-inter'
                           />
                           <label className='text-[11px] uppercase font-black text-slate-800 ml-1 mt-2 block'>
                             Sitting Time
@@ -714,10 +712,10 @@ const AdminStaffManagement = () => {
                             value={formData.sittingTime}
                             placeholder='e.g. 5-9 PM'
                             onChange={handleInputChange}
-                            className='w-full border border-slate-300 rounded-lg px-3 py-3 outline-none focus:ring-1 ring-blue-500 bg-white'
+                            className='w-full border border-slate-300 rounded-lg px-3 py-3 outline-none focus:ring-1 ring-blue-500 bg-white font-inter'
                           />
                         </div>
-                        <div className='space-y-2'>
+                        <div className='space-y-2 font-inter'>
                           <label className='text-[11px] uppercase font-black text-slate-800 ml-1'>
                             Available Days
                           </label>
@@ -735,7 +733,7 @@ const AdminStaffManagement = () => {
                                 key={day}
                                 type='button'
                                 onClick={() => handleDayToggle(day)}
-                                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${formData.sittingDays.includes(day) ? 'bg-[#4486F6] text-white' : 'bg-white border border-slate-200 text-slate-800'}`}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${formData.sittingDays.includes(day) ? 'bg-[#4486F6] text-white' : 'bg-white border border-slate-200 text-slate-800'} font-inter`}
                               >
                                 {day}
                               </button>
@@ -748,11 +746,11 @@ const AdminStaffManagement = () => {
                 )}
 
                 {formData.role === 'ASSISTANTS' && (
-                  <div className='bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-4'>
+                  <div className='bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-4 font-inter'>
                     <p className='text-xs font-black text-[#4486F6] uppercase tracking-widest'>
                       Assistant Assignment
                     </p>
-                    <div className='font-inter'>
+                    <div>
                       <label className='text-[11px] uppercase font-black text-slate-800 ml-1'>
                         Assign Doctor
                       </label>
@@ -760,7 +758,7 @@ const AdminStaffManagement = () => {
                         name='assignedDoctorId'
                         value={formData.assignedDoctorId}
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-3 outline-none focus:ring-1 ring-blue-500 font-bold text-slate-700 bg-white'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-3 outline-none focus:ring-1 ring-blue-500 font-bold text-slate-700 bg-white font-inter'
                         required
                       >
                         <option value=''>Select Doctor...</option>
@@ -774,10 +772,10 @@ const AdminStaffManagement = () => {
                   </div>
                 )}
 
-                <div className='flex flex-col items-center gap-4 pt-4'>
+                <div className='flex flex-col items-center gap-4 pt-4 font-inter'>
                   <button
                     type='submit'
-                    className='w-full max-w-md bg-blue-600 hover:bg-[#4486F6] text-white py-4 rounded-2xl font-bold shadow-lg transition-all uppercase text-xs tracking-widest active:scale-95'
+                    className='w-full max-w-md bg-blue-600 hover:bg-[#4486F6] text-white py-4 rounded-2xl font-bold shadow-lg transition-all uppercase text-xs tracking-widest active:scale-95 font-inter'
                   >
                     Register Member
                   </button>
@@ -787,7 +785,7 @@ const AdminStaffManagement = () => {
                       setShowModal(false);
                       resetForm();
                     }}
-                    className='text-[11px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-800'
+                    className='text-[11px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-800 font-inter'
                   >
                     Close Window
                   </button>
