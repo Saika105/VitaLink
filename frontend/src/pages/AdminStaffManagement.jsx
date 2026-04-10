@@ -302,7 +302,8 @@ const AdminStaffManagement = () => {
                         NID: {staff.nidNumber}
                       </div>
                       <div className='text-[10px] text-slate-800'>
-                        {staff.phone} | {staff.gender}
+                        {staff.phone || 'No Phone'} |{' '}
+                        {staff.gender || 'N/A'}{' '}
                       </div>
                       <div className='text-[10px] text-slate-800 italic'>
                         {staff.email}
@@ -316,7 +317,10 @@ const AdminStaffManagement = () => {
                         {staff.address}
                       </div>
                       <div className='text-[9px] font-black text-red-400 uppercase mt-1'>
-                        SOS: {staff.emergencyName}
+                        SOS:{' '}
+                        {staff.emergencyContact?.name ||
+                          staff.emergencyName ||
+                          'N/A'}{' '}
                       </div>
                     </td>
                     <td className='p-6'>

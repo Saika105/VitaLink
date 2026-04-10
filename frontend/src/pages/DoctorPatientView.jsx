@@ -71,11 +71,16 @@ const DoctorPatientView = () => {
               'Medical Record'
             ).toUpperCase(),
             hospital: (
-              item.hospital?.name ||
-              item.hospitalName ||
+              item.hospital?.fullName ||
+              item.manualHospitalName ||
               'VitaLink Partner'
             ).toUpperCase(),
-            date: new Date(item.prescribedDate || item.createdAt || item.date)
+            date: new Date(
+              item.prescribedDate ||
+                item.reportDate ||
+                item.createdAt ||
+                item.date,
+            )
               .toLocaleDateString('en-GB', {
                 day: '2-digit',
                 month: 'short',
@@ -84,9 +89,8 @@ const DoctorPatientView = () => {
               .toUpperCase(),
             fileUrl:
               item.prescriptionFile?.url ||
-              item.file?.url ||
+              item.reportFile?.url ||
               item.fileUrl ||
-              item.file ||
               '',
           }));
           setItems(mappedData);
@@ -181,7 +185,9 @@ const DoctorPatientView = () => {
                   Emergency
                 </p>
                 <div className='bg-red-50 border border-red-100 rounded-xl px-4 py-2 text-[12px] font-black text-red-600 text-left'>
-                  {patientData.emergencyContact || 'NOT PROVIDED'}
+                  {patientData.emergencyContact?.phone ||
+                    patientData.emergencyContact ||
+                    'NOT PROVIDED'}
                 </div>
               </div>
               <div>
@@ -213,7 +219,7 @@ const DoctorPatientView = () => {
                       state: { patient: patientData },
                     })
                   }
-                  className='w-54 h-12 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[11px] rounded-xl font-black uppercase tracking-widest shadow-lg transition-all active:scale-[0.98]'
+                  className='w-54 h-12 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[11px] font-black uppercase tracking-widest shadow-lg transition-all active:scale-[0.98] rounded-xl'
                 >
                   Create Digital RX
                 </button>

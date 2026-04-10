@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import FormInput from '../components/FormInput';
+import { protectedFetch } from '../utils/api';
 
 const PatientSignUp = () => {
   const navigate = useNavigate();
-  const apiUrl = import.meta.env.VITE_API_URL;
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -58,19 +58,29 @@ const PatientSignUp = () => {
     }
 
     try {
-      const response = await fetch(
-        `${apiUrl}/api/v1/patients/initialize-registration`,
+      const response = await protectedFetch(
+        '/api/v1/patients/initialize-registration',
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            name: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            dob: formData.dateOfBirth,
+            nid: formData.nidNumber,
+            birthCertificate: formData.birthCertificate,
+            gender: formData.gender,
+            address: formData.address,
+            bloodGroup: formData.bloodGroup,
+            emergencyContact: formData.emergencyContact,
+          }),
         },
       );
 
       const data = await response.json();
 
       if (response.ok) {
-        setGeneratedId(data.upid);
+        setGeneratedId(data.data.uniqueId);
         setShowPopup(true);
       } else {
         alert(data.message || 'Registration failed');
@@ -83,7 +93,7 @@ const PatientSignUp = () => {
 
   const handleCreateProfile = async () => {
     if (!passwords.password || passwords.password.length < 6) {
-      alert('Password too short.');
+      alert('Password too short (min 6 characters).');
       return;
     }
 
@@ -93,14 +103,14 @@ const PatientSignUp = () => {
     }
 
     try {
-      const response = await fetch(
-        `${apiUrl}/api/v1/patients/finalize-registration`,
+      const response = await protectedFetch(
+        '/api/v1/patients/finalize-registration',
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            upid: generatedId,
+            uniqueId: generatedId,
             password: passwords.password,
+            confirmPassword: passwords.confirmPassword,
           }),
         },
       );
@@ -115,6 +125,7 @@ const PatientSignUp = () => {
       }
     } catch (error) {
       console.error(error);
+      alert('Connection error');
     }
   };
 
