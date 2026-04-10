@@ -285,25 +285,25 @@ const AdminStaffManagement = () => {
                       <div className='flex items-center gap-3 font-inter'>
                         {activeTableTab === 'DOCTORS' && (
                           <img
-                            src={
+                            src={(
                               staff.profilePhoto?.url ||
                               'https://via.placeholder.com/150'
-                            }
-                            className='w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm font-inter'
+                            ).replace('http://', 'https://')}
+                            className='w-12 h-12 rounded-full object-cover border-2 border-white shadow-md font-inter'
                             alt='profile'
                           />
                         )}
                         <div className='font-inter'>
                           <div className='font-bold text-slate-800 uppercase font-inter'>
-                            {staff.fullName}
+                            {staff.fullName || staff.name}
                           </div>
-                          <div className='text-[10px] text-[#4486F6] font-mono font-bold font-inter'>
+                          <div className='text-[10px] text-[#4486F6] font-bold font-inter'>
                             {staff.doctorId ||
                               staff.assistantId ||
                               staff.labAssistantId ||
                               staff.receptionistId ||
                               staff.upid ||
-                              'PENDING'}
+                              'ID PENDING'}
                           </div>
                         </div>
                       </div>
@@ -324,7 +324,7 @@ const AdminStaffManagement = () => {
                         className='text-[10px] text-slate-500 truncate w-48 font-inter'
                         title={staff.address}
                       >
-                        {staff.address}
+                        {staff.address || 'No Address Provided'}
                       </div>
                       <div className='text-[10px] font-bold text-red-500 mt-1 uppercase font-inter'>
                         SOS:{' '}
@@ -337,16 +337,19 @@ const AdminStaffManagement = () => {
                       {activeTableTab === 'DOCTORS' && (
                         <div className='font-inter'>
                           <div className='text-[11px] font-black text-[#4486F6] uppercase font-inter'>
-                            {staff.specialization}
+                            {staff.specialization || 'General'}
                           </div>
                           <div className='text-[10px] font-black text-green-600 mt-0.5 uppercase font-inter'>
-                            Fee: ৳{staff.consultationFee || staff.fee}
+                            Fee: ৳
+                            {staff.consultationFee ||
+                              staff.schedule?.consultationFee ||
+                              '0'}
                           </div>
                         </div>
                       )}
                       {activeTableTab !== 'DOCTORS' && (
                         <span className='bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter font-inter'>
-                          Hospital Staff
+                          {activeTableTab.replace('_', ' ')}
                         </span>
                       )}
                     </td>
@@ -580,12 +583,12 @@ const AdminStaffManagement = () => {
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-6 font-inter'>
                     <div className='space-y-1 font-inter'>
                       <label className='text-[12px] uppercase font-black text-slate-800 ml-1 font-inter'>
-                        Auto-generated ID
+                        System Identity
                       </label>
                       <input
                         disabled
-                        placeholder='Unique ID generated on save'
-                        className='w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 outline-none font-mono text-xs font-inter italic'
+                        placeholder='Auto-generated on save'
+                        className='w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 outline-none font-inter text-xs italic'
                       />
                     </div>
                     <div className='space-y-1 font-inter'>
