@@ -206,7 +206,7 @@ const AdminStaffManagement = () => {
       }
     } catch (err) {
       console.error(err);
-      alert('Member registration processed. Refreshing...');
+      alert('Network update processed. Refreshing list...');
       setShowModal(false);
       resetForm();
       window.location.reload();
@@ -341,7 +341,7 @@ const AdminStaffManagement = () => {
                       </div>
                     </td>
                     <td className='p-6'>
-                      <div className='text-[11px] text-slate-500 max-w-55 leading-relaxed'>
+                      <div className='text-[11px] text-slate-500 max-w-50 leading-relaxed'>
                         {staff.address || 'N/A'}
                       </div>
                       <div className='text-[11px] font-bold text-red-500 mt-1 uppercase'>
@@ -369,7 +369,6 @@ const AdminStaffManagement = () => {
                           <div className='text-[11px] font-black text-green-600 mt-1 uppercase'>
                             Fee: ৳
                             {staff.consultationFee ||
-                              staff.fee ||
                               staff.schedule?.consultationFee ||
                               '0'}
                           </div>
@@ -405,7 +404,7 @@ const AdminStaffManagement = () => {
           </table>
         </div>
 
-        <div className='flex justify-end'>
+        <div className='flex justify-end font-inter'>
           <button
             onClick={handleLogout}
             className='px-10 border-2 border-red-200 text-red-700 rounded-2xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all'
@@ -415,7 +414,7 @@ const AdminStaffManagement = () => {
         </div>
 
         {showModal && (
-          <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
+          <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 font-inter'>
             <div className='bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]'>
               <div className='p-8 bg-slate-50 border-b border-slate-100 flex justify-between items-center'>
                 <div>
@@ -739,7 +738,7 @@ const AdminStaffManagement = () => {
                     <p className='text-xs font-black text-[#4486F6] uppercase tracking-widest'>
                       Assistant Assignment
                     </p>
-                    <div>
+                    <div className='font-inter'>
                       <label className='text-[11px] uppercase font-black text-slate-800 ml-1'>
                         Assign Doctor
                       </label>
@@ -761,7 +760,7 @@ const AdminStaffManagement = () => {
                   </div>
                 )}
 
-                <div className='flex flex-col items-center gap-4 pt-4'>
+                <div className='flex flex-col items-center gap-4 pt-4 font-inter'>
                   <button
                     type='submit'
                     className='w-full max-w-md bg-blue-600 hover:bg-[#4486F6] text-white py-4 rounded-2xl font-bold shadow-lg transition-all uppercase text-xs tracking-widest active:scale-95'
