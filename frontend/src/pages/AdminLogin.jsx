@@ -10,42 +10,52 @@ const AdminLogin = () => {
 
   const apiUrl = import.meta.env.VITE_API_URL;
 
- const handleLogin = async e => {
-   e.preventDefault();
-   setLoading(true);
-   setError('');
+  const handleLogin = async e => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-   try {
-     const response = await fetch(`${apiUrl}/api/v1/admins/login`, {
-       method: 'POST',
-       headers: { 'Content-Type': 'application/json' },
-       body: JSON.stringify({
-         email: loginData.email,
-         password: loginData.password, 
-       }),
-     });
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: loginData.email,
+          password: loginData.password,
+        }),
+      });
 
-     const data = await response.json();
+      const data = await response.json();
 
-     if (response.ok) {
-       const token = data.data?.accessToken || data.data?.token || data.token;
+      if (response.ok) {
+        const token = data.data?.accessToken || data.data?.token || data.token;
 
-       if (token) {
-         localStorage.setItem('token', token);
-         localStorage.setItem('role', 'admin');
-         navigate('/admin-staff');
-       } else {
-         setError('Auth token not found in server response.');
-       }
-     } else {
-       setError(data.message || 'Authorization failed. Invalid credentials.');
-     }
-   } catch (err) {
-     setError('Connection to security server failed.');
-   } finally {
-     setLoading(false);
-   }
- };
+        if (token) {
+          localStorage.setItem('token', token);
+          localStorage.setItem('role', 'admin');
+          navigate('/admin-staff');
+        } else {
+          setError(
+            'Security protocol error: Access token not found in response.',
+          );
+        }
+      } else {
+        if (response.status === 404) {
+          setError(
+            'Endpoint mismatch (404). Check if backend uses /admin/ or /admins/.',
+          );
+        } else {
+          setError(
+            data.message || 'Authorization failed. Invalid credentials.',
+          );
+        }
+      }
+    } catch (err) {
+      setError('Critical: Connection to security server failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className='min-h-screen bg-[#F0F7FF] flex items-center justify-center p-6 font-inter'>
@@ -104,7 +114,7 @@ const AdminLogin = () => {
               disabled={loading}
               className={`w-full bg-[#4486F6] hover:bg-blue-600 text-white font-inter font-bold py-4 rounded-2xl shadow-lg active:scale-[0.97] transition-all text-xs uppercase tracking-[0.25em] mt-4 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {loading ? 'Verifying...' : 'Authorize Login'}
+              {loading ? 'Verifying Protocols...' : 'Authorize Login'}
             </button>
           </form>
         </div>
@@ -122,21 +132,17 @@ const AdminLogin = () => {
             <h3 className='text-xl font-bold text-slate-800 tracking-tight uppercase'>
               Security Protocol
             </h3>
-            <ul className='list-none space-y-4'>
-              <li>
-                <p className='text-slate-500 leading-relaxed text-xs font-medium opacity-80'>
-                  Access the root management system to oversee medical staff,
-                  verify hospital credentials, and audit security logs.
-                </p>
-              </li>
-              <li>
-                <p className='text-slate-500 leading-relaxed text-xs font-medium opacity-80'>
-                  Maintain the integrity of the network by managing system
-                  permissions and reviewing all high-level administrative
-                  activity.
-                </p>
-              </li>
-            </ul>
+            <div className='space-y-4 text-slate-500 leading-relaxed text-xs font-medium opacity-80'>
+              <p>
+                Access the root management system to oversee medical staff,
+                verify hospital credentials, and audit security logs.
+              </p>
+              <p>
+                Maintain the integrity of the network by managing system
+                permissions and reviewing all high-level administrative
+                activity.
+              </p>
+            </div>
           </div>
         </div>
       </div>
