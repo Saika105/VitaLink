@@ -156,11 +156,10 @@ const AdminStaffManagement = () => {
       dataToSend.append('gender', formData.gender);
       dataToSend.append('dateOfBirth', formData.dateOfBirth);
 
-      const phoneOnly =
-        typeof formData.emergencyContact === 'object'
-          ? formData.emergencyContact.phone
-          : formData.emergencyContact;
-      dataToSend.append('emergencyContact', phoneOnly || '');
+      dataToSend.append(
+        'emergencyContact',
+        JSON.stringify(formData.emergencyContact),
+      );
 
       dataToSend.append('nidNumber', formData.nid);
       dataToSend.append('address', formData.address);
@@ -196,7 +195,6 @@ const AdminStaffManagement = () => {
         if (formData.role === activeTableTab) {
           setStaffList(prev => [newEntry, ...prev]);
         }
-
         setShowModal(false);
         resetForm();
       } else {
@@ -314,7 +312,7 @@ const AdminStaffManagement = () => {
                           <div className='font-bold text-slate-800 uppercase font-inter'>
                             {staff.fullName || staff.name || 'N/A'}
                           </div>
-                          <div className='text-[10px] text-[#4486F6] font-mono font-bold font-inter'>
+                          <div className='text-[10px] text-[#4486F6] font-bold font-inter'>
                             {staff.doctorId ||
                               staff.assistantId ||
                               staff.labAssistantId ||
@@ -345,10 +343,9 @@ const AdminStaffManagement = () => {
                       </div>
                       <div className='text-[10px] font-bold text-red-500 mt-1 uppercase font-inter'>
                         SOS:{' '}
-                        {staff.emergencyContact?.phone ||
-                          staff.emergencyPhone ||
-                          staff.emergencyContact ||
-                          'N/A'}
+                        {typeof staff.emergencyContact === 'object'
+                          ? staff.emergencyContact?.phone || 'N/A'
+                          : staff.emergencyContact || 'N/A'}
                       </div>
                     </td>
                     <td className='p-6 font-inter'>
@@ -607,7 +604,7 @@ const AdminStaffManagement = () => {
                       <input
                         disabled
                         placeholder='Auto-generated on save'
-                        className='w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 outline-none font-mono text-xs font-inter italic'
+                        className='w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 outline-none text-xs font-inter italic'
                       />
                     </div>
                     <div className='space-y-1 font-inter'>
