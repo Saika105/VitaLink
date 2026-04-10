@@ -10,37 +10,42 @@ const AdminLogin = () => {
 
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  const handleLogin = async e => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+ const handleLogin = async e => {
+   e.preventDefault();
+   setLoading(true);
+   setError('');
 
-    try {
-      const response = await fetch(`${apiUrl}/api/v1/admin/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: loginData.email,
-          password: loginData.password,
-        }),
-      });
+   try {
+     const response = await fetch(`${apiUrl}/api/v1/admin/login`, {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({
+         email: loginData.email,
+         password: loginData.password, 
+       }),
+     });
 
-      const data = await response.json();
+     const data = await response.json();
 
-      if (response.ok) {
-        const token = data.data?.token || data.token;
-        localStorage.setItem('token', token);
-        localStorage.setItem('role', 'admin');
-        navigate('/admin-staff');
-      } else {
-        setError(data.message || 'Authorization failed. Invalid credentials.');
-      }
-    } catch (err) {
-      setError('Connection to security server failed.');
-    } finally {
-      setLoading(false);
-    }
-  };
+     if (response.ok) {
+       const token = data.data?.accessToken || data.data?.token || data.token;
+
+       if (token) {
+         localStorage.setItem('token', token);
+         localStorage.setItem('role', 'admin');
+         navigate('/admin-staff');
+       } else {
+         setError('Auth token not found in server response.');
+       }
+     } else {
+       setError(data.message || 'Authorization failed. Invalid credentials.');
+     }
+   } catch (err) {
+     setError('Connection to security server failed.');
+   } finally {
+     setLoading(false);
+   }
+ };
 
   return (
     <div className='min-h-screen bg-[#F0F7FF] flex items-center justify-center p-6 font-inter'>
