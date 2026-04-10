@@ -23,6 +23,15 @@ const AssistantDashboard = () => {
   const [notes, setNotes] = useState([]);
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+
+    if (!token || role !== 'doctor-assistants') {
+      navigate('/login-staff', { replace: true });
+    }
+  }, [navigate]);
+
+  useEffect(() => {
     const today = new Date();
     setCurrentDate(
       today.toLocaleDateString('en-GB', {
@@ -203,19 +212,18 @@ const AssistantDashboard = () => {
   };
 
   const handleLogout = async () => {
-    try {
-      await protectedFetch(`/api/v1/doctor-assistants/logout`, {
-        method: 'POST',
-      });
-    } catch (error) {
-      console.error(error);
-    } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('role');
-      navigate('/login-staff');
-    }
-  };
+        try {
+          await protectedFetch('/api/v1/doctor-assistants/logout', {
+            method: 'POST',
+          });
+        } catch (error) {
+          console.error('Logout Error:', error);
+        } finally {
+          localStorage.clear();
+          navigate('/login-staff', { replace: true });
+          window.location.reload();
+        }
+      };
 
   return (
     <div className='min-h-screen bg-[#F8FAFC] flex flex-col font-inter text-slate-900'>

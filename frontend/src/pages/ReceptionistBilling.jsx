@@ -18,6 +18,14 @@ const ReceptionistBilling = () => {
   const [amountPaidNow, setAmountPaidNow] = useState('');
   const [testCatalog, setTestCatalog] = useState([]);
 
+   useEffect(() => {
+      const token = localStorage.getItem('token');
+      const role = localStorage.getItem('role');
+      if (!token || role !== 'receptionists') {
+        navigate('/login-staff', { replace: true });
+      }
+   }, [navigate]);
+  
   useEffect(() => {
     setCurrentDate(
       new Date().toLocaleDateString('en-GB', {
@@ -110,15 +118,18 @@ const ReceptionistBilling = () => {
   };
 
   const handleLogout = async () => {
-    try {
-      await protectedFetch(`/api/v1/staff/logout`, { method: 'POST' });
-    } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('role');
-      navigate('/login-staff');
-    }
-  };
+      try {
+        await protectedFetch('/api/v1/receptionists/logout', {
+          method: 'POST',
+        });
+      } catch (error) {
+        console.error('Logout Error:', error);
+      } finally {
+        localStorage.clear();
+        navigate('/login-staff', { replace: true });
+        window.location.reload();
+      }
+    };
 
   const handlePaymentSubmit = async () => {
     if (!currentPatient || billItems.length === 0)

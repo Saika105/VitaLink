@@ -48,14 +48,16 @@ const AdminStaffManagement = () => {
     }
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
-
-    navigate('/login-admin', { replace: true });
-    window.location.reload();
+  const handleLogout = async () => {
+    try {
+      await protectedFetch('/api/v1/admins/logout', { method: 'POST' });
+    } catch (error) {
+      console.error('Logout Error:', error);
+    } finally {
+      localStorage.clear();
+      navigate('/login-admin', { replace: true });
+      window.location.reload();
+    }
   };
 
   useEffect(() => {
