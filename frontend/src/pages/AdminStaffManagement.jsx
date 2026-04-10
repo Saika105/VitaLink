@@ -141,14 +141,13 @@ const AdminStaffManagement = () => {
 
     try {
       const dataToSend = new FormData();
-
       dataToSend.append('fullName', formData.name);
       dataToSend.append('email', formData.email);
       dataToSend.append('password', formData.password);
       dataToSend.append('phone', formData.phone);
       dataToSend.append('gender', formData.gender);
       dataToSend.append('dateOfBirth', formData.dateOfBirth);
-      dataToSend.append('emergencyContact', formData.emergencyContact);  
+      dataToSend.append('emergencyContact', formData.emergencyContact);
       dataToSend.append('nidNumber', formData.nid);
       dataToSend.append('address', formData.address);
 
@@ -156,13 +155,10 @@ const AdminStaffManagement = () => {
         dataToSend.append('licenseNumber', formData.licenseNumber);
         dataToSend.append('specialization', formData.specialization);
         dataToSend.append('consultationFee', formData.consultationFee);
-        dataToSend.append('sittingTimeLabel', formData.sittingTime); 
+        dataToSend.append('sittingTimeLabel', formData.sittingTime);
         dataToSend.append('workingDays', JSON.stringify(formData.sittingDays));
         dataToSend.append('timeSlots', JSON.stringify([]));
-
-        if (formData.photo) {
-          dataToSend.append('profilePhoto', formData.photo);
-        }
+        if (formData.photo) dataToSend.append('profilePhoto', formData.photo);
       }
 
       if (formData.role === 'ASSISTANTS') {
@@ -179,13 +175,11 @@ const AdminStaffManagement = () => {
 
       if (response.ok) {
         alert('Staff Added Successfully!');
-
         if (formData.role === 'DOCTORS' && result.data?.doctor) {
           setStaffList(prev => [result.data.doctor, ...prev]);
         } else if (formData.role === activeTableTab) {
           setStaffList(prev => [result.data, ...prev]);
         }
-
         setShowModal(false);
         resetForm();
       } else {
@@ -304,75 +298,63 @@ const AdminStaffManagement = () => {
                             {staff.fullName}
                           </div>
                           <div className='text-[10px] text-[#4486F6] font-mono font-bold font-inter'>
-                            {staff.upid ||
-                              staff.doctorId ||
+                            {staff.doctorId ||
                               staff.assistantId ||
                               staff.labAssistantId ||
-                              staff.receptionistId}
+                              staff.receptionistId ||
+                              staff.upid ||
+                              'PENDING'}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className='p-6 font-inter'>
                       <div className='text-xs font-bold text-slate-600 font-inter'>
-                        NID: {staff.nidNumber}
+                        NID: {staff.nidNumber || 'N/A'}
                       </div>
                       <div className='text-[10px] text-slate-800 font-inter'>
                         {staff.phone} | {staff.gender}
                       </div>
-                      <div className='text-[10px] text-slate-800 italic font-inter'>
+                      <div className='text-[10px] text-slate-400 italic font-inter'>
                         {staff.email}
                       </div>
                     </td>
                     <td className='p-6 font-inter'>
                       <div
-                        className='text-[10px] text-slate-500 truncate w-56 font-inter'
+                        className='text-[10px] text-slate-500 truncate w-48 font-inter'
                         title={staff.address}
                       >
                         {staff.address}
                       </div>
-                      <div className='text-[9px] font-black text-red-400 uppercase mt-1 font-inter'>
+                      <div className='text-[10px] font-bold text-red-500 mt-1 uppercase font-inter'>
                         SOS:{' '}
-                        {staff.emergencyPhone ||
-                          staff.emergencyContact ||
+                        {staff.emergencyContact ||
+                          staff.emergencyPhone ||
                           'N/A'}
                       </div>
                     </td>
                     <td className='p-6 font-inter'>
                       {activeTableTab === 'DOCTORS' && (
                         <div className='font-inter'>
-                          <div className='text-xs font-bold text-[#4486F6] uppercase font-inter'>
+                          <div className='text-[11px] font-black text-[#4486F6] uppercase font-inter'>
                             {staff.specialization}
                           </div>
-                          <div className='text-[10px] text-slate-800 font-inter'>
-                            {staff.hospitalName}
-                          </div>
-                          <div className='text-[10px] font-black text-green-600 mt-1 uppercase font-inter'>
-                            Fee: ৳{staff.consultationFee}
+                          <div className='text-[10px] font-black text-green-600 mt-0.5 uppercase font-inter'>
+                            Fee: ৳{staff.consultationFee || staff.fee}
                           </div>
                         </div>
                       )}
-                      {activeTableTab === 'ASSISTANTS' && (
-                        <div className='text-xs font-bold text-slate-600 italic font-inter'>
-                          Assigned to Doctor
-                        </div>
-                      )}
-                      {activeTableTab === 'LAB STAFF' && (
-                        <span className='bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase font-inter'>
-                          Diagnostic Unit
-                        </span>
-                      )}
-                      {activeTableTab === 'RECEPTIONIST' && (
-                        <span className='text-[10px] font-bold text-green-500 uppercase tracking-widest font-inter'>
-                          Authorized Access
+                      {activeTableTab !== 'DOCTORS' && (
+                        <span className='bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter font-inter'>
+                          Hospital Staff
                         </span>
                       )}
                     </td>
                     <td className='p-6 font-inter'>
-                      <div className='flex justify-center gap-3 font-inter'>
+                      <div className='flex justify-center font-inter'>
                         <button
                           onClick={() => handleDelete(staff._id)}
-                          className='bg-red-50 text-red-400 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase hover:bg-red-400 hover:text-white transition-all font-inter'
+                          className='bg-red-50 text-red-400 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-red-400 hover:text-white transition-all font-inter'
                         >
                           Delete
                         </button>
@@ -386,7 +368,7 @@ const AdminStaffManagement = () => {
                     colSpan='5'
                     className='p-20 text-center text-slate-300 italic font-medium font-inter'
                   >
-                    No records found for this department.
+                    No records found.
                   </td>
                 </tr>
               )}
@@ -397,7 +379,7 @@ const AdminStaffManagement = () => {
         <div className='flex justify-end font-inter'>
           <button
             onClick={handleLogout}
-            className='w-48 border-2 border-red-200 text-red-700 rounded-xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all focus:ring-2 focus:ring-red-500 outline-none font-inter'
+            className='px-10 border-2 border-red-200 text-red-700 rounded-2xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all font-inter'
           >
             LogOut
           </button>
@@ -486,41 +468,6 @@ const AdminStaffManagement = () => {
                   </div>
                 )}
 
-                <div className='bg-blue-50/50 p-6 rounded-3xl border border-blue-100 space-y-4 font-inter'>
-                  <p className='text-xs font-black text-[#4486F6] uppercase tracking-widest font-inter'>
-                    System Access
-                  </p>
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6 font-inter'>
-                    <div className='space-y-1 font-inter'>
-                      <label className='text-[12px] uppercase font-black text-slate-800 ml-1 font-inter'>
-                        Login Email
-                      </label>
-                      <input
-                        name='email'
-                        type='email'
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        placeholder='staff@hospital.com'
-                        className='w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-[#4486F6] font-inter'
-                        required
-                      />
-                    </div>
-                    <div className='space-y-1 font-inter'>
-                      <label className='text-[12px] uppercase font-black text-slate-800 ml-1 font-inter'>
-                        System Password
-                      </label>
-                      <input
-                        type='password'
-                        name='password'
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className='w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-[#4486F6] font-inter'
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
                 <div className='bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm space-y-6 font-inter'>
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 font-inter'>
                     <div className='space-y-1 font-inter'>
@@ -598,7 +545,20 @@ const AdminStaffManagement = () => {
                         required
                       />
                     </div>
-                    <div className='col-span-full space-y-1 font-inter'>
+                    <div className='space-y-1 font-inter'>
+                      <label className='text-[12px] font-bold text-slate-800 font-inter'>
+                        Email Address:
+                      </label>
+                      <input
+                        name='email'
+                        type='email'
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
+                        required
+                      />
+                    </div>
+                    <div className='space-y-1 font-inter'>
                       <label className='text-[12px] font-bold text-slate-800 font-inter'>
                         Address:
                       </label>
@@ -607,6 +567,37 @@ const AdminStaffManagement = () => {
                         value={formData.address}
                         onChange={handleInputChange}
                         className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner font-inter'
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className='bg-blue-50/50 p-6 rounded-3xl border border-blue-100 space-y-4 font-inter'>
+                  <p className='text-xs font-black text-[#4486F6] uppercase tracking-widest font-inter'>
+                    Security & Identity
+                  </p>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6 font-inter'>
+                    <div className='space-y-1 font-inter'>
+                      <label className='text-[12px] uppercase font-black text-slate-800 ml-1 font-inter'>
+                        Auto-generated ID
+                      </label>
+                      <input
+                        disabled
+                        placeholder='Unique ID generated on save'
+                        className='w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 outline-none font-mono text-xs font-inter italic'
+                      />
+                    </div>
+                    <div className='space-y-1 font-inter'>
+                      <label className='text-[12px] uppercase font-black text-slate-800 ml-1 font-inter'>
+                        System Password
+                      </label>
+                      <input
+                        type='password'
+                        name='password'
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        className='w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-[#4486F6] font-inter'
                         required
                       />
                     </div>
