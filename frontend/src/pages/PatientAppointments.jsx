@@ -24,12 +24,19 @@ const PatientAppointments = () => {
           const result = await response.json();
           const mappedData = result.data.map(apt => ({
             id: apt._id,
-            hospital: apt.hospital?.fullName,
-            doctor: apt.doctor?.fullName,
-            specialization: apt.doctor?.specialization,
+            hospital:
+              apt.hospital?.fullName || apt.hospitalName || 'Private Clinic',
+            doctor:
+              apt.doctor?.fullName || apt.manualDoctorName || 'Not Specified',
+            specialization:
+              apt.doctor?.specialization || apt.specialization || 'General',
             date: new Date(apt.appointmentDate).toLocaleDateString(),
-            time: `${apt.timeSlot?.startTime} - ${apt.timeSlot?.endTime}`,
-            phone: apt.doctor?.phone,
+            time: apt.timeSlot
+              ? `${apt.timeSlot.startTime} - ${apt.timeSlot.endTime}`
+              : apt.startTime && apt.endTime
+                ? `${apt.startTime} - ${apt.endTime}`
+                : 'TBA',
+            phone: apt.doctor?.phone || apt.phone,
             followUpDate: apt.followUpDate
               ? new Date(apt.followUpDate).toLocaleDateString()
               : null,
@@ -95,11 +102,7 @@ const PatientAppointments = () => {
 
   const handleLogout = async () => {
     try {
-      await protectedFetch(`/api/v1/patients/logout`, {
-        method: 'POST',
-      });
-    } catch (error) {
-      console.error('Logout Error:', error);
+      await protectedFetch(`/api/v1/patients/logout`, { method: 'POST' });
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
@@ -144,7 +147,7 @@ const PatientAppointments = () => {
 
           <button
             onClick={() => setShowClearConfirm(true)}
-            className='bg-red-50 text-red-600 border border-red-100 px-4 md:px-6 py-2.5 md:py-3 rounded-xl text-[10px] md:text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-sm'
+            className='bg-red-50 text-red-600 border border-red-100 px-4 md:px-6 py-2.5 md:py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-sm'
           >
             Clear {activeTab} History
           </button>
@@ -167,9 +170,13 @@ const PatientAppointments = () => {
                   <th className='p-4 md:p-5 text-[11px] md:text-[12px] uppercase tracking-widest text-black font-black'>
                     Specialization
                   </th>
-                  <th className='p-4 md:p-5 text-[11px] md:text-[12px] uppercase tracking-widest text-black font-black'>
-                    Schedule
-                  </th>
+
+                  {activeTab !== 'Completed' && (
+                    <th className='p-4 md:p-5 text-[11px] md:text-[12px] uppercase tracking-widest text-black font-black'>
+                      Schedule
+                    </th>
+                  )}
+
                   <th className='p-4 md:p-5 text-[11px] md:text-[12px] uppercase tracking-widest text-black font-black text-center'>
                     Action
                   </th>
@@ -195,14 +202,18 @@ const PatientAppointments = () => {
                         {apt.specialization}
                       </span>
                     </td>
-                    <td className='p-4 md:p-5'>
-                      <div className='font-bold text-slate-900 whitespace-nowrap'>
-                        {apt.date}
-                      </div>
-                      <div className='text-[9px] md:text-[10px] font-bold text-black uppercase whitespace-nowrap'>
-                        {apt.time}
-                      </div>
-                    </td>
+
+                    {activeTab !== 'Completed' && (
+                      <td className='p-4 md:p-5'>
+                        <div className='font-bold text-slate-900 whitespace-nowrap'>
+                          {apt.date}
+                        </div>
+                        <div className='text-[9px] md:text-[10px] font-bold text-black uppercase whitespace-nowrap'>
+                          {apt.time}
+                        </div>
+                      </td>
+                    )}
+
                     <td className='p-4 md:p-5 text-center whitespace-nowrap'>
                       {activeTab === 'Upcoming' && (
                         <button
@@ -212,7 +223,6 @@ const PatientAppointments = () => {
                           Cancel
                         </button>
                       )}
-
                       {activeTab === 'Completed' && (
                         <div className='flex flex-col items-center gap-1'>
                           <span className='text-[8px] md:text-[9px] font-black text-slate-400 uppercase'>
@@ -223,7 +233,6 @@ const PatientAppointments = () => {
                           </span>
                         </div>
                       )}
-
                       {activeTab === 'Canceled' && (
                         <button
                           onClick={() => handleRescheduleClick(apt)}
@@ -238,7 +247,6 @@ const PatientAppointments = () => {
               </tbody>
             </table>
           </div>
-
           {appointments.length === 0 && (
             <div className='p-16 md:p-20 text-center text-black bg-white flex flex-col items-center gap-4'>
               <p className='text-xs font-bold uppercase tracking-widest'>
@@ -281,7 +289,7 @@ const PatientAppointments = () => {
             </h3>
             <p className='text-slate-500 text-xs mt-2 leading-relaxed'>
               This action will permanently delete all records from the{' '}
-              <b>{activeTab}</b> list. This cannot be undone.
+              <b>{activeTab}</b> list.
             </p>
             <div className='grid grid-cols-2 gap-3 mt-8'>
               <button
@@ -326,7 +334,6 @@ const PatientAppointments = () => {
               Contact the assistant of <b>{activeAssistant.name}</b> to pick a
               new date.
             </p>
-
             <div className='my-6 md:my-8 space-y-3'>
               <a
                 href={`tel:${activeAssistant.phone}`}
@@ -344,7 +351,6 @@ const PatientAppointments = () => {
                   →
                 </div>
               </a>
-
               <a
                 href={`https://wa.me/${activeAssistant.phone?.replace(/\D/g, '')}`}
                 target='_blank'
@@ -364,7 +370,6 @@ const PatientAppointments = () => {
                 </div>
               </a>
             </div>
-
             <button
               onClick={() => setShowPopup(false)}
               className='w-full bg-slate-900 text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 transition-all'
