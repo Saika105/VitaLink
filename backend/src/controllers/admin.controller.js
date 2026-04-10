@@ -117,7 +117,7 @@ const createDoctor = asyncHandler(async (req, res) => {
     gender,
     dateOfBirth,
     address,
-    nid,
+    nidNumber,
     emergencyContact, 
     licenseNumber,
     specialization,
@@ -132,7 +132,7 @@ const createDoctor = asyncHandler(async (req, res) => {
 
   const requiredStrings = [
     fullName, email, password, phone, gender, 
-    dateOfBirth, address, nid, licenseNumber, 
+    dateOfBirth, address, nidNumber, licenseNumber, 
     specialization, sittingTimeLabel
   ];
 
@@ -191,7 +191,7 @@ const createDoctor = asyncHandler(async (req, res) => {
     gender: gender.toLowerCase(),
     dateOfBirth,
     address,
-    nidNumber: nid,
+    nidNumber,
     emergencyContact: {
       name: parsedEmergencyContact.name || "Emergency Contact",
       phone: parsedEmergencyContact.phone,
@@ -489,25 +489,37 @@ const getHospitalStaff = asyncHandler(async (req, res) => {
 
   switch (role.toUpperCase()) {
     case "DOCTORS":
-      staffData = await Doctor.find(query).select("-password -refreshToken");
+      const doctors = await Doctor.find(query)
+        .select("-password -refreshToken")
+        .lean();
+
+      const doctorIds = doctors.map(d => d._id);
+
+      const schedules = await DoctorSchedule.find({ 
+        doctor: { $in: doctorIds } 
+      }).lean();
+
+      const scheduleMap = {};
+      schedules.forEach(s => {
+        scheduleMap[s.doctor.toString()] = s;
+      });
+
+      staffData = doctors.map(d => ({
+        ...d,
+        schedule: scheduleMap[d._id.toString()] || null,
+      }));
       break;
 
     case "ASSISTANTS":
-      staffData = await DoctorAssistant.find(query).select(
-        "-password -refreshToken",
-      );
+      staffData = await DoctorAssistant.find(query).select("-password -refreshToken");
       break;
 
     case "LAB STAFF":
-      staffData = await LabAssistant.find(query).select(
-        "-password -refreshToken",
-      );
+      staffData = await LabAssistant.find(query).select("-password -refreshToken");
       break;
 
     case "RECEPTIONIST":
-      staffData = await Receptionist.find(query).select(
-        "-password -refreshToken",
-      );
+      staffData = await Receptionist.find(query).select("-password -refreshToken");
       break;
 
     default:
