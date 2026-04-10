@@ -108,7 +108,6 @@ const generateScheduleId = () => {
 };
 
 const createDoctor = asyncHandler(async (req, res) => {
-  // 1. Destructure all fields from req.body
   const {
     fullName,
     email,
@@ -116,9 +115,9 @@ const createDoctor = asyncHandler(async (req, res) => {
     phone,
     gender,
     dateOfBirth,
-    address,          // Added
-    nid,              // Added (frontend calls it nid)
-    emergencyContact, // This is the phone number string from frontend
+    address,          
+    nid,             
+    emergencyContact, 
     licenseNumber,
     specialization,
     designation,
@@ -130,7 +129,6 @@ const createDoctor = asyncHandler(async (req, res) => {
     timeSlots,
   } = req.body;
 
-  // 2. Comprehensive Validation
   if (
     [
       fullName,
@@ -147,7 +145,6 @@ const createDoctor = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All profile and availability fields are required");
   }
 
-  // 3. Parse Array fields from FormData (which come as strings)
   let parsedWorkingDays = typeof workingDays === "string" ? JSON.parse(workingDays) : workingDays;
   let parsedTimeSlots = typeof timeSlots === "string" ? JSON.parse(timeSlots) : timeSlots;
 
@@ -155,7 +152,6 @@ const createDoctor = asyncHandler(async (req, res) => {
     throw new ApiError(400, "At least one working day is required");
   }
 
-  // 4. Check for existing doctor
   const existedDoctor = await Doctor.findOne({
     $or: [{ email }, { licenseNumber }, { phone }],
   });
@@ -167,7 +163,6 @@ const createDoctor = asyncHandler(async (req, res) => {
     );
   }
 
-  // 5. Handle Profile Photo upload
   const photoLocalPath = req.file?.path;
   if (!photoLocalPath)
     throw new ApiError(400, "Doctor profile photo is required");
