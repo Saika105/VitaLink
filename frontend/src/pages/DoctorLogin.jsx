@@ -41,7 +41,7 @@ const DoctorLogin = () => {
       }
     } catch (error) {
       console.error('Login Error:', error);
-      alert('Server Connection Failed. Check your backend status.');
+      alert('Server Connection Failed. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -96,7 +96,7 @@ const DoctorLogin = () => {
             <button
               type='submit'
               disabled={loading}
-              className='w-full bg-[#3B82F6] hover:bg-[#1E40AF] disabled:bg-slate-400 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-200 active:scale-[0.98] transition-all text-xs uppercase tracking-[0.2em] mt-2 font-inter'
+              className='w-full bg-[#3B82F6] hover:bg-[#1E40AF] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-200 active:scale-[0.98] transition-all text-xs uppercase tracking-[0.2em] mt-2 font-inter disabled:bg-slate-400'
             >
               {loading ? 'Authenticating...' : 'Secure Login'}
             </button>
