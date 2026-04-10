@@ -18,14 +18,14 @@ const ReceptionistBilling = () => {
   const [amountPaidNow, setAmountPaidNow] = useState('');
   const [testCatalog, setTestCatalog] = useState([]);
 
-   useEffect(() => {
-      const token = localStorage.getItem('token');
-      const role = localStorage.getItem('role');
-      if (!token || role !== 'receptionists') {
-        navigate('/login-staff', { replace: true });
-      }
-   }, [navigate]);
-  
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    if (!token || role !== 'receptionists') {
+      navigate('/login-staff', { replace: true });
+    }
+  }, [navigate]);
+
   useEffect(() => {
     setCurrentDate(
       new Date().toLocaleDateString('en-GB', {
@@ -37,10 +37,10 @@ const ReceptionistBilling = () => {
 
     const fetchTests = async () => {
       try {
-        const res = await protectedFetch(`/api/v1/reception/tests`);
+        const res = await protectedFetch(`/api/v1/receptionists/tests`);
         if (res.ok) {
           const result = await res.json();
-          setTestCatalog(result.data);
+          setTestCatalog(result.data || []);
         }
       } catch (err) {
         console.error(err);
@@ -65,7 +65,7 @@ const ReceptionistBilling = () => {
     if (!patientIdSearch.trim()) return;
     try {
       const res = await protectedFetch(
-        `/api/v1/reception/patient/${patientIdSearch}`,
+        `/api/v1/receptionists/patient/${patientIdSearch}`,
       );
       if (res.ok) {
         const result = await res.json();
@@ -118,18 +118,18 @@ const ReceptionistBilling = () => {
   };
 
   const handleLogout = async () => {
-      try {
-        await protectedFetch('/api/v1/receptionists/logout', {
-          method: 'POST',
-        });
-      } catch (error) {
-        console.error('Logout Error:', error);
-      } finally {
-        localStorage.clear();
-        navigate('/login-staff', { replace: true });
-        window.location.reload();
-      }
-    };
+    try {
+      await protectedFetch('/api/v1/receptionists/logout', {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Logout Error:', error);
+    } finally {
+      localStorage.clear();
+      navigate('/login-staff', { replace: true });
+      window.location.reload();
+    }
+  };
 
   const handlePaymentSubmit = async () => {
     if (!currentPatient || billItems.length === 0)
@@ -158,7 +158,7 @@ const ReceptionistBilling = () => {
     };
 
     try {
-      const res = await protectedFetch(`/api/v1/reception/create-bill`, {
+      const res = await protectedFetch(`/api/v1/receptionists/create-bill`, {
         method: 'POST',
         body: JSON.stringify(payload),
       });
@@ -494,7 +494,7 @@ const ReceptionistBilling = () => {
           <div className='no-print flex justify-end pt-1'>
             <button
               onClick={() => window.print()}
-              className='px-12 py-3 bg-slate-800 text-white rounded-lg text-[12px] font-black uppercase cursor-pointer border-none shadow-md transition-colors hover:bg-slate-900'
+              className='w-full h-12 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[11px] rounded-xl font-black uppercase tracking-widest shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98] disabled:opacity-50 font-inter'
             >
               Print Invoice
             </button>

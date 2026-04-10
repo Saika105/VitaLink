@@ -23,7 +23,7 @@ const DoctorDashboard = () => {
       navigate('/login-doctor', { replace: true });
     }
   }, [navigate]);
-  
+
   useEffect(() => {
     const today = new Date();
     setCurrentDate(
@@ -36,12 +36,11 @@ const DoctorDashboard = () => {
 
     const fetchDoctorData = async () => {
       try {
-        const response = await protectedFetch(`/api/v1/doctors/profile`);
-        if (response.ok) {
-          const result = await response.json();
+        const savedUser = JSON.parse(localStorage.getItem('user'));
+        if (savedUser) {
           setDoctorInfo({
-            fullName: result.data.fullName,
-            photo: result.data.profilePhoto?.url,
+            fullName: savedUser.fullName,
+            photo: savedUser.profilePhoto?.url || '',
           });
         }
       } catch (err) {
@@ -51,7 +50,7 @@ const DoctorDashboard = () => {
 
     const fetchDailyQueue = async () => {
       try {
-        const response = await protectedFetch(`/api/v1/doctors/queue`);
+        const response = await protectedFetch(`/api/v1/doctors/today-queue`);
         if (response.ok) {
           const result = await response.json();
           const apiData = result.data.filter(
@@ -78,7 +77,7 @@ const DoctorDashboard = () => {
 
     try {
       const response = await protectedFetch(
-        `/api/v1/doctors/patient-check/${patientIdSearch}`,
+        `/api/v1/doctors/patient-profile/${patientIdSearch}`,
       );
       if (response.ok) {
         const result = await response.json();
@@ -99,11 +98,11 @@ const DoctorDashboard = () => {
         patient: patientData,
       });
     } else {
-      setSelectedPatient(patientData);
+      setSelectedPatient(item);
     }
     setShowConfirmModal(true);
   };
-  
+
   const handleConfirmConsultation = async () => {
     const isManual = selectedPatient._id.toString().startsWith('manual');
 
@@ -113,9 +112,9 @@ const DoctorDashboard = () => {
     }
     try {
       const response = await protectedFetch(
-        `/api/v1/doctors/start-consultation/${selectedPatient._id}`,
+        `/api/v1/doctors/start-session/${selectedPatient._id}`,
         {
-          method: 'POST', 
+          method: 'PATCH', 
         },
       );
 
@@ -130,6 +129,7 @@ const DoctorDashboard = () => {
       alert('An error occurred while starting the session');
     }
   };
+
   return (
     <div className='min-h-screen bg-[#F8FAFC] flex flex-col font-inter text-black'>
       <DoctorNavbar
@@ -216,7 +216,10 @@ const DoctorDashboard = () => {
                     </td>
                     <td className='p-8 text-right'>
                       <button
-                        onClick={() => openConfirmModal(item)}
+                        onClick={() => {
+                          setSelectedPatient(item);
+                          setShowConfirmModal(true);
+                        }}
                         className='w-40 h-11 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[11px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98]'
                       >
                         Open File
