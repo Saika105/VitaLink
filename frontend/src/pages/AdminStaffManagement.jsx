@@ -6,13 +6,13 @@ import Footer from '../components/Footer';
 const AdminStaffManagement = () => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
-  const [activeTableTab, setActiveTableTab] = useState('doctor');
+  const [activeTableTab, setActiveTableTab] = useState('DOCTORS');
   const [staffList, setStaffList] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [imagePreview, setImagePreview] = useState(null);
 
   const [formData, setFormData] = useState({
-    role: 'doctor',
+    role: 'DOCTORS',
     upid: '',
     name: '',
     nid: '',
@@ -36,20 +36,43 @@ const AdminStaffManagement = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    if (!token || role !== 'admin') {
+      navigate('/login-admin');
+    }
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('refreshToken');
+    navigate('/login-admin');
+  };
+
+  useEffect(() => {
     const fetchStaff = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
       try {
         const response = await fetch(
           `${apiUrl}/api/v1/admins/staff?role=${activeTableTab}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
             },
           },
         );
         const result = await response.json();
-        if (response.ok) setStaffList(result.data);
+        if (response.ok) {
+          setStaffList(result.data || []);
+        } else if (response.status === 401) {
+          handleLogout();
+        }
       } catch (err) {
-        console.error(err);
+        console.error('Fetch Staff Error:', err);
       }
     };
     fetchStaff();
@@ -58,14 +81,16 @@ const AdminStaffManagement = () => {
   useEffect(() => {
     if (showModal) {
       const fetchDocs = async () => {
+        const token = localStorage.getItem('token');
         try {
-          const response = await fetch(`${apiUrl}/api/v1/admins/doctors-list`, {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
+          const response = await fetch(
+            `${apiUrl}/api/v1/admins/staff?role=DOCTORS`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
             },
-          });
+          );
           const result = await response.json();
-          if (response.ok) setDoctors(result.data);
+          if (response.ok) setDoctors(result.data || []);
         } catch (err) {
           console.error(err);
         }
@@ -97,22 +122,18 @@ const AdminStaffManagement = () => {
     });
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    navigate('/login-admin');
-  };
-
   const handleSubmit = async e => {
     e.preventDefault();
+    const token = localStorage.getItem('token');
+
     const routeMap = {
-      doctor: '/api/v1/admins/register-doctor',  
-      assistant: '/api/v1/admins/register-assistant',
-      lab: '/api/v1/admins/register-lab-assistant',
-      receptionist: '/api/v1/admins/register-receptionist',
+      DOCTORS: '/api/v1/admins/register-doctor',
+      ASSISTANTS: '/api/v1/admins/register-assistant',
+      'LAB STAFF': '/api/v1/admins/register-lab-assistant',
+      RECEPTIONIST: '/api/v1/admins/register-receptionist',
     };
-    const targetRoute =
-      routeMap[formData.role] || '/api/v1/admins/register-doctor';
+
+    const targetRoute = routeMap[formData.role];
 
     try {
       const dataToSend = new FormData();
@@ -124,55 +145,37 @@ const AdminStaffManagement = () => {
       dataToSend.append('address', formData.address);
       dataToSend.append('email', formData.email);
       dataToSend.append('password', formData.password);
-      dataToSend.append('emergencyName', formData.emergencyContact);
-      dataToSend.append('emergencyPhone', formData.phone);
+      dataToSend.append('emergencyPhone', formData.emergencyContact);
 
-      if (formData.role === 'doctor') {
+      if (formData.role === 'DOCTORS') {
         dataToSend.append('licenseNumber', formData.licenseNumber);
         dataToSend.append('specialization', formData.specialization);
         dataToSend.append('consultationFee', formData.consultationFee);
-        dataToSend.append('hospitalName', formData.hospitalName);
-        dataToSend.append('sittingTime', formData.sittingTime);
-        dataToSend.append('sittingDays', JSON.stringify(formData.sittingDays));
+        dataToSend.append('sittingTimeLabel', formData.sittingTime);
+        dataToSend.append('workingDays', JSON.stringify(formData.sittingDays));
+        dataToSend.append('timeSlots', JSON.stringify([]));
         if (formData.photo) {
           dataToSend.append('profilePhoto', formData.photo);
         }
       }
 
-      if (formData.role === 'assistant') {
-        dataToSend.append('assignedDoctorId', formData.assignedDoctorId);
+      if (formData.role === 'ASSISTANTS') {
+        dataToSend.append('doctor', formData.assignedDoctorId);
       }
 
       const response = await fetch(`${apiUrl}${targetRoute}`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: dataToSend,
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        const generatedId =
-          result.data.upid ||
-          result.data.assistantId ||
-          result.data.labAssistantId ||
-          result.data.receptionistId;
-        alert(`Staff Added Successfully!\nGenerated ID: ${generatedId}`);
+        alert('Staff Added Successfully!');
         setShowModal(false);
         setImagePreview(null);
-
-        const updatedResponse = await fetch(
-          `${apiUrl}/api/v1/admins/staff?role=${activeTableTab}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
-            },
-          },
-        );
-        const updatedData = await updatedResponse.json();
-        setStaffList(updatedData.data);
+        setActiveTableTab(formData.role);
       } else {
         alert(result.message || 'Registration failed');
       }
@@ -185,12 +188,13 @@ const AdminStaffManagement = () => {
   const handleDelete = async id => {
     if (!window.confirm('Are you sure you want to remove this staff member?'))
       return;
+    const token = localStorage.getItem('token');
     try {
       const response = await fetch(
         `${apiUrl}/api/v1/admins/staff/${id}?role=${activeTableTab}`,
         {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { Authorization: `Bearer ${token}` },
         },
       );
       if (response.ok) {
@@ -208,7 +212,6 @@ const AdminStaffManagement = () => {
   return (
     <div className='min-h-screen bg-[#F0F7FF] flex flex-col text-slate-800 font-inter'>
       <Navbar />
-
       <main className='grow p-6 md:p-10 max-w-7xl mx-auto w-full space-y-8 font-inter'>
         <div className='flex flex-col md:flex-row justify-between items-center gap-6'>
           <div>
@@ -227,23 +230,28 @@ const AdminStaffManagement = () => {
           </button>
         </div>
 
-        <div className='flex items-center gap-4 bg-white w-fit p-2 rounded-2xl border border-slate-200 shadow-sm font-inter'>
+        <div className='flex items-center gap-4 bg-white w-fit p-2 rounded-2xl border border-slate-200 shadow-sm'>
           <span className='pl-4 text-[10px] uppercase font-black text-slate-800 tracking-widest'>
             Identity Filter:
           </span>
-          <select
-            value={activeTableTab}
-            onChange={e => setActiveTableTab(e.target.value)}
-            className='bg-slate-50 border-none rounded-xl px-4 py-2 font-bold text-[#4486F6] outline-none cursor-pointer uppercase text-xs'
-          >
-            <option value='doctor'>Doctors</option>
-            <option value='assistant'>Assistants</option>
-            <option value='lab'>Lab Staff</option>
-            <option value='receptionist'>Receptionist</option>
-          </select>
+          <div className='flex gap-2 p-1'>
+            {['DOCTORS', 'ASSISTANTS', 'LAB STAFF', 'RECEPTIONIST'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTableTab(tab)}
+                className={`px-4 py-2 rounded-xl font-bold uppercase text-xs transition-all ${
+                  activeTableTab === tab
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className='bg-white rounded-[2.5rem] shadow-2xl overflow-x-auto border border-slate-200 font-inter'>
+        <div className='bg-white rounded-[2.5rem] shadow-2xl overflow-x-auto border border-slate-200'>
           <table className='w-full text-left border-collapse min-w-full'>
             <thead>
               <tr className='bg-slate-50 border-b border-slate-100'>
@@ -265,7 +273,7 @@ const AdminStaffManagement = () => {
               </tr>
             </thead>
             <tbody className='divide-y divide-slate-50'>
-              {staffList && staffList.length > 0 ? (
+              {staffList.length > 0 ? (
                 staffList.map(staff => (
                   <tr
                     key={staff._id}
@@ -273,7 +281,7 @@ const AdminStaffManagement = () => {
                   >
                     <td className='p-6'>
                       <div className='flex items-center gap-3'>
-                        {activeTableTab === 'doctor' && (
+                        {activeTableTab === 'DOCTORS' && (
                           <img
                             src={
                               staff.profilePhoto?.url ||
@@ -288,7 +296,7 @@ const AdminStaffManagement = () => {
                             {staff.fullName}
                           </div>
                           <div className='text-[10px] text-[#4486F6] font-bold'>
-                            {staff.upid ||
+                            {staff.doctorId ||
                               staff.assistantId ||
                               staff.labAssistantId ||
                               staff.receptionistId}
@@ -301,7 +309,7 @@ const AdminStaffManagement = () => {
                         NID: {staff.nidNumber}
                       </div>
                       <div className='text-[10px] text-slate-800'>
-                        {staff.phone || 'No Phone'} | {staff.gender || 'N/A'}
+                        {staff.phone} | {staff.gender}
                       </div>
                       <div className='text-[10px] text-slate-800 italic'>
                         {staff.email}
@@ -316,37 +324,33 @@ const AdminStaffManagement = () => {
                       </div>
                       <div className='text-[9px] font-black text-red-400 uppercase mt-1'>
                         SOS:{' '}
-                        {staff.emergencyContact?.name ||
-                          staff.emergencyName ||
+                        {staff.emergencyContact?.phone ||
+                          staff.emergencyPhone ||
                           'N/A'}
                       </div>
                     </td>
                     <td className='p-6'>
-                      {activeTableTab === 'doctor' && (
+                      {activeTableTab === 'DOCTORS' && (
                         <div>
                           <div className='text-xs font-bold text-[#4486F6] uppercase'>
                             {staff.specialization}
                           </div>
-                          <div className='text-[10px] text-slate-800 uppercase font-black'>
-                            {staff.hospitalName || 'Central Hospital'}
-                          </div>
                           <div className='text-[10px] font-black text-green-600 mt-1 uppercase'>
-                            Fee: ৳{staff.consultationFee}
+                            {staff.sittingTimeLabel}
                           </div>
                         </div>
                       )}
-                      {activeTableTab === 'assistant' && (
+                      {activeTableTab === 'ASSISTANTS' && (
                         <div className='text-xs font-bold text-slate-600 italic'>
-                          Assigned Dr:{' '}
-                          {staff.assignedDoctorId?.fullName || 'N/A'}
+                          Assigned to Doctor
                         </div>
                       )}
-                      {activeTableTab === 'lab' && (
+                      {activeTableTab === 'LAB STAFF' && (
                         <span className='bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase'>
                           Diagnostic Unit
                         </span>
                       )}
-                      {activeTableTab === 'receptionist' && (
+                      {activeTableTab === 'RECEPTIONIST' && (
                         <span className='text-[10px] font-bold text-green-500 uppercase tracking-widest'>
                           Authorized Access
                         </span>
@@ -381,7 +385,7 @@ const AdminStaffManagement = () => {
         <div className='flex justify-end'>
           <button
             onClick={handleLogout}
-            className='w-48 border-2 border-red-200 text-red-700 rounded-xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all outline-none'
+            className='w-48 border-2 border-red-200 text-red-700 rounded-xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all focus:ring-2 focus:ring-red-500 outline-none'
           >
             LogOut
           </button>
@@ -403,12 +407,12 @@ const AdminStaffManagement = () => {
                   name='role'
                   value={formData.role}
                   onChange={handleInputChange}
-                  className='bg-white border border-slate-200 rounded-xl px-4 py-2 font-bold text-slate-600 text-sm outline-none focus:ring-2 ring-blue-500'
+                  className='bg-white border border-slate-200 rounded-xl px-4 py-2 font-bold text-slate-600 text-sm outline-none'
                 >
-                  <option value='doctor'>Doctor</option>
-                  <option value='assistant'>Doctor's Assistant</option>
-                  <option value='lab'>Lab Staff</option>
-                  <option value='receptionist'>Receptionist</option>
+                  <option value='DOCTORS'>Doctor</option>
+                  <option value='ASSISTANTS'>Doctor's Assistant</option>
+                  <option value='LAB STAFF'>Lab Staff</option>
+                  <option value='RECEPTIONIST'>Receptionist</option>
                 </select>
               </div>
 
@@ -445,7 +449,7 @@ const AdminStaffManagement = () => {
                       <input
                         name='name'
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner uppercase'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 uppercase'
                         required
                       />
                     </div>
@@ -456,7 +460,7 @@ const AdminStaffManagement = () => {
                       <input
                         name='nid'
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500'
                         required
                       />
                     </div>
@@ -468,7 +472,7 @@ const AdminStaffManagement = () => {
                         type='date'
                         name='dateOfBirth'
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500'
                         required
                       />
                     </div>
@@ -479,7 +483,7 @@ const AdminStaffManagement = () => {
                       <input
                         name='phone'
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500'
                         required
                       />
                     </div>
@@ -490,7 +494,7 @@ const AdminStaffManagement = () => {
                       <select
                         name='gender'
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none'
                       >
                         <option value='male'>Male</option>
                         <option value='female'>Female</option>
@@ -498,12 +502,12 @@ const AdminStaffManagement = () => {
                     </div>
                     <div className='space-y-1'>
                       <label className='text-[12px] font-bold text-slate-800'>
-                        Emergency Contact:
+                        Emergency Phone:
                       </label>
                       <input
                         name='emergencyContact'
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500'
                         required
                       />
                     </div>
@@ -514,7 +518,7 @@ const AdminStaffManagement = () => {
                       <input
                         name='address'
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500'
                         required
                       />
                     </div>
@@ -526,14 +530,14 @@ const AdminStaffManagement = () => {
                         type='email'
                         name='email'
                         onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
+                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500'
                         required
                       />
                     </div>
                   </div>
                 </div>
 
-                {formData.role === 'doctor' && (
+                {formData.role === 'DOCTORS' && (
                   <div className='bg-slate-50 p-8 rounded-3xl border border-slate-200 space-y-6'>
                     <div className='flex flex-col items-center gap-4 bg-blue-50/50 p-6 rounded-3xl border border-blue-100'>
                       <label className='text-xs font-black text-slate-800 uppercase tracking-widest'>
@@ -545,6 +549,7 @@ const AdminStaffManagement = () => {
                             <img
                               src={imagePreview}
                               className='w-full h-full object-cover'
+                              alt='preview'
                             />
                           ) : (
                             <svg
@@ -562,7 +567,7 @@ const AdminStaffManagement = () => {
                             </svg>
                           )}
                         </div>
-                        <label className='absolute bottom-0 right-0 bg-blue-600 p-2 rounded-full text-white cursor-pointer hover:bg-blue-700'>
+                        <label className='absolute bottom-0 right-0 bg-blue-600 p-2 rounded-full text-white cursor-pointer hover:bg-blue-700 shadow-lg'>
                           <svg
                             className='w-4 h-4'
                             fill='none'
@@ -628,19 +633,13 @@ const AdminStaffManagement = () => {
                       <div className='space-y-4'>
                         <div className='space-y-1'>
                           <label className='text-[10px] uppercase font-black text-slate-800'>
-                            Hospital & Time
+                            Sitting Time Label
                           </label>
                           <input
-                            name='hospitalName'
-                            placeholder='Hospital Name'
+                            name='sittingTime'
+                            placeholder='e.g. 5-9 PM'
                             onChange={handleInputChange}
                             className='w-full border border-slate-300 rounded-lg px-3 py-3 bg-white'
-                          />
-                          <input
-                            name='sittingTime'
-                            placeholder='Sitting Time (e.g. 5-9 PM)'
-                            onChange={handleInputChange}
-                            className='w-full border border-slate-300 rounded-lg px-3 py-3 bg-white mt-2'
                           />
                         </div>
                         <div className='space-y-2'>
@@ -673,7 +672,7 @@ const AdminStaffManagement = () => {
                   </div>
                 )}
 
-                {formData.role === 'assistant' && (
+                {formData.role === 'ASSISTANTS' && (
                   <div className='bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-4'>
                     <p className='text-xs font-black text-[#4486F6] uppercase tracking-widest'>
                       Assistant Assignment
