@@ -22,12 +22,10 @@ const DoctorPatientView = () => {
   useEffect(() => {
     const fetchDoctorProfile = async () => {
       try {
-        const savedUser = JSON.parse(localStorage.getItem('user'));
-        if (savedUser) {
-          setDoctorInfo({
-            fullName: savedUser.fullName,
-            profilePhoto: { url: savedUser.profilePhoto?.url || '' },
-          });
+        const response = await protectedFetch(`/api/v1/doctors/profile`);
+        if (response.ok) {
+          const result = await response.json();
+          setDoctorInfo(result.data);
         }
       } catch (err) {
         console.error(err);
@@ -137,6 +135,7 @@ const DoctorPatientView = () => {
       }
       navigate('/doctor-dashboard');
     } catch (err) {
+      console.error(err);
       navigate('/doctor-dashboard');
     }
   };
@@ -230,7 +229,10 @@ const DoctorPatientView = () => {
                   Resident Address
                 </p>
                 <div className='bg-white border border-slate-200 rounded-xl px-4 py-2 text-[11px] font-bold text-left leading-relaxed'>
-                  {patientData.address || 'NOT PROVIDED'}
+                  {typeof patientData.address === 'object'
+                    ? `${patientData.address?.city || ''} ${patientData.address?.street || ''}`.trim() ||
+                      'NOT PROVIDED'
+                    : patientData.address || 'NOT PROVIDED'}
                 </div>
               </div>
             </div>
