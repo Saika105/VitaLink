@@ -40,29 +40,29 @@ const AssistantDashboard = () => {
       }),
     );
 
-   const fetchInitialData = async () => {
-     try {
-       const savedUser = JSON.parse(localStorage.getItem('user'));
-       if (savedUser) {
-         setAssistantData({
-           fullName: savedUser.fullName,
-           doctor: savedUser.doctor || { fullName: 'N/A' },
-           hospital: savedUser.hospital || { name: 'N/A' },
-         });
-       }
-       const response = await protectedFetch(
-         `/api/v1/doctor-assistants/daily-list`,
-       );
-       if (response.ok) {
-         const result = await response.json();
-         setSessionList(result.data || []);
-       }
-     } catch (err) {
-       console.error('Fetch Error:', err);
-     }
-   };
+    const fetchInitialData = async () => {
+      try {
+        const savedUser = JSON.parse(localStorage.getItem('user'));
+        if (savedUser) {
+          setAssistantData({
+            fullName: savedUser.fullName,
+            doctor: savedUser.doctor || { fullName: 'N/A' },
+            hospital: savedUser.hospital || { name: 'N/A' },
+          });
+        }
+        const response = await protectedFetch(
+          `/api/v1/doctor-assistants/daily-list`,
+        );
+        if (response.ok) {
+          const result = await response.json();
+          setSessionList(result.data || []);
+        }
+      } catch (err) {
+        console.error('Fetch Error:', err);
+      }
+    };
 
-   fetchInitialData();
+    fetchInitialData();
 
     const savedNotes = localStorage.getItem('vitalink_assistant_notes');
     if (savedNotes) {
@@ -133,8 +133,7 @@ const AssistantDashboard = () => {
         setSessionList(prev => [...prev, newEntry]);
         setCurrentPatient(null);
         setPatientId('');
-      }
-      else {
+      } else {
         const errorData = await response.json();
         alert(errorData.message || 'Failed to add patient');
       }
@@ -219,7 +218,10 @@ const AssistantDashboard = () => {
     } catch (error) {
       console.error('Logout Error:', error);
     } finally {
-      localStorage.clear();
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('role');
+      localStorage.removeItem('user');
       navigate('/login-staff', { replace: true });
       window.location.reload();
     }
@@ -403,12 +405,20 @@ const AssistantDashboard = () => {
                           <select
                             value={item.queueStatus}
                             onChange={e => updateStatus(idx, e.target.value)}
-                            className={`border border-slate-300 rounded-lg text-[10px] font-black uppercase p-2 outline-none transition-all ${item.queueStatus === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : item.queueStatus === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-white text-slate-900'}`}
+                            className={`border border-slate-300 rounded-lg text-[10px] font-black uppercase p-2 outline-none transition-all ${
+                              item.queueStatus === 'done'
+                                ? 'bg-green-50 text-green-700 border-green-200'
+                                : item.queueStatus === 'no_show'
+                                  ? 'bg-red-50 text-red-700 border-red-200'
+                                  : 'bg-white text-slate-900'
+                            }`}
                           >
                             <option value='pending'>Pending</option>
-                            <option value='waiting'>Waiting</option>
-                            <option value='completed'>Completed</option>
-                            <option value='cancelled'>Cancelled</option>
+                            <option value='in_consultation'>
+                              In Consultation
+                            </option>
+                            <option value='done'>Done</option>
+                            <option value='no_show'>No Show</option>
                           </select>
                         </td>
                         <td className='p-6 text-center'>
@@ -426,9 +436,7 @@ const AssistantDashboard = () => {
                             type='date'
                             value={
                               item.followUpDate
-                                ? new Date(item.followUpDate)
-                                    .toISOString()
-                                    .split('T')[0]
+                                ? item.followUpDate.split('T')[0]
                                 : ''
                             }
                             onChange={e => updateFollowUp(idx, e.target.value)}
