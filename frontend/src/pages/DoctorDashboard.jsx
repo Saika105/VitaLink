@@ -55,10 +55,10 @@ const DoctorDashboard = () => {
           const result = await response.json();
           const activeQueue = result.data.filter(
             item =>
-              item.bookingStatus !== 'completed' &&
-              item.bookingStatus !== 'cancelled' &&
+              item.bookingStatus === 'scheduled' &&
               item.queueStatus !== 'done' &&
-              item.queueStatus !== 'completed',
+              item.queueStatus !== 'completed' &&
+              item.queueStatus !== 'cancelled',
           );
           setQueue(activeQueue);
         }
@@ -224,15 +224,9 @@ const DoctorDashboard = () => {
                     <td className='p-8 text-right'>
                       <button
                         onClick={() => openConfirmModal(item)}
-                        className={`w-44 h-12 text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all active:scale-[0.98] ${
-                          item.queueStatus === 'in_consultation'
-                            ? 'bg-amber-500 text-white hover:bg-amber-600'
-                            : 'bg-[#3B82F6] hover:bg-[#1E40AF] text-white shadow-blue-500/30'
-                        }`}
+                        className='w-44 h-12 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all active:scale-[0.98] shadow-blue-500/30'
                       >
-                        {item.queueStatus === 'in_consultation'
-                          ? 'In Session'
-                          : 'Open File'}
+                        See Patient
                       </button>
                     </td>
                   </tr>
@@ -273,7 +267,7 @@ const DoctorDashboard = () => {
                   onClick={handleConfirmConsultation}
                   className='w-full h-14 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[12px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg active:scale-95'
                 >
-                  Confirm Entry
+                  Enter Consultation
                 </button>
                 <button
                   onClick={() => setShowConfirmModal(false)}
