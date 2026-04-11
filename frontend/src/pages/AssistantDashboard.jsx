@@ -184,7 +184,7 @@ const AssistantDashboard = () => {
     }
   };
 
-  const handleFileChange = (e, aptId) => {
+  const handleFileChange = (e, aptId, name, upid) => {
     const file = e.target.files[0];
     if (!file) return;
     navigate('/confirm-upload', {
@@ -193,6 +193,8 @@ const AssistantDashboard = () => {
         uploadType: 'prescription',
         role: 'assistant',
         appointmentId: aptId,
+        patientName: name, 
+        patientUpid: upid, 
       },
     });
   };
@@ -430,7 +432,14 @@ const AssistantDashboard = () => {
                             <input
                               type='file'
                               className='hidden'
-                              onChange={e => handleFileChange(e, item._id)}
+                              onChange={e =>
+                                handleFileChange(
+                                  e,
+                                  item._id,
+                                  item.patient?.fullName,
+                                  item.patient?.upid,
+                                )
+                              }
                             />
                           </label>
                         </td>
