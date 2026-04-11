@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import DoctorNavbar from '../components/DoctorNavbar';
 import Footer from '../components/Footer';
 import { protectedFetch } from '../utils/api';
 
 const DoctorPatientView = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { patientId } = useParams();
+  const location = useLocation();
+  const appointmentId = location.state?.appointmentId;
 
   const [activeTab, setActiveTab] = useState('Prescriptions');
   const [items, setItems] = useState([]);
@@ -20,10 +22,12 @@ const DoctorPatientView = () => {
   useEffect(() => {
     const fetchDoctorProfile = async () => {
       try {
-        const response = await protectedFetch(`/api/v1/doctors/profile`);
-        if (response.ok) {
-          const result = await response.json();
-          setDoctorInfo(result.data);
+        const savedUser = JSON.parse(localStorage.getItem('user'));
+        if (savedUser) {
+          setDoctorInfo({
+            fullName: savedUser.fullName,
+            profilePhoto: { url: savedUser.profilePhoto?.url || '' },
+          });
         }
       } catch (err) {
         console.error(err);
@@ -32,32 +36,47 @@ const DoctorPatientView = () => {
 
     const fetchPatientDetails = async () => {
       try {
-        const response = await protectedFetch(`/api/v1/doctors/patient/${id}`);
+        const response = await protectedFetch(
+          `/api/v1/doctors/patient-profile/${patientId}`,
+        );
         if (response.ok) {
           const result = await response.json();
           setPatientData(result.data);
         } else {
-          setPatientData({ fullName: 'Patient Not Found', age: '--' });
+          setPatientData({
+            fullName: 'Patient Not Found',
+            upid: patientId,
+            age: '--',
+          });
         }
       } catch (err) {
-        setPatientData({ fullName: 'Error Loading', age: '--' });
+        setPatientData({
+          fullName: 'Error Loading',
+          upid: patientId,
+          age: '--',
+        });
       }
     };
 
     fetchDoctorProfile();
     fetchPatientDetails();
-  }, [id]);
+  }, [patientId]);
 
   useEffect(() => {
-    if (!patientData || patientData.fullName === 'Patient Not Found') return;
+    if (
+      !patientData ||
+      patientData.fullName === 'Patient Not Found' ||
+      !patientData._id
+    )
+      return;
 
     const fetchRecords = async () => {
       setIsLoading(true);
       try {
         const endpoint =
           activeTab === 'Prescriptions'
-            ? `/api/v1/doctors/patient/${id}/prescriptions`
-            : `/api/v1/doctors/patient/${id}/reports`;
+            ? `/api/v1/doctors/patient/${patientData._id}/prescriptions`
+            : `/api/v1/doctors/patient/${patientData._id}/reports`;
 
         const response = await protectedFetch(endpoint);
         if (response.ok) {
@@ -102,7 +121,26 @@ const DoctorPatientView = () => {
       }
     };
     fetchRecords();
-  }, [activeTab, id, patientData]);
+  }, [activeTab, patientData]);
+
+  const handleExitSession = async () => {
+    try {
+      if (appointmentId && !appointmentId.toString().startsWith('manual')) {
+        await protectedFetch(
+          `/api/v1/doctor-assistants/status/${appointmentId}`,
+          {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'done' }),
+          },
+        );
+      }
+      navigate('/doctor-dashboard');
+    } catch (err) {
+      console.error(err);
+      navigate('/doctor-dashboard');
+    }
+  };
 
   if (!patientData) {
     return (
@@ -129,7 +167,7 @@ const DoctorPatientView = () => {
               <div className='w-32 h-32 bg-white rounded-4xl shadow-sm border border-slate-200 mb-5 overflow-hidden flex items-center justify-center p-1'>
                 <img
                   src={
-                    patientData.profilePhoto ||
+                    patientData.profilePhoto?.url ||
                     `https://ui-avatars.com/api/?name=${patientData.fullName}&background=F1F5F9&color=3B82F6`
                   }
                   alt={patientData.fullName}
@@ -152,13 +190,13 @@ const DoctorPatientView = () => {
               <div className='bg-white border border-slate-200 rounded-2xl p-3 text-center'>
                 <p className='text-[10px] font-black uppercase'>Gender</p>
                 <p className='text-sm font-black capitalize'>
-                  {patientData.gender}
+                  {patientData.gender || '--'}
                 </p>
               </div>
               <div className='bg-white border border-slate-200 rounded-2xl p-3 text-center'>
                 <p className='text-[10px] font-black uppercase'>Blood</p>
                 <p className='text-sm font-black text-red-600'>
-                  {patientData.bloodGroup}
+                  {patientData.bloodGroup || '--'}
                 </p>
               </div>
             </div>
@@ -185,17 +223,7 @@ const DoctorPatientView = () => {
                   Emergency
                 </p>
                 <div className='bg-red-50 border border-red-100 rounded-xl px-4 py-2 text-[12px] font-black text-red-600 text-left'>
-                  {patientData.emergencyContact?.phone ||
-                    patientData.emergencyContact ||
-                    'NOT PROVIDED'}
-                </div>
-              </div>
-              <div>
-                <p className='text-[12px] font-black uppercase mb-1 ml-1 text-left'>
-                  Resident Address
-                </p>
-                <div className='bg-white border border-slate-200 rounded-xl px-4 py-2 text-[11px] font-bold text-left leading-relaxed'>
-                  {patientData.address || 'NOT PROVIDED'}
+                  {patientData.emergencyContact || 'NOT PROVIDED'}
                 </div>
               </div>
             </div>
@@ -215,8 +243,8 @@ const DoctorPatientView = () => {
               <div className='flex flex-col gap-2'>
                 <button
                   onClick={() =>
-                    navigate(`/doctor/create-prescription/${id}`, {
-                      state: { patient: patientData },
+                    navigate(`/doctor/create-prescription/${patientData._id}`, {
+                      state: { patient: patientData, appointmentId },
                     })
                   }
                   className='w-54 h-12 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[11px] font-black uppercase tracking-widest shadow-lg transition-all active:scale-[0.98] rounded-xl'
@@ -224,7 +252,7 @@ const DoctorPatientView = () => {
                   Create Digital RX
                 </button>
                 <button
-                  onClick={() => navigate('/doctor-dashboard')}
+                  onClick={handleExitSession}
                   className='w-54 h-12 border-2 border-slate-200 text-black rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all'
                 >
                   Exit Session
