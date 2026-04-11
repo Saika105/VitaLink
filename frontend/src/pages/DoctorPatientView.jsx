@@ -30,10 +30,12 @@ const DoctorPatientView = () => {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const docRes = await protectedFetch(`/api/v1/doctors/profile`);
-        if (docRes.ok) {
-          const docData = await docRes.json();
-          setDoctorInfo(docData.data);
+        const savedUser = JSON.parse(localStorage.getItem('user'));
+        if (savedUser) {
+          setDoctorInfo({
+            fullName: savedUser.fullName,
+            profilePhoto: { url: savedUser.profilePhoto?.url || '' },
+          });
         }
 
         const patientRes = await protectedFetch(
@@ -65,8 +67,8 @@ const DoctorPatientView = () => {
       try {
         const endpoint =
           activeTab === 'Prescriptions'
-            ? `/api/v1/doctor-assistants/prescriptions/get/${patientData._id}`
-            : `/api/v1/doctor-assistants/lab-reports/get/${patientData._id}`;
+            ? `/api/v1/doctors/prescriptions/get/${patientData._id}`
+            : `/api/v1/doctors/lab-reports/get/${patientData._id}`;
 
         const response = await protectedFetch(endpoint);
         if (response.ok) {
@@ -75,6 +77,7 @@ const DoctorPatientView = () => {
             _id: item._id,
             title: (
               item.diagnosis ||
+              item.testName ||
               item.reportName ||
               item.title ||
               'Medical Record'
@@ -85,7 +88,10 @@ const DoctorPatientView = () => {
               'VitaLink Partner'
             ).toUpperCase(),
             date: new Date(
-              item.prescribedDate || item.reportDate || item.createdAt,
+              item.prescribedDate ||
+                item.reportDate ||
+                item.createdAt ||
+                item.date,
             )
               .toLocaleDateString('en-GB', {
                 day: '2-digit',
@@ -100,8 +106,6 @@ const DoctorPatientView = () => {
               '',
           }));
           setItems(mappedData);
-        } else {
-          setItems([]);
         }
       } catch (err) {
         setItems([]);
@@ -115,14 +119,11 @@ const DoctorPatientView = () => {
   const handleExitSession = async () => {
     try {
       if (appointmentId && !appointmentId.toString().startsWith('manual')) {
-        await protectedFetch(
-          `/api/v1/doctor-assistants/status/${appointmentId}`,
-          {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'done' }),
-          },
-        );
+        await protectedFetch(`/api/v1/doctors/status/${appointmentId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'done' }),
+        });
       }
       navigate('/doctor-dashboard');
     } catch (err) {
@@ -132,9 +133,9 @@ const DoctorPatientView = () => {
 
   if (!patientData) {
     return (
-      <div className='min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center'>
+      <div className='min-h-screen bg-[#F8FAFC] flex flex-col font-inter items-center justify-center text-black'>
         <div className='w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4'></div>
-        <p className='text-[12px] font-black uppercase tracking-widest'>
+        <p className='text-[12px] font-black uppercase tracking-[0.2em]'>
           Syncing HealthVault...
         </p>
       </div>
@@ -151,41 +152,44 @@ const DoctorPatientView = () => {
       <main className='grow flex items-center justify-center p-4 md:p-8'>
         <div className='flex flex-col md:flex-row w-full max-w-7xl bg-white rounded-[2.5rem] shadow-xl overflow-hidden border border-slate-200'>
           <aside className='w-full md:w-85 bg-slate-50 p-8 flex flex-col items-center border-r border-slate-200'>
-            <div className='w-32 h-32 bg-white rounded-4xl shadow-sm border border-slate-200 mb-5 overflow-hidden flex items-center justify-center'>
-              <img
-                src={
-                  patientData.profilePhoto ||
-                  `https://ui-avatars.com/api/?name=${patientData.fullName}&background=F1F5F9&color=3B82F6`
-                }
-                className='w-full h-full object-cover'
-              />
+            <div className='flex flex-col items-center text-center mb-8'>
+              <div className='w-32 h-32 bg-white rounded-4xl shadow-sm border border-slate-200 mb-5 overflow-hidden flex items-center justify-center p-1'>
+                <img
+                  src={
+                    patientData.profilePhoto?.url ||
+                    patientData.profilePhoto ||
+                    `https://ui-avatars.com/api/?name=${patientData.fullName}&background=F1F5F9&color=3B82F6`
+                  }
+                  className='w-full h-full object-cover rounded-[1.8rem]'
+                />
+              </div>
+              <h3 className='text-lg font-black uppercase tracking-tight'>
+                {patientData.fullName}
+              </h3>
+              <p className='text-[12px] font-black text-blue-600 mt-1 uppercase tracking-widest'>
+                {patientData.upid}
+              </p>
             </div>
-            <h3 className='text-lg font-black uppercase'>
-              {patientData.fullName}
-            </h3>
-            <p className='text-[12px] font-black text-blue-600 mt-1 uppercase'>
-              {patientData.upid}
-            </p>
 
-            <div className='grid grid-cols-3 gap-2 w-full my-8'>
-              <div className='bg-white border border-slate-200 rounded-2xl p-3 text-center'>
-                <p className='text-[9px] font-black uppercase text-slate-400'>
+            <div className='grid grid-cols-3 gap-2 w-full mb-8'>
+              <div className='bg-white border border-slate-200 rounded-2xl p-3 text-center shadow-sm'>
+                <p className='text-[10px] font-black uppercase text-slate-400'>
                   Age
                 </p>
                 <p className='text-sm font-black'>
                   {calculateAge(patientData.dateOfBirth)}
                 </p>
               </div>
-              <div className='bg-white border border-slate-200 rounded-2xl p-3 text-center'>
-                <p className='text-[9px] font-black uppercase text-slate-400'>
+              <div className='bg-white border border-slate-200 rounded-2xl p-3 text-center shadow-sm'>
+                <p className='text-[10px] font-black uppercase text-slate-400'>
                   Gender
                 </p>
                 <p className='text-sm font-black capitalize'>
                   {patientData.gender || '--'}
                 </p>
               </div>
-              <div className='bg-white border border-slate-200 rounded-2xl p-3 text-center'>
-                <p className='text-[9px] font-black uppercase text-slate-400'>
+              <div className='bg-white border border-slate-200 rounded-2xl p-3 text-center shadow-sm'>
+                <p className='text-[10px] font-black uppercase text-slate-400'>
                   Blood
                 </p>
                 <p className='text-sm font-black text-red-600'>
@@ -194,33 +198,33 @@ const DoctorPatientView = () => {
               </div>
             </div>
 
-            <div className='w-full space-y-4 text-left'>
+            <div className='w-full space-y-4 text-left font-inter'>
               <div>
-                <p className='text-[10px] font-black uppercase mb-1 text-slate-400'>
+                <p className='text-[12px] font-black uppercase mb-1 ml-1'>
                   Email Address
                 </p>
-                <div className='bg-white border border-slate-200 rounded-xl px-4 py-2 text-[11px] font-bold truncate'>
-                  {patientData.email}
+                <div className='bg-white border border-slate-200 rounded-xl px-4 py-2 text-[12px] font-bold truncate'>
+                  {patientData.email || '---'}
                 </div>
               </div>
               <div>
-                <p className='text-[10px] font-black uppercase mb-1 text-slate-400'>
+                <p className='text-[12px] font-black uppercase mb-1 ml-1'>
                   Contact Number
                 </p>
-                <div className='bg-white border border-slate-200 rounded-xl px-4 py-2 text-[11px] font-black'>
-                  {patientData.phone}
+                <div className='bg-white border border-slate-200 rounded-xl px-4 py-2 text-[12px] font-black'>
+                  {patientData.phone || '---'}
                 </div>
               </div>
               <div>
-                <p className='text-[10px] font-black uppercase mb-1 text-slate-400'>
+                <p className='text-[12px] font-black uppercase mb-1 ml-1 text-red-500'>
                   Emergency Contact
                 </p>
-                <div className='bg-red-50 border border-red-100 rounded-xl px-4 py-2 text-[11px] font-black text-red-600'>
+                <div className='bg-red-50 border border-red-100 rounded-xl px-4 py-2 text-[12px] font-black text-red-600'>
                   {patientData.emergencyContact?.phone || 'NOT PROVIDED'}
                 </div>
               </div>
               <div>
-                <p className='text-[10px] font-black uppercase mb-1 text-slate-400'>
+                <p className='text-[12px] font-black uppercase mb-1 ml-1'>
                   Resident Address
                 </p>
                 <div className='bg-white border border-slate-200 rounded-xl px-4 py-2 text-[11px] font-bold leading-relaxed'>
@@ -234,10 +238,15 @@ const DoctorPatientView = () => {
           </aside>
 
           <section className='grow p-8 md:p-10 flex flex-col bg-white'>
-            <div className='flex justify-between items-start mb-10'>
-              <h2 className='text-3xl font-black uppercase'>
-                Clinical History
-              </h2>
+            <div className='flex justify-between items-start mb-10 gap-6'>
+              <div>
+                <h2 className='text-3xl font-black uppercase leading-none'>
+                  Clinical History
+                </h2>
+                <p className='text-[12px] font-bold text-blue-700 uppercase tracking-widest mt-2'>
+                  Authenticated Vault
+                </p>
+              </div>
               <div className='flex flex-col gap-2'>
                 <button
                   onClick={() =>
@@ -245,25 +254,25 @@ const DoctorPatientView = () => {
                       state: { patient: patientData, appointmentId },
                     })
                   }
-                  className='w-48 h-12 bg-[#3B82F6] text-white text-[11px] font-black uppercase rounded-xl shadow-lg'
+                  className='w-54 h-12 bg-[#3B82F6] text-white text-[11px] font-black uppercase tracking-widest rounded-xl shadow-lg transition-all active:scale-95'
                 >
                   Create Digital RX
                 </button>
                 <button
                   onClick={handleExitSession}
-                  className='w-48 h-12 border-2 border-slate-200 text-black rounded-xl text-[11px] font-black uppercase hover:bg-red-600 hover:text-white transition-all'
+                  className='w-54 h-12 border-2 border-slate-200 text-black rounded-xl text-[11px] font-black uppercase hover:bg-red-600 hover:text-white transition-all'
                 >
                   Exit Session
                 </button>
               </div>
             </div>
 
-            <div className='flex bg-slate-100 p-1.5 rounded-2xl w-fit mb-8'>
+            <div className='flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 w-fit mb-8'>
               {['Prescriptions', 'Reports'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-8 py-2.5 rounded-xl text-[11px] font-black uppercase transition-all ${activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-black'}`}
+                  className={`px-8 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-black hover:text-blue-600'}`}
                 >
                   {tab === 'Reports' ? 'Medical Reports' : tab}
                 </button>
@@ -279,7 +288,7 @@ const DoctorPatientView = () => {
                 items.map((item, index) => (
                   <div
                     key={item._id}
-                    className='h-16 bg-white border border-slate-200 rounded-2xl px-5 flex justify-between items-center group hover:border-blue-600 transition-all shadow-sm'
+                    className='h-16 bg-white border border-slate-200 rounded-2xl px-5 flex justify-between items-center group hover:border-blue-600 transition-all shadow-sm shrink-0'
                   >
                     <div className='flex items-center gap-5'>
                       <div className='w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center font-black text-[12px]'>
@@ -296,7 +305,7 @@ const DoctorPatientView = () => {
                     </div>
                     <button
                       onClick={() => window.open(item.fileUrl, '_blank')}
-                      className='h-8 px-5 bg-white border-2 border-blue-600 text-blue-600 rounded-xl text-[10px] font-black uppercase hover:bg-blue-600 hover:text-white transition-all'
+                      className='h-8 px-5 bg-white border-2 border-blue-600 text-blue-600 rounded-xl text-[10px] font-black uppercase hover:bg-blue-600 hover:text-white transition-all shadow-sm'
                     >
                       Open File
                     </button>
