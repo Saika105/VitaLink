@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import DoctorNavbar from '../components/DoctorNavbar';
 import Footer from '../components/Footer';
 import { protectedFetch } from '../utils/api';
@@ -8,15 +10,12 @@ const DigitalPrescription = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { state } = useLocation();
+  const appointmentId = state?.appointmentId;
+  const prescriptionRef = useRef(null);
 
   const [medicineInput, setMedicineInput] = useState('');
   const [medicineList, setMedicineList] = useState([]);
-  const [doctorInfo, setDoctorInfo] = useState({
-    fullName: '',
-    specialization: '',
-    hospital: { name: '' },
-    profilePhoto: { url: '' },
-  });
+  const [doctorInfo, setDoctorInfo] = useState(null);
 
   const [prescriptionData, setPrescriptionData] = useState({
     illness: '',
@@ -24,11 +23,24 @@ const DigitalPrescription = () => {
     advice: '',
   });
 
+  const calculateAge = dob => {
+    if (!dob) return '--';
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   const patientInfo = state?.patient || {
     fullName: 'PATIENT',
     upid: id,
-    age: '--',
+    dateOfBirth: null,
     gender: '--',
+    _id: null,
   };
 
   const todayDate = new Date().toLocaleDateString('en-GB', {
@@ -50,7 +62,12 @@ const DigitalPrescription = () => {
       }
     };
     fetchDoctorProfile();
-  }, []);
+
+    if (!appointmentId) {
+      alert('Critical Error: No active appointment reference found.');
+      navigate(-1);
+    }
+  }, [appointmentId, navigate]);
 
   const addMedicine = e => {
     if (e.key === 'Enter' && medicineInput.trim()) {
@@ -69,42 +86,71 @@ const DigitalPrescription = () => {
       return;
     }
 
-    const finalData = {
-      diagnosis:
-        prescriptionData.illness.toUpperCase() || 'GENERAL CONSULTATION',
-      hospitalName: (doctorInfo.hospital?.name || 'VITALINK HUB').toUpperCase(),
-      prescriptionContent: {
-        illness: prescriptionData.illness,
-        tests: prescriptionData.tests,
-        advice: prescriptionData.advice,
-        medicines: medicineList,
-      },
-      date: new Date(),
-    };
+    if (!appointmentId) {
+      alert('Cannot save: Appointment ID missing.');
+      return;
+    }
 
     try {
+      const element = prescriptionRef.current;
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const pdfBlob = pdf.output('blob');
+
+      const formData = new FormData();
+      formData.append(
+        'prescriptionFile',
+        pdfBlob,
+        `RX_${patientInfo.upid}.pdf`,
+      );
+      formData.append(
+        'diagnosis',
+        prescriptionData.illness || 'General Consultation',
+      );
+      formData.append('medications', JSON.stringify(medicineList));
+      formData.append(
+        'advice',
+        prescriptionData.advice || 'Follow-up as advised',
+      );
+      formData.append(
+        'requiredTests',
+        JSON.stringify(
+          prescriptionData.tests
+            ? prescriptionData.tests.split(',').map(t => t.trim())
+            : [],
+        ),
+      );
+
       const response = await protectedFetch(
-        `/api/v1/doctors/patient/${id}/save-prescription`,
+        `/api/v1/doctors/prescription/create/${appointmentId}`,
         {
           method: 'POST',
-          body: JSON.stringify(finalData),
+          body: formData,
         },
       );
 
       if (response.ok) {
-        alert('Prescription secured in Patient Vault under your name.');
+        alert('Digital Prescription synced to HealthVault successfully.');
         navigate(`/doctor/patient-view/${id}`);
+      } else {
+        const err = await response.json();
+        alert(err.message || 'Error saving to database.');
       }
     } catch (err) {
-      alert('Upload failed. Check connection.');
+      console.error(err);
+      alert('Network error during prescription sync.');
     }
   };
 
   return (
     <div className='min-h-screen bg-[#F8FAFC] flex flex-col font-inter text-black'>
       <DoctorNavbar
-        doctorName={doctorInfo.fullName}
-        doctorPhoto={doctorInfo.profilePhoto?.url}
+        doctorName={doctorInfo?.fullName || 'Practitioner'}
+        doctorPhoto={doctorInfo?.profilePhoto?.url}
       />
 
       <main className='grow max-w-6xl mx-auto w-full p-4 md:p-10 flex flex-col'>
@@ -125,7 +171,10 @@ const DigitalPrescription = () => {
           </button>
         </div>
 
-        <div className='bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden flex flex-col'>
+        <div
+          ref={prescriptionRef}
+          className='bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden flex flex-col'
+        >
           <div className='bg-[#3B82F6] p-8 text-white grid grid-cols-2 md:grid-cols-4 gap-8'>
             <div>
               <p className='text-[12px] font-bold text-blue-100 uppercase tracking-widest mb-1'>
@@ -140,7 +189,7 @@ const DigitalPrescription = () => {
                 ID Number:
               </p>
               <p className='font-black text-sm uppercase leading-tight'>
-                {patientInfo.upid || id}
+                {patientInfo.upid}
               </p>
             </div>
             <div>
@@ -148,12 +197,13 @@ const DigitalPrescription = () => {
                 Age/Gender:
               </p>
               <p className='font-black text-sm uppercase leading-tight'>
-                {patientInfo.age}Y / {patientInfo.gender}
+                {calculateAge(patientInfo.dateOfBirth)}Y /{' '}
+                {patientInfo.gender || '--'}
               </p>
             </div>
             <div className='text-right'>
               <p className='text-[12px] font-bold text-blue-100 uppercase tracking-widest mb-1'>
-                Date
+                Consult Date
               </p>
               <p className='font-black text-sm uppercase leading-tight'>
                 {todayDate}
@@ -176,7 +226,7 @@ const DigitalPrescription = () => {
                     })
                   }
                   className='w-full bg-transparent border-b-2 border-slate-300 focus:border-blue-600 outline-none text-md font-semibold text-black placeholder:text-slate-300 resize-none'
-                  placeholder='Clinical notes...'
+                  placeholder='Symptoms observed...'
                   rows='3'
                 ></textarea>
               </div>
@@ -193,7 +243,7 @@ const DigitalPrescription = () => {
                     })
                   }
                   className='w-full bg-transparent border-b-2 border-slate-300 focus:border-blue-600 outline-none text-md font-semibold text-black placeholder:text-slate-300 resize-none'
-                  placeholder='e.g. CBC, X-Ray'
+                  placeholder='e.g. Blood Sugar, MRI'
                   rows='3'
                 ></textarea>
               </div>
@@ -241,7 +291,7 @@ const DigitalPrescription = () => {
                 </div>
                 <div>
                   <h3 className='text-[12px] font-black text-black uppercase tracking-widest mb-4'>
-                    Special Advice
+                    Doctor's Advice
                   </h3>
                   <input
                     type='text'
@@ -253,7 +303,7 @@ const DigitalPrescription = () => {
                       })
                     }
                     className='w-full bg-transparent border-b-2 border-slate-300 focus:border-blue-600 outline-none text-md font-semibold text-black py-2'
-                    placeholder='e.g. Follow-up in 7 days'
+                    placeholder='Special instructions...'
                   />
                 </div>
               </div>
@@ -261,24 +311,27 @@ const DigitalPrescription = () => {
               <div className='mt-20 flex justify-end pb-4 border-t border-slate-100 pt-8'>
                 <div className='text-right'>
                   <p className='text-md font-black text-black uppercase tracking-tight'>
-                    {doctorInfo.fullName}
+                    {doctorInfo?.fullName || 'Dr. Practitioner'}
                   </p>
                   <p className='text-[11px] font-bold text-blue-600 uppercase tracking-widest mt-1'>
-                    {doctorInfo.specialization} • {doctorInfo.hospital?.name}
+                    {doctorInfo?.specialization || 'Consultant'} •{' '}
+                    {doctorInfo?.hospital?.fullName ||
+                      doctorInfo?.hospital?.name ||
+                      'VitaLink Medical Center'}
                   </p>
                 </div>
               </div>
             </section>
           </div>
+        </div>
 
-          <div className='bg-slate-50 p-8 border-t border-slate-200 flex justify-end items-center'>
-            <button
-              onClick={handleSave}
-              className='px-16 py-4 rounded-2xl bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[11px] font-black uppercase tracking-widest shadow-xl shadow-blue-200 transition-all active:scale-95'
-            >
-              Sign & Save Rx
-            </button>
-          </div>
+        <div className='mt-8 flex justify-end items-center'>
+          <button
+            onClick={handleSave}
+            className='px-20 py-5 rounded-2xl bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[12px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-blue-200 transition-all active:scale-95'
+          >
+            Sign & Save Rx
+          </button>
         </div>
       </main>
       <Footer />
