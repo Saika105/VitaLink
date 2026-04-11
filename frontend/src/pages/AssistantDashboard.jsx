@@ -93,7 +93,7 @@ const AssistantDashboard = () => {
     if (!patientId) return;
     try {
       const response = await protectedFetch(
-        `/api/v1/doctor-assistants/search-patient/${patientId}`,
+        `/api/v1/doctor-assistants/search-patient/${patientId.trim().toUpperCase()}`,
       );
       if (response.ok) {
         const result = await response.json();
@@ -410,15 +410,19 @@ const AssistantDashboard = () => {
                                 ? 'bg-green-50 text-green-700 border-green-200'
                                 : item.queueStatus === 'no_show'
                                   ? 'bg-red-50 text-red-700 border-red-200'
-                                  : 'bg-white text-slate-900'
+                                  : item.queueStatus === 'in_consultation'
+                                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                    : 'bg-white text-slate-900'
                             }`}
                           >
                             <option value='pending'>Pending</option>
-                            <option value='in_consultation'>
-                              In Consultation
-                            </option>
                             <option value='done'>Done</option>
                             <option value='no_show'>No Show</option>
+                            {item.queueStatus === 'in_consultation' && (
+                              <option value='in_consultation'>
+                                In Consultation
+                              </option>
+                            )}
                           </select>
                         </td>
                         <td className='p-6 text-center'>

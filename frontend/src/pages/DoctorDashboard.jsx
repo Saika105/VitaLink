@@ -53,12 +53,14 @@ const DoctorDashboard = () => {
         const response = await protectedFetch(`/api/v1/doctors/today-queue`);
         if (response.ok) {
           const result = await response.json();
-          const apiData = result.data.filter(
+          const activeQueue = result.data.filter(
             item =>
-              item.queueStatus !== 'cancelled' &&
+              item.bookingStatus !== 'completed' &&
+              item.bookingStatus !== 'cancelled' &&
+              item.queueStatus !== 'done' &&
               item.queueStatus !== 'completed',
           );
-          setQueue(apiData);
+          setQueue(activeQueue);
         }
       } catch (err) {
         setQueue([]);
@@ -67,7 +69,7 @@ const DoctorDashboard = () => {
 
     fetchDoctorData();
     fetchDailyQueue();
-    const interval = setInterval(fetchDailyQueue, 15000);
+    const interval = setInterval(fetchDailyQueue, 10000); 
     return () => clearInterval(interval);
   }, []);
 
@@ -77,56 +79,61 @@ const DoctorDashboard = () => {
 
     try {
       const response = await protectedFetch(
-        `/api/v1/doctors/search-patient/${patientIdSearch}`,
+        `/api/v1/doctors/search-patient/${patientIdSearch.trim().toUpperCase()}`,
       );
       if (response.ok) {
         const result = await response.json();
         openConfirmModal(result.data, true);
       } else {
-        alert('Patient not found');
+        alert('Patient not found in the health vault');
       }
     } catch (err) {
       console.error(err);
     }
   };
 
-  const openConfirmModal = (patientData, isFromSearch = false) => {
+  const openConfirmModal = (data, isFromSearch = false) => {
     if (isFromSearch) {
       setSelectedPatient({
-        _id: 'manual-' + Date.now(),
-        appointmentId: 'DIRECT-ACCESS',
-        patient: patientData,
+        _id: 'manual-' + data._id,  
+        appointmentId: 'VAULT-ACCESS',
+        patient: data,
       });
     } else {
-      setSelectedPatient(patientData);
+      setSelectedPatient(data);
     }
     setShowConfirmModal(true);
   };
 
   const handleConfirmConsultation = async () => {
+    if (!selectedPatient) return;
+
     const isManual = selectedPatient._id.toString().startsWith('manual');
 
     if (isManual) {
       navigate(`/doctor/patient-view/${selectedPatient.patient._id}`);
       return;
     }
+
     try {
       const response = await protectedFetch(
         `/api/v1/doctors/start-session/${selectedPatient._id}`,
         {
-          method: 'PATCH', 
+          method: 'PATCH',
         },
       );
 
       if (response.ok) {
-        navigate(`/doctor/patient-view/${selectedPatient.patient._id}`);
+        navigate(`/doctor/patient-view/${selectedPatient.patient._id}`, {
+          state: { appointmentId: selectedPatient._id },
+        });
       } else {
         const errorData = await response.json();
         alert(errorData.message || 'Failed to start session');
       }
     } catch (err) {
       console.error(err);
-      alert('An error occurred while starting the session');
+      alert('Network error while starting session');
     }
   };
 
@@ -139,7 +146,7 @@ const DoctorDashboard = () => {
 
       <main className='grow max-w-7xl mx-auto w-full p-4 md:p-8 flex flex-col'>
         <div className='flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6'>
-          <div className='text-left'>
+          <div>
             <h2 className='text-3xl md:text-4xl font-extrabold text-black tracking-tight uppercase'>
               Consultation Queue
             </h2>
@@ -169,10 +176,10 @@ const DoctorDashboard = () => {
             </form>
 
             <div className='bg-white px-6 py-3 rounded-2xl border border-slate-200 shadow-sm text-center md:text-right flex flex-col justify-center min-w-40'>
-              <p className='text-[12px] font-black text-slate-900 uppercase tracking-widest mb-1'>
-                Session Date:
+              <p className='text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1'>
+                Session Date
               </p>
-              <p className='text-[12px] font-black text-black leading-none'>
+              <p className='text-[13px] font-black text-slate-900 leading-none'>
                 {currentDate}
               </p>
             </div>
@@ -182,17 +189,17 @@ const DoctorDashboard = () => {
         <div className='bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden'>
           <div className='bg-slate-50 p-6 md:p-8 border-b border-slate-100 flex justify-between items-center'>
             <h3 className='text-black font-black uppercase text-[12px] tracking-widest'>
-              Active Patients
+              Active Queue
             </h3>
             <span className='bg-blue-600 text-white px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest'>
-              {queue.length} in Queue
+              {queue.length} Patients
             </span>
           </div>
 
           <div className='overflow-x-auto custom-scrollbar'>
             <table className='w-full text-left border-collapse'>
               <thead>
-                <tr className='text-[12px] font-black text-black uppercase tracking-[0.2em] border-b border-slate-100 bg-white'>
+                <tr className='text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 bg-white'>
                   <th className='p-8 text-center w-24'>#</th>
                   <th className='p-8'>Patient ID</th>
                   <th className='p-8'>Full Name</th>
@@ -208,25 +215,24 @@ const DoctorDashboard = () => {
                     <td className='p-8 text-center font-black text-blue-600 text-xl'>
                       {idx + 1}
                     </td>
-                    <td className='p-8 font-bold text-black text-[12px] uppercase tracking-widest'>
-                      {item.appointmentId}
+                    <td className='p-8 font-bold text-slate-600 text-[12px] uppercase tracking-widest'>
+                      {item.patient?.upid || 'N/A'}
                     </td>
-                    <td className='p-8 font-black text-black text-[12px] uppercase'>
+                    <td className='p-8 font-black text-slate-900 text-[13px] uppercase'>
                       {item.patient?.fullName}
                     </td>
                     <td className='p-8 text-right'>
                       <button
                         onClick={() => openConfirmModal(item)}
-                        disabled={item.queueStatus === 'in_consultation'}
-                        className={`w-40 h-11 text-[11px] font-black uppercase tracking-widest rounded-xl shadow-lg transition-all active:scale-[0.98] ${
+                        className={`w-44 h-12 text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all active:scale-[0.98] ${
                           item.queueStatus === 'in_consultation'
-                            ? 'bg-green-500 text-white cursor-not-allowed opacity-80'
+                            ? 'bg-amber-500 text-white hover:bg-amber-600'
                             : 'bg-[#3B82F6] hover:bg-[#1E40AF] text-white shadow-blue-500/30'
                         }`}
                       >
                         {item.queueStatus === 'in_consultation'
-                          ? 'In Session'
-                          : 'Open File'}
+                          ? 'Resume Session'
+                          : 'Start Session'}
                       </button>
                     </td>
                   </tr>
@@ -235,8 +241,8 @@ const DoctorDashboard = () => {
             </table>
           </div>
           {queue.length === 0 && (
-            <div className='p-32 text-center text-black uppercase font-black text-[12px] tracking-[0.3em] bg-white'>
-              Queue is empty
+            <div className='p-32 text-center text-slate-400 uppercase font-black text-[12px] tracking-[0.3em] bg-white'>
+              No Patients in Queue
             </div>
           )}
         </div>
@@ -259,21 +265,21 @@ const DoctorDashboard = () => {
               <h3 className='text-xl font-black text-black uppercase tracking-tight mb-1'>
                 {selectedPatient.patient?.fullName}
               </h3>
-              <p className='text-[12px] font-black text-blue-600 uppercase tracking-widest mb-8'>
-                {selectedPatient.appointmentId}
+              <p className='text-[11px] font-black text-blue-600 bg-blue-50 px-4 py-1 rounded-full uppercase tracking-widest mb-8'>
+                {selectedPatient.patient?.upid || 'NEW ENTRY'}
               </p>
-              <div className='flex gap-3 w-full'>
+              <div className='flex flex-col gap-3 w-full'>
                 <button
                   onClick={handleConfirmConsultation}
-                  className='flex-1 h-12 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[11px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg active:scale-95'
+                  className='w-full h-14 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[12px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg active:scale-95'
                 >
-                  Confirm
+                  Enter Consultation
                 </button>
                 <button
                   onClick={() => setShowConfirmModal(false)}
-                  className='flex-1 h-12 bg-slate-100 text-black text-[11px] font-black uppercase tracking-widest rounded-2xl hover:bg-slate-200 transition-all'
+                  className='w-full h-14 bg-slate-100 text-slate-500 text-[12px] font-black uppercase tracking-widest rounded-2xl hover:bg-slate-200 transition-all'
                 >
-                  Close
+                  Cancel
                 </button>
               </div>
             </div>
