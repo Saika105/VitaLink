@@ -174,6 +174,7 @@ const SearchDoctor = () => {
                           'Private Clinic'}
                       </span>
                     </div>
+
                     <div className='flex items-center gap-2 text-slate-600'>
                       <span className='text-[10px] font-black uppercase text-slate-400'>
                         Sitting Time:
@@ -184,7 +185,27 @@ const SearchDoctor = () => {
                           'TBA'}
                       </span>
                     </div>
-                    <div className='flex items-center gap-2 text-slate-600'>
+
+                    <div className='space-y-1.5'>
+                      <span className='text-[10px] font-black uppercase text-slate-400'>
+                        Available Days:
+                      </span>
+                      <div className='flex flex-wrap gap-1'>
+                        {(
+                          doc.workingDays ||
+                          doc.schedule?.workingDays || ['TBA']
+                        ).map(day => (
+                          <span
+                            key={day}
+                            className='text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md font-bold border border-blue-100 uppercase'
+                          >
+                            {day}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className='flex items-center gap-2 text-slate-600 pt-1'>
                       <span className='text-[10px] font-black uppercase text-blue-500'>
                         Fee:
                       </span>
