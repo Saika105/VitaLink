@@ -46,7 +46,7 @@ const loginAssistant = asyncHandler(async (req, res) => {
 
   const loggedInAssistant = await DoctorAssistant.findById(assistant._id)
     .select("-password -refreshToken")
-    .populate("doctor", "fullName email"); // Helpful to know which doctor they work for
+    .populate("doctor", "fullName email"); 
 
   const options = {
     httpOnly: true,

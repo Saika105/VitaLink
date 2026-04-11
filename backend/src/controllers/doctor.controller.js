@@ -102,6 +102,7 @@ const getTodayAppointments = asyncHandler(async (req, res) => {
 
   const queue = await Appointment.find({
     doctor: req.user._id,
+    hospital: req.user.hospital,
     appointmentDate: { $gte: today, $lte: endOfToday },
     bookingStatus: "scheduled",
   })
@@ -195,9 +196,15 @@ const startConsultationSession = asyncHandler(async (req, res) => {
 const getPatientProfileForDoctor = asyncHandler(async (req, res) => {
   const { patientId } = req.params;
 
-  const patient = await Patient.findById(patientId).select(
-    "-password -refreshToken",
-  );
+  let patient = await Patient.findOne({ 
+    upid: patientId.toUpperCase().trim() 
+  }).select("-password -refreshToken");
+
+  if (!patient) {
+    if (mongoose.Types.ObjectId.isValid(patientId)) {
+      patient = await Patient.findById(patientId).select("-password -refreshToken");
+    }
+  }
 
   if (!patient) throw new ApiError(404, "Patient not found");
 

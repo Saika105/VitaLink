@@ -118,7 +118,7 @@ const createDoctor = asyncHandler(async (req, res) => {
     dateOfBirth,
     address,
     nidNumber,
-    emergencyContact, 
+    emergencyContact,
     licenseNumber,
     specialization,
     designation,
@@ -131,53 +131,75 @@ const createDoctor = asyncHandler(async (req, res) => {
   } = req.body;
 
   const requiredStrings = [
-    fullName, email, password, phone, gender, 
-    dateOfBirth, address, nidNumber, licenseNumber, 
-    specialization, sittingTimeLabel
+    fullName,
+    email,
+    password,
+    phone,
+    gender,
+    dateOfBirth,
+    address,
+    nidNumber,
+    licenseNumber,
+    specialization,
+    sittingTimeLabel,
   ];
 
   if (requiredStrings.some((f) => !f || f.toString().trim() === "")) {
     throw new ApiError(400, "All profile and availability fields are required");
   }
 
-  if (consultationFee === undefined || consultationFee === null || consultationFee === "") {
+  if (
+    consultationFee === undefined ||
+    consultationFee === null ||
+    consultationFee === ""
+  ) {
     throw new ApiError(400, "Consultation fee is required");
   }
 
   let parsedEmergencyContact;
   try {
-    parsedEmergencyContact = typeof emergencyContact === "string" 
-      ? JSON.parse(emergencyContact) 
-      : emergencyContact;
-      
-    if (!parsedEmergencyContact?.phone || parsedEmergencyContact.phone.trim() === "") {
+    parsedEmergencyContact =
+      typeof emergencyContact === "string"
+        ? JSON.parse(emergencyContact)
+        : emergencyContact;
+
+    if (
+      !parsedEmergencyContact?.phone ||
+      parsedEmergencyContact.phone.trim() === ""
+    ) {
       throw new Error();
     }
   } catch (error) {
     throw new ApiError(400, "Valid Emergency Contact phone is required");
   }
 
-  let parsedWorkingDays = typeof workingDays === "string" ? JSON.parse(workingDays) : workingDays;
-  let parsedTimeSlots = typeof timeSlots === "string" ? JSON.parse(timeSlots) : timeSlots;
+  let parsedWorkingDays =
+    typeof workingDays === "string" ? JSON.parse(workingDays) : workingDays;
+  let parsedTimeSlots =
+    typeof timeSlots === "string" ? JSON.parse(timeSlots) : timeSlots;
 
   if (!Array.isArray(parsedWorkingDays) || parsedWorkingDays.length === 0) {
     throw new ApiError(400, "At least one working day is required");
   }
-  
+
   if (!Array.isArray(parsedTimeSlots) || parsedTimeSlots.length === 0) {
     throw new ApiError(400, "At least one time slot is required");
   }
- 
+
   const existedDoctor = await Doctor.findOne({
     $or: [{ email }, { licenseNumber }, { phone }],
   });
 
   if (existedDoctor) {
-    throw new ApiError(409, "Doctor with this email, license, or phone already exists");
+    throw new ApiError(
+      409,
+      "Doctor with this email, license, or phone already exists",
+    );
   }
 
   const photoLocalPath = req.file?.path;
-  if (!photoLocalPath) throw new ApiError(400, "Doctor profile photo is required");
+  if (!photoLocalPath)
+    throw new ApiError(400, "Doctor profile photo is required");
 
   const photo = await uploadOnCloudinary(photoLocalPath);
   if (!photo) throw new ApiError(500, "Error while uploading profile photo");
@@ -229,11 +251,19 @@ const createDoctor = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Error while creating doctor schedule");
   }
 
-  const createdDoctor = await Doctor.findById(doctor._id).select("-password -refreshToken");
-
-  return res.status(201).json(
-    new ApiResponse(201, { doctor: createdDoctor, schedule }, "Doctor account and schedule created successfully")
+  const createdDoctor = await Doctor.findById(doctor._id).select(
+    "-password -refreshToken",
   );
+
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(
+        201,
+        { doctor: createdDoctor, schedule },
+        "Doctor account and schedule created successfully",
+      ),
+    );
 });
 
 //************** Create doctor assistant ********** */
@@ -493,33 +523,39 @@ const getHospitalStaff = asyncHandler(async (req, res) => {
         .select("-password -refreshToken")
         .lean();
 
-      const doctorIds = doctors.map(d => d._id);
+      const doctorIds = doctors.map((d) => d._id);
 
-      const schedules = await DoctorSchedule.find({ 
-        doctor: { $in: doctorIds } 
+      const schedules = await DoctorSchedule.find({
+        doctor: { $in: doctorIds },
       }).lean();
 
       const scheduleMap = {};
-      schedules.forEach(s => {
+      schedules.forEach((s) => {
         scheduleMap[s.doctor.toString()] = s;
       });
 
-      staffData = doctors.map(d => ({
+      staffData = doctors.map((d) => ({
         ...d,
         schedule: scheduleMap[d._id.toString()] || null,
       }));
       break;
 
     case "ASSISTANTS":
-      staffData = await DoctorAssistant.find(query).select("-password -refreshToken");
+      staffData = await DoctorAssistant.find(query).select(
+        "-password -refreshToken",
+      );
       break;
 
     case "LAB STAFF":
-      staffData = await LabAssistant.find(query).select("-password -refreshToken");
+      staffData = await LabAssistant.find(query).select(
+        "-password -refreshToken",
+      );
       break;
 
     case "RECEPTIONIST":
-      staffData = await Receptionist.find(query).select("-password -refreshToken");
+      staffData = await Receptionist.find(query).select(
+        "-password -refreshToken",
+      );
       break;
 
     default:
@@ -572,7 +608,10 @@ const deleteStaff = asyncHandler(async (req, res) => {
 
     await DoctorSchedule.deleteMany({ doctor: id });
 
-    await Appointment.deleteMany({ doctor: id });
+    await Appointment.deleteMany({
+      doctor: id,
+      bookingStatus: "scheduled",
+    });
 
     await DoctorAssistant.deleteMany({ doctor: id });
 
@@ -580,7 +619,7 @@ const deleteStaff = asyncHandler(async (req, res) => {
       await deleteFromCloudinary(staffMember.profilePhoto.publicId);
     }
 
-    console.log("Schedules, Appointments, Assistants, and Images cleared.");
+    console.log("Schedules, Upcoming Appointments, Assistants, and Images cleared.");
   }
 
   await Model.findByIdAndDelete(id);
