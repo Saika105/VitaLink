@@ -40,36 +40,29 @@ const AssistantDashboard = () => {
       }),
     );
 
-    const fetchAssistantProfile = async () => {
-      try {
-        const response = await protectedFetch(
-          `/api/v1/doctor-assistants/daily-list`,
-        );
-        if (response.ok) {
-          const result = await response.json();
-          setAssistantData(result.data[0]?.addedToQueueByAssistant || {});
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
+   const fetchInitialData = async () => {
+     try {
+       const savedUser = JSON.parse(localStorage.getItem('user'));
+       if (savedUser) {
+         setAssistantData({
+           fullName: savedUser.fullName,
+           doctor: savedUser.doctor || { fullName: 'N/A' },
+           hospital: savedUser.hospital || { name: 'N/A' },
+         });
+       }
+       const response = await protectedFetch(
+         `/api/v1/doctor-assistants/daily-list`,
+       );
+       if (response.ok) {
+         const result = await response.json();
+         setSessionList(result.data || []);
+       }
+     } catch (err) {
+       console.error('Fetch Error:', err);
+     }
+   };
 
-    const fetchTodaysQueue = async () => {
-      try {
-        const response = await protectedFetch(
-          `/api/v1/doctor-assistants/daily-list`,
-        );
-        if (response.ok) {
-          const result = await response.json();
-          setSessionList(result.data || []);
-        }
-      } catch (err) {
-        setSessionList([]);
-      }
-    };
-
-    fetchAssistantProfile();
-    fetchTodaysQueue();
+   fetchInitialData();
 
     const savedNotes = localStorage.getItem('vitalink_assistant_notes');
     if (savedNotes) {
@@ -130,10 +123,18 @@ const AssistantDashboard = () => {
       );
       if (response.ok) {
         const result = await response.json();
-        setSessionList(prev => [...prev, result.data]);
+        const newEntry = {
+          ...result.data,
+          patient: {
+            fullName: currentPatient.fullName,
+            upid: currentPatient.upid,
+          },
+        };
+        setSessionList(prev => [...prev, newEntry]);
         setCurrentPatient(null);
         setPatientId('');
-      } else {
+      }
+      else {
         const errorData = await response.json();
         alert(errorData.message || 'Failed to add patient');
       }
@@ -404,6 +405,7 @@ const AssistantDashboard = () => {
                             onChange={e => updateStatus(idx, e.target.value)}
                             className={`border border-slate-300 rounded-lg text-[10px] font-black uppercase p-2 outline-none transition-all ${item.queueStatus === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : item.queueStatus === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-white text-slate-900'}`}
                           >
+                            <option value='pending'>Pending</option>
                             <option value='waiting'>Waiting</option>
                             <option value='completed'>Completed</option>
                             <option value='cancelled'>Cancelled</option>

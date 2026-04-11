@@ -77,7 +77,7 @@ const DoctorDashboard = () => {
 
     try {
       const response = await protectedFetch(
-        `/api/v1/doctors/patient-profile/${patientIdSearch}`,
+        `/api/v1/doctors/search-patient/${patientIdSearch}`,
       );
       if (response.ok) {
         const result = await response.json();
@@ -98,7 +98,7 @@ const DoctorDashboard = () => {
         patient: patientData,
       });
     } else {
-      setSelectedPatient(item);
+      setSelectedPatient(patientData);
     }
     setShowConfirmModal(true);
   };
@@ -216,13 +216,17 @@ const DoctorDashboard = () => {
                     </td>
                     <td className='p-8 text-right'>
                       <button
-                        onClick={() => {
-                          setSelectedPatient(item);
-                          setShowConfirmModal(true);
-                        }}
-                        className='w-40 h-11 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[11px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98]'
+                        onClick={() => openConfirmModal(item)}
+                        disabled={item.queueStatus === 'in_consultation'}
+                        className={`w-40 h-11 text-[11px] font-black uppercase tracking-widest rounded-xl shadow-lg transition-all active:scale-[0.98] ${
+                          item.queueStatus === 'in_consultation'
+                            ? 'bg-green-500 text-white cursor-not-allowed opacity-80'
+                            : 'bg-[#3B82F6] hover:bg-[#1E40AF] text-white shadow-blue-500/30'
+                        }`}
                       >
-                        Open File
+                        {item.queueStatus === 'in_consultation'
+                          ? 'In Session'
+                          : 'Open File'}
                       </button>
                     </td>
                   </tr>

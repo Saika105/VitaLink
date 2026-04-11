@@ -45,10 +45,9 @@ const StaffLogin = () => {
         if (result.data.user) {
           localStorage.setItem('user', JSON.stringify(result.data.user));
         }
-
-        alert('Login Authorized');
-        navigate(dashboardRoutes[loginData.role]);
-      } else {
+          navigate(dashboardRoutes[loginData.role]);
+      }
+      else {
         alert(result.message || 'Invalid Credentials');
       }
     } catch (error) {
