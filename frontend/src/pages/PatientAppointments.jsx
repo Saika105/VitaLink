@@ -28,9 +28,12 @@ const PatientAppointments = () => {
             doctor: apt.doctor?.fullName || apt.manualDoctorName || 'Staff',
             specialization: apt.doctor?.specialization || 'General',
             date: new Date(apt.appointmentDate).toLocaleDateString(),
-            time: apt.timeSlot
-              ? `${apt.timeSlot.startTime} - ${apt.timeSlot.endTime}`
-              : 'TBA',
+            time:
+              apt.startTime && apt.endTime
+                ? `${apt.startTime} - ${apt.endTime}`
+                : apt.timeSlot?.startTime
+                  ? `${apt.timeSlot.startTime} - ${apt.timeSlot.endTime}`
+                  : 'TBA',
             phone: apt.doctor?.phone || apt.phone,
             followUpDate: apt.followUpDate
               ? new Date(apt.followUpDate).toLocaleDateString()
@@ -209,13 +212,13 @@ const PatientAppointments = () => {
                       )}
                       {activeTab === 'completed' && (
                         <span className='text-[10px] font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg border border-green-100'>
-                          {apt.followUpDate || 'None'}
+                          {apt.followUpDate || 'None Scheduled'}
                         </span>
                       )}
                       {activeTab === 'cancelled' && (
                         <button
                           onClick={() => handleRescheduleClick(apt)}
-                          className='bg-blue-600 text-white text-[9px] md:text-[10px] font-black py-2 px-6 rounded-xl uppercase'
+                          className='bg-blue-600 text-white text-[9px] md:text-[10px] font-black py-2 px-6 rounded-xl uppercase shadow-md'
                         >
                           Reschedule
                         </button>
@@ -227,7 +230,7 @@ const PatientAppointments = () => {
             </table>
           </div>
           {appointments.length === 0 && (
-            <div className='p-16 text-center text-slate-400 text-xs font-bold uppercase'>
+            <div className='p-16 text-center text-slate-400 text-xs font-bold uppercase tracking-widest'>
               No {activeTab} records found
             </div>
           )}
@@ -245,12 +248,12 @@ const PatientAppointments = () => {
 
       {showClearConfirm && (
         <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
-          <div className='bg-white rounded-3xl p-8 max-w-sm w-full text-center'>
+          <div className='bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl'>
             <h3 className='text-xl font-black text-slate-900 uppercase'>
-              Clear {activeTab}?
+              Clear {activeTab} History?
             </h3>
             <p className='text-slate-500 text-xs mt-2'>
-              Permanently delete all records from this list?
+              This action cannot be undone.
             </p>
             <div className='grid grid-cols-2 gap-3 mt-8'>
               <button
@@ -272,7 +275,7 @@ const PatientAppointments = () => {
 
       {showPopup && activeAssistant && (
         <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
-          <div className='bg-white rounded-[40px] p-8 max-w-sm w-full text-center'>
+          <div className='bg-white rounded-[40px] p-8 max-w-sm w-full text-center shadow-2xl'>
             <h3 className='text-xl md:text-2xl font-black text-slate-900 uppercase'>
               Reschedule Slot
             </h3>
@@ -282,24 +285,24 @@ const PatientAppointments = () => {
             <div className='my-8 space-y-3'>
               <a
                 href={`tel:${activeAssistant.phone}`}
-                className='flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-200'
+                className='flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-200 hover:border-blue-400 transition-all'
               >
                 <div className='text-left'>
-                  <p className='text-[10px] font-black text-black uppercase'>
+                  <p className='text-[10px] font-black text-black uppercase tracking-widest'>
                     Call Assistant
                   </p>
                   <p className='text-sm font-bold text-slate-900'>
                     {activeAssistant.phone}
                   </p>
                 </div>
-                <div className='w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center'>
+                <div className='w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold'>
                   →
                 </div>
               </a>
             </div>
             <button
               onClick={() => setShowPopup(false)}
-              className='w-full bg-slate-900 text-white py-4 rounded-2xl text-xs font-black uppercase'
+              className='w-full bg-slate-900 text-white py-4 rounded-2xl text-xs font-black uppercase hover:bg-blue-600 transition-all'
             >
               Close
             </button>
