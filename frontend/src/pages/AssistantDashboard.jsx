@@ -223,7 +223,6 @@ const AssistantDashboard = () => {
       localStorage.removeItem('role');
       localStorage.removeItem('user');
       navigate('/login-staff', { replace: true });
-      window.location.reload();
     }
   };
 
@@ -426,7 +425,7 @@ const AssistantDashboard = () => {
                           </select>
                         </td>
                         <td className='p-6 text-center'>
-                          <label className='cursor-pointer w-32 h-10 flex items-center justify-center bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[10px] rounded-xl font-black uppercase tracking-widest shadow-md transition-all font-inter'>
+                          <label className='cursor-pointer w-32 h-10 flex items-center justify-center bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[10px] rounded-xl font-black uppercase tracking-widest shadow-md transition-all font-inter mx-auto'>
                             Upload RX
                             <input
                               type='file'
@@ -467,7 +466,7 @@ const AssistantDashboard = () => {
               </button>
               <button
                 onClick={handleLogout}
-                className='w-full md:w-56 h-12 border-2 border-red-200 text-red-700 rounded-xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all outline-none font-inter'
+                className='w-full md:w-56 h-12 border-2 border-slate-300 text-slate-600 rounded-xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all outline-none font-inter'
               >
                 LogOut
               </button>
