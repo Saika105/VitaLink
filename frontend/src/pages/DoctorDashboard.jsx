@@ -69,7 +69,7 @@ const DoctorDashboard = () => {
 
     fetchDoctorData();
     fetchDailyQueue();
-    const interval = setInterval(fetchDailyQueue, 10000); 
+    const interval = setInterval(fetchDailyQueue, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -95,7 +95,7 @@ const DoctorDashboard = () => {
   const openConfirmModal = (data, isFromSearch = false) => {
     if (isFromSearch) {
       setSelectedPatient({
-        _id: 'manual-' + data._id,  
+        _id: 'manual-' + data._id,
         appointmentId: 'VAULT-ACCESS',
         patient: data,
       });
@@ -111,7 +111,7 @@ const DoctorDashboard = () => {
     const isManual = selectedPatient._id.toString().startsWith('manual');
 
     if (isManual) {
-      navigate(`/doctor/patient-view/${selectedPatient.patient._id}`);
+      navigate(`/doctor/patient-view/${selectedPatient.patient.upid}`);
       return;
     }
 
@@ -124,7 +124,7 @@ const DoctorDashboard = () => {
       );
 
       if (response.ok) {
-        navigate(`/doctor/patient-view/${selectedPatient.patient._id}`, {
+        navigate(`/doctor/patient-view/${selectedPatient.patient.upid}`, {
           state: { appointmentId: selectedPatient._id },
         });
       } else {
@@ -231,8 +231,8 @@ const DoctorDashboard = () => {
                         }`}
                       >
                         {item.queueStatus === 'in_consultation'
-                          ? 'Resume Session'
-                          : 'Start Session'}
+                          ? 'In Session'
+                          : 'Open File'}
                       </button>
                     </td>
                   </tr>
@@ -273,7 +273,7 @@ const DoctorDashboard = () => {
                   onClick={handleConfirmConsultation}
                   className='w-full h-14 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[12px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg active:scale-95'
                 >
-                  Enter Consultation
+                  Confirm Entry
                 </button>
                 <button
                   onClick={() => setShowConfirmModal(false)}
