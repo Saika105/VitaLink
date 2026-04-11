@@ -133,7 +133,6 @@ const DoctorDashboard = () => {
       }
     } catch (err) {
       console.error(err);
-      alert('Network error while starting session');
     }
   };
 
