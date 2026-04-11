@@ -45,7 +45,7 @@ const App = () => {
           <Route path='/assistant' element={<AssistantDashboard />} />
           <Route path='/doctor-dashboard' element={<DoctorDashboard />} />
           <Route
-            path='/doctor/patient-view/:id'
+            path='/doctor/patient-view/:patientId'
             element={<DoctorPatientView />}
           />
           <Route path='/doctor/change-password' element={<ChangePassword />} />
