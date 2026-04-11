@@ -106,6 +106,8 @@ const DoctorPatientView = () => {
               '',
           }));
           setItems(mappedData);
+        } else {
+          setItems([]);
         }
       } catch (err) {
         setItems([]);
@@ -133,9 +135,9 @@ const DoctorPatientView = () => {
 
   if (!patientData) {
     return (
-      <div className='min-h-screen bg-[#F8FAFC] flex flex-col font-inter items-center justify-center text-black'>
+      <div className='min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center font-inter'>
         <div className='w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4'></div>
-        <p className='text-[12px] font-black uppercase tracking-[0.2em]'>
+        <p className='text-[12px] font-black uppercase tracking-widest text-black'>
           Syncing HealthVault...
         </p>
       </div>
@@ -216,7 +218,7 @@ const DoctorPatientView = () => {
                 </div>
               </div>
               <div>
-                <p className='text-[12px] font-black uppercase mb-1 ml-1 text-red-500'>
+                <p className='text-[12px] font-black uppercase mb-1 ml-1 text-red-600'>
                   Emergency Contact
                 </p>
                 <div className='bg-red-50 border border-red-100 rounded-xl px-4 py-2 text-[12px] font-black text-red-600'>
@@ -260,7 +262,7 @@ const DoctorPatientView = () => {
                 </button>
                 <button
                   onClick={handleExitSession}
-                  className='w-54 h-12 border-2 border-slate-200 text-black rounded-xl text-[11px] font-black uppercase hover:bg-red-600 hover:text-white transition-all'
+                  className='w-54 h-12 border-2 border-slate-200 text-black rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all'
                 >
                   Exit Session
                 </button>
