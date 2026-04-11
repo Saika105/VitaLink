@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { domToPng } from 'modern-screenshot';
 import DoctorNavbar from '../components/DoctorNavbar';
 import Footer from '../components/Footer';
 import { protectedFetch } from '../utils/api';
@@ -40,7 +39,6 @@ const DigitalPrescription = () => {
     upid: id,
     dateOfBirth: null,
     gender: '--',
-    _id: null,
   };
 
   const todayDate = new Date().toLocaleDateString('en-GB', {
@@ -50,21 +48,12 @@ const DigitalPrescription = () => {
   });
 
   useEffect(() => {
-    const fetchDoctorProfile = async () => {
-      try {
-        const response = await protectedFetch(`/api/v1/doctors/profile`);
-        if (response.ok) {
-          const result = await response.json();
-          setDoctorInfo(result.data);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchDoctorProfile();
-
+    const savedUser = JSON.parse(localStorage.getItem('user'));
+    if (savedUser) {
+      setDoctorInfo(savedUser);
+    }
     if (!appointmentId) {
-      alert('Critical Error: No active appointment reference found.');
+      alert('Session expired. Please return to dashboard.');
       navigate(-1);
     }
   }, [appointmentId, navigate]);
@@ -86,27 +75,20 @@ const DigitalPrescription = () => {
       return;
     }
 
-    if (!appointmentId) {
-      alert('Cannot save: Appointment ID missing.');
-      return;
-    }
-
     try {
-      const element = prescriptionRef.current;
-      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      const pdfBlob = pdf.output('blob');
+      const dataUrl = await domToPng(prescriptionRef.current, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        filter: node => {
+          if (node.hasAttribute && node.hasAttribute('data-screenshot-exclude'))
+            return false;
+          return true;
+        },
+      });
 
+      const blob = await (await fetch(dataUrl)).blob();
       const formData = new FormData();
-      formData.append(
-        'prescriptionFile',
-        pdfBlob,
-        `RX_${patientInfo.upid}.pdf`,
-      );
+      formData.append('prescriptionFile', blob, `RX_${patientInfo.upid}.png`);
       formData.append(
         'diagnosis',
         prescriptionData.illness || 'General Consultation',
@@ -125,7 +107,7 @@ const DigitalPrescription = () => {
         ),
       );
 
-      const response = await protectedFetch(
+      const res = await protectedFetch(
         `/api/v1/doctors/prescription/create/${appointmentId}`,
         {
           method: 'POST',
@@ -133,28 +115,31 @@ const DigitalPrescription = () => {
         },
       );
 
-      if (response.ok) {
+      if (res.ok) {
         alert('Digital Prescription synced to HealthVault successfully.');
         navigate(`/doctor/patient-view/${id}`);
       } else {
-        const err = await response.json();
-        alert(err.message || 'Error saving to database.');
+        const error = await res.json();
+        alert(error.message || 'Error saving to database.');
       }
     } catch (err) {
       console.error(err);
-      alert('Network error during prescription sync.');
+      alert('Failed to capture prescription image. Try using a standard font.');
     }
   };
 
   return (
     <div className='min-h-screen bg-[#F8FAFC] flex flex-col font-inter text-black'>
       <DoctorNavbar
-        doctorName={doctorInfo?.fullName || 'Practitioner'}
+        doctorName={doctorInfo?.fullName}
         doctorPhoto={doctorInfo?.profilePhoto?.url}
       />
 
       <main className='grow max-w-6xl mx-auto w-full p-4 md:p-10 flex flex-col'>
-        <div className='flex justify-between items-end mb-6'>
+        <div
+          className='flex justify-between items-end mb-6'
+          data-screenshot-exclude
+        >
           <div>
             <h2 className='text-3xl font-black text-black uppercase tracking-tighter'>
               New Consultation
@@ -175,9 +160,12 @@ const DigitalPrescription = () => {
           ref={prescriptionRef}
           className='bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden flex flex-col'
         >
-          <div className='bg-[#3B82F6] p-8 text-white grid grid-cols-2 md:grid-cols-4 gap-8'>
+          <div
+            style={{ backgroundColor: '#2563eb' }}
+            className='p-8 text-white grid grid-cols-2 md:grid-cols-4 gap-8'
+          >
             <div>
-              <p className='text-[12px] font-bold text-blue-100 uppercase tracking-widest mb-1'>
+              <p className='text-[12px] font-bold opacity-80 uppercase tracking-widest mb-1'>
                 Patient:
               </p>
               <p className='font-black text-sm uppercase leading-tight'>
@@ -185,7 +173,7 @@ const DigitalPrescription = () => {
               </p>
             </div>
             <div>
-              <p className='text-[12px] font-bold text-blue-100 uppercase tracking-widest mb-1'>
+              <p className='text-[12px] font-bold opacity-80 uppercase tracking-widest mb-1'>
                 ID Number:
               </p>
               <p className='font-black text-sm uppercase leading-tight'>
@@ -193,7 +181,7 @@ const DigitalPrescription = () => {
               </p>
             </div>
             <div>
-              <p className='text-[12px] font-bold text-blue-100 uppercase tracking-widest mb-1'>
+              <p className='text-[12px] font-bold opacity-80 uppercase tracking-widest mb-1'>
                 Age/Gender:
               </p>
               <p className='font-black text-sm uppercase leading-tight'>
@@ -202,8 +190,8 @@ const DigitalPrescription = () => {
               </p>
             </div>
             <div className='text-right'>
-              <p className='text-[12px] font-bold text-blue-100 uppercase tracking-widest mb-1'>
-                Consult Date
+              <p className='text-[12px] font-bold opacity-80 uppercase tracking-widest mb-1'>
+                Date
               </p>
               <p className='font-black text-sm uppercase leading-tight'>
                 {todayDate}
@@ -211,7 +199,7 @@ const DigitalPrescription = () => {
             </div>
           </div>
 
-          <div className='flex flex-col md:flex-row min-h-125'>
+          <div className='flex flex-col md:flex-row min-h-[500px]'>
             <aside className='w-full md:w-80 bg-slate-50 p-8 border-r border-slate-200 flex flex-col gap-12'>
               <div>
                 <h3 className='text-[12px] font-black text-black uppercase tracking-widest mb-4'>
@@ -226,7 +214,7 @@ const DigitalPrescription = () => {
                     })
                   }
                   className='w-full bg-transparent border-b-2 border-slate-300 focus:border-blue-600 outline-none text-md font-semibold text-black placeholder:text-slate-300 resize-none'
-                  placeholder='Symptoms observed...'
+                  placeholder='Notes...'
                   rows='3'
                 ></textarea>
               </div>
@@ -243,27 +231,30 @@ const DigitalPrescription = () => {
                     })
                   }
                   className='w-full bg-transparent border-b-2 border-slate-300 focus:border-blue-600 outline-none text-md font-semibold text-black placeholder:text-slate-300 resize-none'
-                  placeholder='e.g. Blood Sugar, MRI'
+                  placeholder='e.g. CBC'
                   rows='3'
                 ></textarea>
               </div>
             </aside>
 
             <section className='grow p-10 relative flex flex-col bg-white'>
-              <div className='absolute top-10 left-10 text-9xl font-black text-blue-600/5 select-none uppercase pointer-events-none'>
+              <div className='absolute top-10 left-10 text-9xl font-black text-blue-100/20 select-none uppercase pointer-events-none'>
                 Rx
               </div>
               <div className='relative z-10 space-y-12 grow'>
                 <div>
                   <h3 className='text-sm font-black text-black uppercase tracking-widest mb-6 flex items-center gap-3'>
-                    <span className='w-2.5 h-2.5 bg-blue-600 rounded-full'></span>{' '}
+                    <span
+                      style={{ backgroundColor: '#2563eb' }}
+                      className='w-2.5 h-2.5 rounded-full'
+                    ></span>{' '}
                     Medication Plan
                   </h3>
                   <div className='space-y-2 mb-6'>
                     {medicineList.map((med, index) => (
                       <div
                         key={index}
-                        className='flex justify-between items-center bg-slate-50 border border-slate-200 px-6 py-4 rounded-2xl group shadow-sm'
+                        className='flex justify-between items-center bg-slate-50 border border-slate-200 px-6 py-4 rounded-2xl'
                       >
                         <p className='text-md font-semibold text-black'>
                           <span className='text-blue-600 mr-2'>
@@ -273,7 +264,8 @@ const DigitalPrescription = () => {
                         </p>
                         <button
                           onClick={() => removeMedicine(index)}
-                          className='text-red-600 opacity-0 group-hover:opacity-100 transition-all font-black text-[10px] uppercase tracking-widest'
+                          className='text-red-600 font-black text-[10px] uppercase'
+                          data-screenshot-exclude
                         >
                           Remove
                         </button>
@@ -287,6 +279,7 @@ const DigitalPrescription = () => {
                     onKeyDown={addMedicine}
                     className='w-full bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-5 text-md font-black text-black outline-none focus:border-blue-600 focus:bg-white transition-all shadow-inner'
                     placeholder='Type medicine + Enter...'
+                    data-screenshot-exclude
                   />
                 </div>
                 <div>
@@ -303,7 +296,7 @@ const DigitalPrescription = () => {
                       })
                     }
                     className='w-full bg-transparent border-b-2 border-slate-300 focus:border-blue-600 outline-none text-md font-semibold text-black py-2'
-                    placeholder='Special instructions...'
+                    placeholder='Instructions...'
                   />
                 </div>
               </div>
@@ -311,13 +304,13 @@ const DigitalPrescription = () => {
               <div className='mt-20 flex justify-end pb-4 border-t border-slate-100 pt-8'>
                 <div className='text-right'>
                   <p className='text-md font-black text-black uppercase tracking-tight'>
-                    {doctorInfo?.fullName || 'Dr. Practitioner'}
+                    {doctorInfo?.fullName || 'Practitioner'}
                   </p>
-                  <p className='text-[11px] font-bold text-blue-600 uppercase tracking-widest mt-1'>
-                    {doctorInfo?.specialization || 'Consultant'} •{' '}
-                    {doctorInfo?.hospital?.fullName ||
-                      doctorInfo?.hospital?.name ||
-                      'VitaLink Medical Center'}
+                  <p
+                    style={{ color: '#2563eb' }}
+                    className='text-[11px] font-bold uppercase tracking-widest mt-1'
+                  >
+                    {doctorInfo?.specialization || 'Consultant'}
                   </p>
                 </div>
               </div>
@@ -325,10 +318,13 @@ const DigitalPrescription = () => {
           </div>
         </div>
 
-        <div className='mt-8 flex justify-end items-center'>
+        <div
+          className='mt-8 flex justify-end items-center'
+          data-screenshot-exclude
+        >
           <button
             onClick={handleSave}
-            className='px-20 py-5 rounded-2xl bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[12px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-blue-200 transition-all active:scale-95'
+            className='px-20 py-5 rounded-2xl bg-blue-600 hover:bg-blue-800 text-white text-[12px] font-black uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all'
           >
             Sign & Save Rx
           </button>
