@@ -137,7 +137,6 @@ const DoctorPatientView = () => {
       }
       navigate('/doctor-dashboard');
     } catch (err) {
-      console.error(err);
       navigate('/doctor-dashboard');
     }
   };
@@ -223,7 +222,15 @@ const DoctorPatientView = () => {
                   Emergency
                 </p>
                 <div className='bg-red-50 border border-red-100 rounded-xl px-4 py-2 text-[12px] font-black text-red-600 text-left'>
-                  {patientData.emergencyContact || 'NOT PROVIDED'}
+                  {patientData.emergencyContact?.phone || 'NOT PROVIDED'}
+                </div>
+              </div>
+              <div>
+                <p className='text-[12px] font-black uppercase mb-1 ml-1 text-left'>
+                  Resident Address
+                </p>
+                <div className='bg-white border border-slate-200 rounded-xl px-4 py-2 text-[11px] font-bold text-left leading-relaxed'>
+                  {patientData.address || 'NOT PROVIDED'}
                 </div>
               </div>
             </div>
