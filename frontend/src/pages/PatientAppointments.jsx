@@ -7,7 +7,7 @@ import { protectedFetch } from '../utils/api';
 
 const PatientAppointments = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('Upcoming');
+  const [activeTab, setActiveTab] = useState('scheduled');
   const [appointments, setAppointments] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
   const [activeAssistant, setActiveAssistant] = useState(null);
@@ -25,7 +25,7 @@ const PatientAppointments = () => {
           const mappedData = result.data.map(apt => ({
             id: apt._id,
             hospital:
-              apt.hospital?.fullName || apt.hospitalName || 'Private Clinic',
+              apt.hospital?.name || apt.hospitalName || 'Private Clinic',
             doctor:
               apt.doctor?.fullName || apt.manualDoctorName || 'Not Specified',
             specialization:
@@ -129,17 +129,21 @@ const PatientAppointments = () => {
         <div className='flex items-center justify-between gap-4 mb-8'>
           <div className='overflow-x-auto no-scrollbar'>
             <div className='flex w-max md:w-fit bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner'>
-              {['Upcoming', 'Completed', 'Canceled'].map(tab => (
+              {[
+                { label: 'Upcoming', value: 'scheduled' },
+                { label: 'Completed', value: 'completed' },
+                { label: 'Cancelled', value: 'cancelled' },
+              ].map(tab => (
                 <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  key={tab.value}
+                  onClick={() => setActiveTab(tab.value)}
                   className={`px-5 md:px-6 py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${
-                    activeTab === tab
+                    activeTab === tab.value
                       ? 'bg-white text-blue-600 shadow-sm'
                       : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
-                  {tab}
+                  {tab.label}
                 </button>
               ))}
             </div>
@@ -171,7 +175,7 @@ const PatientAppointments = () => {
                     Specialization
                   </th>
 
-                  {activeTab !== 'Completed' && (
+                  {activeTab !== 'completed' && (
                     <th className='p-4 md:p-5 text-[11px] md:text-[12px] uppercase tracking-widest text-black font-black'>
                       Schedule
                     </th>
@@ -203,7 +207,7 @@ const PatientAppointments = () => {
                       </span>
                     </td>
 
-                    {activeTab !== 'Completed' && (
+                    {activeTab !== 'completed' && (
                       <td className='p-4 md:p-5'>
                         <div className='font-bold text-slate-900 whitespace-nowrap'>
                           {apt.date}
@@ -215,7 +219,7 @@ const PatientAppointments = () => {
                     )}
 
                     <td className='p-4 md:p-5 text-center whitespace-nowrap'>
-                      {activeTab === 'Upcoming' && (
+                      {activeTab === 'scheduled' && (
                         <button
                           onClick={() => handleCancel(apt.id)}
                           className='bg-red-50 text-red-600 border border-red-100 hover:bg-red-600 hover:text-white text-[9px] md:text-[10px] font-black py-2 px-4 md:px-6 rounded-xl transition-all uppercase tracking-widest'
@@ -223,7 +227,7 @@ const PatientAppointments = () => {
                           Cancel
                         </button>
                       )}
-                      {activeTab === 'Completed' && (
+                      {activeTab === 'completed' && (
                         <div className='flex flex-col items-center gap-1'>
                           <span className='text-[8px] md:text-[9px] font-black text-slate-400 uppercase'>
                             Follow-up
@@ -233,7 +237,7 @@ const PatientAppointments = () => {
                           </span>
                         </div>
                       )}
-                      {activeTab === 'Canceled' && (
+                      {activeTab === 'cancelled' && (
                         <button
                           onClick={() => handleRescheduleClick(apt)}
                           className='bg-blue-600 hover:bg-blue-700 text-white text-[9px] md:text-[10px] font-black py-2 px-4 md:px-6 rounded-xl shadow-md transition-all uppercase tracking-widest'
@@ -250,7 +254,7 @@ const PatientAppointments = () => {
           {appointments.length === 0 && (
             <div className='p-16 md:p-20 text-center text-black bg-white flex flex-col items-center gap-4'>
               <p className='text-xs font-bold uppercase tracking-widest'>
-                No {activeTab.toLowerCase()} records found
+                No {activeTab} records found
               </p>
             </div>
           )}
