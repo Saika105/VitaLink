@@ -1,23 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { protectedFetch } from '../utils/api';
 
 const AssistantDashboard = () => {
-  const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
-
-  if (!token || role !== 'doctor-assistants') {
-    return <Navigate to='/login-staff' replace />;
-  }
-
   const navigate = useNavigate();
 
-  const [assistantData, setAssistantData] = useState({
-    fullName: '',
-    doctor: { fullName: '', startTime: '' },
-    hospital: { name: '' },
+  const [assistantData, setAssistantData] = useState(() => {
+    const savedUser = JSON.parse(localStorage.getItem('user'));
+    return {
+      fullName: savedUser?.fullName || '',
+      doctor: savedUser?.doctor || { fullName: 'N/A' },
+      hospital: savedUser?.hospital || { name: 'N/A' },
+    };
   });
 
   const [patientId, setPatientId] = useState('');
@@ -40,14 +36,6 @@ const AssistantDashboard = () => {
 
     const fetchInitialData = async () => {
       try {
-        const savedUser = JSON.parse(localStorage.getItem('user'));
-        if (savedUser) {
-          setAssistantData({
-            fullName: savedUser.fullName,
-            doctor: savedUser.doctor || { fullName: 'N/A' },
-            hospital: savedUser.hospital || { name: 'N/A' },
-          });
-        }
         const response = await protectedFetch(
           `/api/v1/doctor-assistants/daily-list`,
         );

@@ -38,7 +38,15 @@ const ProtectedRoute = ({ children, allowedRole }) => {
   const normalizedUserRole = role?.toLowerCase().replace(/_/g, '-');
   const normalizedAllowedRole = allowedRole?.toLowerCase().replace(/_/g, '-');
 
-  if (allowedRole && normalizedUserRole !== normalizedAllowedRole) {
+  const isAssistantMatch =
+    normalizedUserRole?.includes('assistant') &&
+    normalizedAllowedRole?.includes('assistant');
+
+  if (
+    allowedRole &&
+    normalizedUserRole !== normalizedAllowedRole &&
+    !isAssistantMatch
+  ) {
     return <Navigate to='/' replace />;
   }
 
@@ -109,7 +117,7 @@ const App = () => {
           <Route
             path='/confirm-upload'
             element={
-              <ProtectedRoute allowedRole='patient'>
+              <ProtectedRoute allowedRole='doctor-assistants'>
                 <ConfirmUpload />
               </ProtectedRoute>
             }

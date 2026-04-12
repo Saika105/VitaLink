@@ -6,7 +6,6 @@ import { protectedFetch } from '../utils/api';
 
 const ReceptionistBilling = () => {
   const navigate = useNavigate();
-  const apiUrl = import.meta.env.VITE_API_URL;
 
   const [patientIdSearch, setPatientIdSearch] = useState('');
   const [itemSearch, setItemSearch] = useState('');
@@ -17,14 +16,6 @@ const ReceptionistBilling = () => {
   const [trxId, setTrxId] = useState('');
   const [amountPaidNow, setAmountPaidNow] = useState('');
   const [testCatalog, setTestCatalog] = useState([]);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
-    if (!token || role !== 'receptionists') {
-      navigate('/login-staff', { replace: true });
-    }
-  }, [navigate]);
 
   useEffect(() => {
     setCurrentDate(
@@ -117,18 +108,10 @@ const ReceptionistBilling = () => {
     setAmountPaidNow('');
   };
 
-  const handleLogout = async () => {
-    try {
-      await protectedFetch('/api/v1/receptionists/logout', {
-        method: 'POST',
-      });
-    } catch (error) {
-      console.error('Logout Error:', error);
-    } finally {
-      localStorage.clear();
-      navigate('/login-staff', { replace: true });
-      window.location.reload();
-    }
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/login-staff', { replace: true });
+    window.location.reload();
   };
 
   const handlePaymentSubmit = async () => {
@@ -263,7 +246,7 @@ const ReceptionistBilling = () => {
             </button>
             <button
               onClick={handleLogout}
-              className='w-full h-10 border-2 border-red-200 text-red-700 rounded-xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all outline-none font-inter'
+              className='w-full h-10 border-2 border-slate-300 text-slate-600 rounded-xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all outline-none font-inter'
             >
               LogOut
             </button>

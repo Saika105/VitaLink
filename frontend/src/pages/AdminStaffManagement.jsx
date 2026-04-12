@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { protectedFetch } from '../utils/api';
 
 const AdminStaffManagement = () => {
   const navigate = useNavigate();
@@ -40,42 +41,20 @@ const AdminStaffManagement = () => {
     setImagePreview(null);
   };
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
-    if (!token || role !== 'admin') {
-      navigate('/login-admin', { replace: true });
-    }
-  }, [navigate]);
-
-  const handleLogout = async () => {
-    try {
-      await protectedFetch('/api/v1/admins/logout', { method: 'POST' });
-    } catch (error) {
-      console.error('Logout Error:', error);
-    } finally {
-      localStorage.clear();
-      navigate('/login-admin', { replace: true });
-      window.location.reload();
-    }
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/login-admin', { replace: true });
+    window.location.reload();
   };
 
   useEffect(() => {
     const fetchStaff = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) return;
       try {
-        const response = await fetch(
-          `${apiUrl}/api/v1/admins/staff?role=${activeTableTab}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          },
+        const response = await protectedFetch(
+          `/api/v1/admins/staff?role=${activeTableTab}`,
         );
-        const result = await response.json();
         if (response.ok) {
+          const result = await response.json();
           setStaffList(result.data || []);
         } else if (response.status === 401) {
           handleLogout();
@@ -85,28 +64,26 @@ const AdminStaffManagement = () => {
       }
     };
     fetchStaff();
-  }, [activeTableTab, apiUrl]);
+  }, [activeTableTab]);
 
   useEffect(() => {
     if (showModal) {
       const fetchDocs = async () => {
-        const token = localStorage.getItem('token');
         try {
-          const response = await fetch(
-            `${apiUrl}/api/v1/admins/staff?role=DOCTORS`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            },
+          const response = await protectedFetch(
+            `/api/v1/admins/staff?role=DOCTORS`,
           );
-          const result = await response.json();
-          if (response.ok) setDoctors(result.data || []);
+          if (response.ok) {
+            const result = await response.json();
+            setDoctors(result.data || []);
+          }
         } catch (err) {
           console.error(err);
         }
       };
       fetchDocs();
     }
-  }, [showModal, apiUrl]);
+  }, [showModal]);
 
   const handleInputChange = e => {
     const { name, value } = e.target;
@@ -212,14 +189,10 @@ const AdminStaffManagement = () => {
   const handleDelete = async id => {
     if (!window.confirm('Are you sure you want to remove this staff member?'))
       return;
-    const token = localStorage.getItem('token');
     try {
-      const response = await fetch(
-        `${apiUrl}/api/v1/admins/staff/${id}?role=${activeTableTab}`,
-        {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        },
+      const response = await protectedFetch(
+        `/api/v1/admins/staff/${id}?role=${activeTableTab}`,
+        { method: 'DELETE' },
       );
       if (response.ok) {
         setStaffList(prev => prev.filter(item => item._id !== id));
@@ -350,7 +323,7 @@ const AdminStaffManagement = () => {
                       </div>
                     </td>
                     <td className='p-6'>
-                      {activeTableTab === 'DOCTORS' && (
+                      {activeTableTab === 'DOCTORS' ? (
                         <div>
                           <div className='text-[12px] font-black text-[#4486F6] uppercase'>
                             {staff.specialization || 'N/A'}
@@ -376,14 +349,13 @@ const AdminStaffManagement = () => {
                             ))}
                           </div>
                           <div className='text-[11px] font-black text-green-600 mt-1.5 uppercase'>
-                            Fee: ৳
+                            Fee: ৳{' '}
                             {staff.consultationFee ||
                               staff.schedule?.consultationFee ||
                               '0'}
                           </div>
                         </div>
-                      )}
-                      {activeTableTab !== 'DOCTORS' && (
+                      ) : (
                         <span className='bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter'>
                           {activeTableTab}
                         </span>
@@ -507,55 +479,30 @@ const AdminStaffManagement = () => {
 
                 <div className='bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm space-y-6'>
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6'>
-                    <div className='space-y-1'>
-                      <label className='text-[12px] font-bold text-slate-800'>
-                        Full Name:
-                      </label>
-                      <input
-                        name='name'
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner uppercase'
-                        required
-                      />
-                    </div>
-                    <div className='space-y-1'>
-                      <label className='text-[12px] font-bold text-slate-800'>
-                        NID Number:
-                      </label>
-                      <input
-                        name='nid'
-                        value={formData.nid}
-                        onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
-                        required
-                      />
-                    </div>
-                    <div className='space-y-1'>
-                      <label className='text-[12px] font-bold text-slate-800'>
-                        Date of Birth:
-                      </label>
-                      <input
-                        type='date'
-                        name='dateOfBirth'
-                        value={formData.dateOfBirth}
-                        onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
-                        required
-                      />
-                    </div>
-                    <div className='space-y-1'>
-                      <label className='text-[12px] font-bold text-slate-800'>
-                        Phone Number:
-                      </label>
-                      <input
-                        name='phone'
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner'
-                        required
-                      />
-                    </div>
+                    {[
+                      { label: 'Full Name:', name: 'name', type: 'text' },
+                      { label: 'NID Number:', name: 'nid', type: 'text' },
+                      {
+                        label: 'Date of Birth:',
+                        name: 'dateOfBirth',
+                        type: 'date',
+                      },
+                      { label: 'Phone Number:', name: 'phone', type: 'text' },
+                    ].map(field => (
+                      <div key={field.name} className='space-y-1'>
+                        <label className='text-[12px] font-bold text-slate-800'>
+                          {field.label}
+                        </label>
+                        <input
+                          type={field.type}
+                          name={field.name}
+                          value={formData[field.name]}
+                          onChange={handleInputChange}
+                          className='w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-1 ring-blue-500 shadow-inner uppercase'
+                          required
+                        />
+                      </div>
+                    ))}
                     <div className='space-y-1'>
                       <label className='text-[12px] font-bold text-slate-800'>
                         Gender:

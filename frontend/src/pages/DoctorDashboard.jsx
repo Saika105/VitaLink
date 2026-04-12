@@ -6,23 +6,21 @@ import { protectedFetch } from '../utils/api';
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
+
   const [queue, setQueue] = useState([]);
   const [currentDate, setCurrentDate] = useState('');
-  const [doctorInfo, setDoctorInfo] = useState({
-    fullName: '',
-    photo: '',
+
+  const [doctorInfo, setDoctorInfo] = useState(() => {
+    const savedUser = JSON.parse(localStorage.getItem('user'));
+    return {
+      fullName: savedUser?.fullName || '',
+      photo: savedUser?.profilePhoto?.url || '',
+    };
   });
+
   const [patientIdSearch, setPatientIdSearch] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
-    if (!token || role !== 'doctor') {
-      navigate('/login-doctor', { replace: true });
-    }
-  }, [navigate]);
 
   useEffect(() => {
     const today = new Date();
@@ -33,20 +31,6 @@ const DoctorDashboard = () => {
         year: 'numeric',
       }),
     );
-
-    const fetchDoctorData = async () => {
-      try {
-        const savedUser = JSON.parse(localStorage.getItem('user'));
-        if (savedUser) {
-          setDoctorInfo({
-            fullName: savedUser.fullName,
-            photo: savedUser.profilePhoto?.url || '',
-          });
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
 
     const fetchDailyQueue = async () => {
       try {
@@ -67,7 +51,6 @@ const DoctorDashboard = () => {
       }
     };
 
-    fetchDoctorData();
     fetchDailyQueue();
     const interval = setInterval(fetchDailyQueue, 10000);
     return () => clearInterval(interval);
@@ -243,7 +226,7 @@ const DoctorDashboard = () => {
 
       {showConfirmModal && selectedPatient && (
         <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
-          <div className='bg-white rounded-[3rem] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200'>
+          <div className='bg-white rounded-[3rem] shadow-2xl w-full max-sm overflow-hidden animate-in zoom-in-95 duration-200'>
             <div className='p-10 flex flex-col items-center text-center'>
               <div className='w-28 h-28 rounded-full border-4 border-blue-50 overflow-hidden mb-6 shadow-xl'>
                 <img

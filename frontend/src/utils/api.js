@@ -38,10 +38,20 @@ export const protectedFetch = async (endpoint, options = {}) => {
         },
       });
     } else {
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('role');
-      window.location.href = '/login-patient';
+      const role = localStorage.getItem('role');
+      localStorage.clear();
+
+      if (role === 'admin') {
+        window.location.href = '/login-admin';
+      } else if (role === 'patient') {
+        window.location.href = '/login-patient';
+      } else if (role === 'doctor') {
+        window.location.href = '/login-doctor';
+      } else {
+        // Handles doctor-assistants and receptionists
+        window.location.href = '/login-staff';
+      }
+
       return response;
     }
   }
