@@ -608,10 +608,11 @@ const deleteStaff = asyncHandler(async (req, res) => {
 
     await DoctorSchedule.deleteMany({ doctor: id });
 
-    await Appointment.deleteMany({
-      doctor: id,
-      bookingStatus: "scheduled",
-    });
+    // await Appointment.deleteMany({
+    //   doctor: id,
+    //   bookingStatus: "scheduled",
+    // });
+    await Appointment.deleteMany({ doctor: id });
 
     await DoctorAssistant.deleteMany({ doctor: id });
 
@@ -619,7 +620,9 @@ const deleteStaff = asyncHandler(async (req, res) => {
       await deleteFromCloudinary(staffMember.profilePhoto.publicId);
     }
 
-    console.log("Schedules, Upcoming Appointments, Assistants, and Images cleared.");
+    console.log(
+      "Schedules, Upcoming Appointments, Assistants, and Images cleared.",
+    );
   }
 
   await Model.findByIdAndDelete(id);
