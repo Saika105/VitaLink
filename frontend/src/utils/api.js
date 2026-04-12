@@ -17,11 +17,12 @@ export const protectedFetch = async (endpoint, options = {}) => {
   });
 
     if (response.status === 401 || response.status === 403) {
+  const refreshToken = localStorage.getItem('refreshToken');
   const refreshResponse = await fetch(`${apiUrl}/api/v1/auth/refresh-token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({}),
+    body: JSON.stringify({ refreshToken }),
   });
 
   if (refreshResponse.ok) {

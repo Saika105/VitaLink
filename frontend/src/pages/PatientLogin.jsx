@@ -26,7 +26,9 @@ const PatientLogin = () => {
 
       if (response.ok) {
        localStorage.setItem('token', data.data.accessToken);
-       localStorage.setItem('refreshToken', data.data.refreshToken || '');
+       if (data.data.refreshToken) {
+         localStorage.setItem('refreshToken', data.data.refreshToken);
+       }
        localStorage.setItem('role', 'patient');
         navigate('/patient-dashboard');
       } else {
