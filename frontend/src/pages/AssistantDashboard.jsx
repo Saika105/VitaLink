@@ -213,7 +213,6 @@ const AssistantDashboard = () => {
   const handleLogout = () => {
     localStorage.clear();
     navigate('/login-staff', { replace: true });
-    window.location.reload();
   };
 
   return (

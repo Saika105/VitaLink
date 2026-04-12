@@ -44,7 +44,6 @@ const AdminStaffManagement = () => {
   const handleLogout = () => {
     localStorage.clear();
     navigate('/login-admin', { replace: true });
-    window.location.reload();
   };
 
   useEffect(() => {

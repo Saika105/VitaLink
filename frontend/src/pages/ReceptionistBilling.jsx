@@ -111,7 +111,6 @@ const ReceptionistBilling = () => {
   const handleLogout = () => {
     localStorage.clear();
     navigate('/login-staff', { replace: true });
-    window.location.reload();
   };
 
   const handlePaymentSubmit = async () => {
