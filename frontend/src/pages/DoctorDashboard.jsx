@@ -52,8 +52,17 @@ const DoctorDashboard = () => {
     };
 
     fetchDailyQueue();
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchDailyQueue();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     const interval = setInterval(fetchDailyQueue, 10000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const handleSearchPatient = async e => {

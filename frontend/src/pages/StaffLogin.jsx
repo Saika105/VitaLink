@@ -23,18 +23,19 @@ const StaffLogin = () => {
     };
 
     try {
-      const response = await fetch(`${apiUrl}/api/v1/${loginData.role}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          [loginData.role === 'doctor-assistants'
-            ? 'assistantId'
-            : loginData.role === 'lab-assistants'
-              ? 'labAssistantId'
-              : 'receptionistId']: loginData.staffId,
-          password: loginData.password,
-        }),
-      });
+     const response = await fetch(`${apiUrl}/api/v1/${loginData.role}/login`, {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       credentials: 'include',
+       body: JSON.stringify({
+         [loginData.role === 'doctor-assistants'
+           ? 'assistantId'
+           : loginData.role === 'lab-assistants'
+             ? 'labAssistantId'
+             : 'receptionistId']: loginData.staffId,
+         password: loginData.password,
+       }),
+     });
 
       const result = await response.json();
 

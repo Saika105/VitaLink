@@ -31,22 +31,34 @@ const ProtectedRoute = ({ children, allowedRole }) => {
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
 
-if (!token) {
-  if (allowedRole === 'patient')
-    return <Navigate to='/login-patient' replace />;
-  if (allowedRole === 'doctor') return <Navigate to='/login-doctor' replace />;
-  if (allowedRole === 'admin') return <Navigate to='/login-admin' replace />;
-  return <Navigate to='/login-staff' replace />;
-}
-  const userRole = role?.toLowerCase().replace(/_/g, '-');
-  const targetRole = allowedRole?.toLowerCase().replace(/_/g, '-');
+  if (!token || token === 'undefined' || token === 'null') {
+    if (allowedRole === 'patient')
+      return <Navigate to='/login-patient' replace />;
+    if (allowedRole === 'doctor')
+      return <Navigate to='/login-doctor' replace />;
+    if (allowedRole === 'admin') return <Navigate to='/login-admin' replace />;
+    return <Navigate to='/login-staff' replace />;
+  }
 
-  // Flexible match for assistants and receptionists to prevent refresh-bugs
-  const isAssistantMatch = userRole?.includes('assistant') && targetRole?.includes('assistant');
-  const isReceptionMatch = userRole?.includes('reception') && targetRole?.includes('reception');
+  if (allowedRole !== null && allowedRole) {
+    const normalizedUserRole = role?.toLowerCase().replace(/_/g, '-');
+    const normalizedAllowedRole = allowedRole?.toLowerCase().replace(/_/g, '-');
 
-  if (allowedRole && userRole !== targetRole && !isAssistantMatch && !isReceptionMatch) {
-    return <Navigate to='/' replace />;
+    const isAssistantMatch =
+      normalizedUserRole?.includes('assistant') &&
+      normalizedAllowedRole?.includes('assistant');
+
+    const isLabMatch =
+      normalizedUserRole?.includes('lab') &&
+      normalizedAllowedRole?.includes('lab');
+
+    if (
+      normalizedUserRole !== normalizedAllowedRole &&
+      !isAssistantMatch &&
+      !isLabMatch
+    ) {
+      return <Navigate to='/' replace />;
+    }
   }
 
   return children;
@@ -116,7 +128,7 @@ const App = () => {
           <Route
             path='/confirm-upload'
             element={
-              <ProtectedRoute allowedRole='doctor-assistants'>
+              <ProtectedRoute allowedRole={null}>
                 <ConfirmUpload />
               </ProtectedRoute>
             }

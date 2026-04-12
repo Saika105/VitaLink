@@ -19,6 +19,7 @@ const DoctorLogin = () => {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           doctorId: loginData.doctorId,
           password: loginData.password,

@@ -19,6 +19,7 @@ const AdminLogin = () => {
       const response = await fetch(`${apiUrl}/api/v1/admins/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           email: loginData.email,
           password: loginData.password,
