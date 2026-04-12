@@ -152,8 +152,7 @@ const AssistantDashboard = () => {
         const updatedList = [...sessionList];
         updatedList[index].queueStatus = newStatus;
         setSessionList(updatedList);
-      } else {
-        alert('Failed to update status. Check permissions.');
+        if (newStatus === 'no_show') alert('Patient marked as No Show');
       }
     } catch (err) {
       console.error(err);
@@ -175,9 +174,12 @@ const AssistantDashboard = () => {
         const updatedList = [...sessionList];
         updatedList[index].followUpDate = date;
         setSessionList(updatedList);
-        alert('✅ Follow-up scheduled successfully');
+        alert(
+          "✅ Follow-up scheduled! It will appear in the patient's upcoming list.",
+        );
       } else {
-        alert('Could not save follow-up.');
+        const errorData = await response.json();
+        alert(errorData.message || 'Failed to schedule follow-up');
       }
     } catch (err) {
       console.error(err);
@@ -187,11 +189,12 @@ const AssistantDashboard = () => {
   const handleFileChange = (e, aptId, name, upid) => {
     const file = e.target.files[0];
     if (!file) return;
+
     navigate('/confirm-upload', {
       state: {
         selectedFile: file,
         uploadType: 'prescription',
-        role: 'assistant',
+        role: 'doctor-assistants',
         appointmentId: aptId,
         patientName: name,
         patientUpid: upid,
@@ -210,6 +213,9 @@ const AssistantDashboard = () => {
       if (response.ok) {
         setSessionList([]);
         setShowClearModal(false);
+        alert(
+          'Daily queue cleared. All remaining appointments marked as Cancelled.',
+        );
       }
     } catch (err) {
       console.error(err);
@@ -232,7 +238,7 @@ const AssistantDashboard = () => {
               Assistant Portal
             </h2>
             <p className='text-sm font-bold text-blue-700 uppercase tracking-widest mt-0.5'>
-              Queue & Records Management
+              Queue Management
             </p>
           </div>
           <div className='bg-white px-6 py-3 rounded-2xl border border-slate-200 shadow-sm text-right w-full md:w-auto'>
@@ -277,7 +283,7 @@ const AssistantDashboard = () => {
                   </p>
                   <button
                     onClick={handleConfirmArrival}
-                    className='w-full mt-4 bg-slate-900 text-white py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-600'
+                    className='w-full mt-4 bg-slate-900 text-white py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-colors'
                   >
                     Confirm Check-In
                   </button>
@@ -287,13 +293,13 @@ const AssistantDashboard = () => {
 
             <div className='bg-white p-6 rounded-3xl border border-slate-200 shadow-xl'>
               <h3 className='text-[11px] font-black text-slate-700 uppercase mb-4 tracking-widest'>
-                Notes
+                Quick Notes
               </h3>
               <form onSubmit={handleAddNote} className='mb-6'>
                 <textarea
                   value={noteInput}
                   onChange={e => setNoteInput(e.target.value)}
-                  placeholder='Quick session notes...'
+                  placeholder='Reminders...'
                   className='w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-[11px] font-bold focus:ring-2 focus:ring-blue-500 outline-none h-20 resize-none text-slate-900'
                 />
                 <button
@@ -328,7 +334,7 @@ const AssistantDashboard = () => {
             <div className='bg-white rounded-4xl border border-slate-200 shadow-xl overflow-hidden'>
               <div className='bg-slate-50 p-6 border-b border-slate-100 flex justify-between items-center'>
                 <h3 className='text-[12px] font-black text-slate-900 uppercase tracking-widest'>
-                  Active Patient Queue
+                  Active Queue
                 </h3>
                 <span className='bg-blue-600 text-white px-4 py-1 rounded-full text-[11px] font-black uppercase'>
                   {sessionList.length} Total
@@ -339,16 +345,18 @@ const AssistantDashboard = () => {
                   <thead>
                     <tr className='text-[11px] font-black text-slate-900 uppercase border-b border-slate-100 bg-white'>
                       <th className='p-6 text-center w-16'>#</th>
-                      <th className='p-6'>Patient</th>
-                      <th className='p-6'>Assigned Time</th>
-                      <th className='p-6'>Live Status</th>
+                      <th className='p-6'>Patient Details</th>
+                      <th className='p-6'>Status Update</th>
                       <th className='p-6 text-center'>RX Scan</th>
                       <th className='p-6'>Next Follow-Up</th>
                     </tr>
                   </thead>
                   <tbody className='divide-y divide-slate-100'>
                     {sessionList.map((item, idx) => (
-                      <tr key={item._id} className='hover:bg-blue-50/20 group'>
+                      <tr
+                        key={item._id || idx}
+                        className='hover:bg-blue-50/20 group transition-colors'
+                      >
                         <td className='p-6 text-center font-black text-slate-400 text-lg'>
                           {idx + 1}
                         </td>
@@ -361,11 +369,6 @@ const AssistantDashboard = () => {
                           </div>
                         </td>
                         <td className='p-6'>
-                          <span className='bg-slate-200 px-3 py-1 rounded-lg font-black text-[10px] text-slate-700 uppercase'>
-                            {item.arrivalTime || 'TBD'}
-                          </span>
-                        </td>
-                        <td className='p-6'>
                           <select
                             value={item.queueStatus || 'pending'}
                             onChange={e => updateStatus(idx, e.target.value)}
@@ -373,11 +376,11 @@ const AssistantDashboard = () => {
                           >
                             <option value='pending'>Pending</option>
                             <option value='done'>Done</option>
-                            <option value='no_show'>No Show</option>
+                            <option value='no_show'>No Show (Cancel)</option>
                           </select>
                         </td>
                         <td className='p-6 text-center'>
-                          <label className='cursor-pointer w-32 h-10 flex items-center justify-center bg-[#3B82F6] text-white text-[10px] rounded-xl font-black uppercase tracking-widest shadow-md mx-auto'>
+                          <label className='cursor-pointer w-32 h-10 flex items-center justify-center bg-[#3B82F6] hover:bg-blue-700 text-white text-[10px] rounded-xl font-black uppercase tracking-widest shadow-md mx-auto transition-colors'>
                             Upload RX
                             <input
                               type='file'
@@ -416,16 +419,16 @@ const AssistantDashboard = () => {
                 </div>
               )}
             </div>
-            <div className='flex flex-col md:flex-row justify-between items-center gap-4 pt-6'>
+            <div className='flex justify-between items-center pt-4'>
               <button
                 onClick={() => setShowClearModal(true)}
-                className='w-full md:w-56 h-12 border-2 border-red-200 text-red-700 rounded-xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all'
+                className='border-2 border-red-200 text-red-700 px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all'
               >
-                Clear Shift Data
+                Clear Daily Queue
               </button>
               <button
                 onClick={handleLogout}
-                className='w-full md:w-56 h-12 border-2 border-slate-300 text-slate-600 rounded-xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white'
+                className='border-2 border-slate-300 text-slate-600 px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all'
               >
                 Sign Out
               </button>
@@ -436,15 +439,16 @@ const AssistantDashboard = () => {
 
       {showClearModal && (
         <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
-          <div className='bg-white rounded-4xl p-8 max-w-sm w-full shadow-2xl text-center'>
+          <div className='bg-white rounded-4xl p-8 max-w-sm w-full shadow-2xl text-center animate-in zoom-in-95'>
             <div className='w-14 h-14 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-5 text-xl font-black'>
               !
             </div>
             <h3 className='text-lg font-black text-slate-900 uppercase'>
-              Reset Queue?
+              Reset Session?
             </h3>
             <p className='text-slate-500 text-xs mt-3 font-medium'>
-              This clears the current list. Ensure all records are saved.
+              This will clear today's queue. All remaining patients will be
+              marked as Cancelled.
             </p>
             <div className='mt-8 grid grid-cols-2 gap-3'>
               <button
@@ -455,7 +459,7 @@ const AssistantDashboard = () => {
               </button>
               <button
                 onClick={handleClearSessionFinal}
-                className='bg-red-600 text-white py-3 rounded-xl text-[10px] font-black uppercase'
+                className='bg-red-600 text-white py-3 rounded-xl text-[10px] font-black uppercase shadow-lg'
               >
                 Confirm
               </button>
