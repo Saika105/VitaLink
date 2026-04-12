@@ -39,8 +39,9 @@ const StaffLogin = () => {
       const result = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', result.data.token);
-        localStorage.setItem('role', loginData.role);
+      localStorage.setItem('token', result.data.token);
+      localStorage.setItem('refreshToken', result.data.refreshToken || '');
+      localStorage.setItem('role', loginData.role);
 
         if (result.data.user) {
           localStorage.setItem('user', JSON.stringify(result.data.user));

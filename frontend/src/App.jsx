@@ -31,22 +31,21 @@ const ProtectedRoute = ({ children, allowedRole }) => {
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
 
-  if (!token) {
-    return <Navigate to='/login-staff' replace />;
-  }
+if (!token) {
+  if (allowedRole === 'patient')
+    return <Navigate to='/login-patient' replace />;
+  if (allowedRole === 'doctor') return <Navigate to='/login-doctor' replace />;
+  if (allowedRole === 'admin') return <Navigate to='/login-admin' replace />;
+  return <Navigate to='/login-staff' replace />;
+}
+  const userRole = role?.toLowerCase().replace(/_/g, '-');
+  const targetRole = allowedRole?.toLowerCase().replace(/_/g, '-');
 
-  const normalizedUserRole = role?.toLowerCase().replace(/_/g, '-');
-  const normalizedAllowedRole = allowedRole?.toLowerCase().replace(/_/g, '-');
+  // Flexible match for assistants and receptionists to prevent refresh-bugs
+  const isAssistantMatch = userRole?.includes('assistant') && targetRole?.includes('assistant');
+  const isReceptionMatch = userRole?.includes('reception') && targetRole?.includes('reception');
 
-  const isAssistantMatch =
-    normalizedUserRole?.includes('assistant') &&
-    normalizedAllowedRole?.includes('assistant');
-
-  if (
-    allowedRole &&
-    normalizedUserRole !== normalizedAllowedRole &&
-    !isAssistantMatch
-  ) {
+  if (allowedRole && userRole !== targetRole && !isAssistantMatch && !isReceptionMatch) {
     return <Navigate to='/' replace />;
   }
 

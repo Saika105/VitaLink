@@ -25,8 +25,9 @@ const PatientLogin = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', data.data.accessToken);
-        localStorage.setItem('role', 'patient');
+       localStorage.setItem('token', data.data.accessToken);
+       localStorage.setItem('refreshToken', data.data.refreshToken || '');
+       localStorage.setItem('role', 'patient');
         navigate('/patient-dashboard');
       } else {
         alert(data.message || 'Invalid Vault Credentials');

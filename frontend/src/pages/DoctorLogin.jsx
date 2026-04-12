@@ -28,8 +28,9 @@ const DoctorLogin = () => {
       const result = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', result.data.token);
-        localStorage.setItem('role', 'doctor');
+     localStorage.setItem('token', result.data.token);
+     localStorage.setItem('refreshToken', result.data.refreshToken || '');
+     localStorage.setItem('role', 'doctor');
 
         if (result.data.doctor) {
           localStorage.setItem('user', JSON.stringify(result.data.doctor));
