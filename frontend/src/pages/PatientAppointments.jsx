@@ -19,6 +19,7 @@ const PatientAppointments = () => {
         const response = await protectedFetch(
           `/api/v1/patients/my-appointments?status=${activeTab}`,
         );
+
         if (response.ok) {
           const result = await response.json();
           const mappedData = result.data.map(apt => ({
@@ -30,10 +31,18 @@ const PatientAppointments = () => {
               'Clinic',
             doctor: apt.doctor?.fullName || apt.manualDoctorName || 'Staff',
             specialization: apt.doctor?.specialization || 'General',
-            date: new Date(apt.appointmentDate).toLocaleDateString(),
-            phone: apt.doctor?.phone || apt.phone,
+            date: new Date(apt.appointmentDate).toLocaleDateString('en-GB', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+            }),
+            phone: apt.doctor?.phone || apt.phone || 'N/A',
             followUpDate: apt.followUpDate
-              ? new Date(apt.followUpDate).toLocaleDateString()
+              ? new Date(apt.followUpDate).toLocaleDateString('en-GB', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                })
               : null,
           }));
           setAppointments(mappedData);
@@ -41,6 +50,7 @@ const PatientAppointments = () => {
           setAppointments([]);
         }
       } catch (err) {
+        console.error('Fetch Error:', err);
         setAppointments([]);
       }
     };
@@ -56,7 +66,7 @@ const PatientAppointments = () => {
   };
 
   const handleCancel = async id => {
-    if (window.confirm('Are you sure you want to cancel?')) {
+    if (window.confirm('Are you sure you want to cancel this appointment?')) {
       try {
         const response = await protectedFetch(
           `/api/v1/patients/cancel-appointment/${id}`,
@@ -64,6 +74,7 @@ const PatientAppointments = () => {
         );
         if (response.ok) {
           setAppointments(prev => prev.filter(a => a.id !== id));
+          alert('Appointment cancelled successfully.');
         }
       } catch (err) {
         console.error(err);
@@ -86,13 +97,10 @@ const PatientAppointments = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await protectedFetch(`/api/v1/patients/logout`, { method: 'POST' });
-    } finally {
-      localStorage.clear();
-      navigate('/login-patient');
-    }
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/login-patient', { replace: true });
+    window.location.reload();
   };
 
   return (
@@ -168,7 +176,7 @@ const PatientAppointments = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className='divide-y divide-slate-50 text-xs md:text-sm'>
+              <tbody className='divide-y divide-slate-100 text-xs md:text-sm'>
                 {appointments.map((apt, idx) => (
                   <tr
                     key={apt.id}
