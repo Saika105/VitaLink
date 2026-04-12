@@ -62,7 +62,7 @@ export const isAdmin = (req, res, next) => {
   if (req.user && req.role === "admin") {
     next();
   } else {
-    throw new ApiError(403, "Access denied. Admin rights required.");
+    throw new ApiError(401, "Access denied. Admin rights required.");
   }
 };
 
@@ -70,13 +70,13 @@ export const isDoctorAssistant = (req, res, next) => {
   if (req.user && req.role === "doctor_assistant") {
     if (!req.user.doctor || !req.user.hospital) {
       throw new ApiError(
-        403,
+        401,
         "Assistant is not assigned to a doctor or hospital session.",
       );
     }
     next();
   } else {
-    throw new ApiError(403, "Access denied. Doctor Assistant rights required.");
+    throw new ApiError(401, "Access denied. Doctor Assistant rights required.");
   }
 };
 
@@ -84,7 +84,7 @@ export const isPatient = (req, res, next) => {
     if (req.user && req.role === "patient") {
         next();
     } else {
-        throw new ApiError(403, "Access denied. Patient account required.");
+        throw new ApiError(401, "Access denied. Patient account required.");
     }
 };
 
@@ -92,8 +92,7 @@ export const isDoctor = (req, res, next) => {
     if (req.user && req.role === "doctor") {
         next();
     } else {
-        throw new ApiError(403, "Access denied. Doctor credentials required.");
-
+        throw new ApiError(401, "Access denied. Doctor credentials required.");
     }
 };
 
@@ -101,7 +100,7 @@ export const isLabAssistant = (req, res, next) => {
     if (req.user && req.role === "lab_assistant") {
         next();
     } else {
-        throw new ApiError(403, "Access denied. Lab Assistant rights required.");
+        throw new ApiError(401, "Access denied. Lab Assistant rights required.");
     }
 };
 
@@ -109,6 +108,6 @@ export const isReceptionist = (req, res, next) => {
     if (req.user && req.role === "receptionist") {
         next();
     } else {
-        throw new ApiError(403, "Access denied. Receptionist rights required.");
+        throw new ApiError(401, "Access denied. Receptionist rights required.");
     }
 };
