@@ -1,5 +1,10 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom';
 import AdminStaffManagement from './pages/AdminStaffManagement.jsx';
 import AdminLogin from './pages/AdminLogin.jsx';
 import LandingPage from './pages/LandingPage.jsx';
@@ -21,8 +26,25 @@ import ChangePassword from './pages/ChangePassword.jsx';
 import DigitalPrescription from './pages/DigitalPrescription.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
 import ReceptionistBilling from './pages/ReceptionistBilling.jsx';
-// import ReporterDashboard from './pages/ReporterDashboard.jsx';
-// import ReportManagement from './pages/ReportManagement.jsx';
+
+const ProtectedRoute = ({ children, allowedRole }) => {
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+
+  if (!token) {
+    return <Navigate to='/login-staff' replace />;
+  }
+
+  const normalizedUserRole = role?.toLowerCase().replace(/_/g, '-');
+  const normalizedAllowedRole = allowedRole?.toLowerCase().replace(/_/g, '-');
+
+  if (allowedRole && normalizedUserRole !== normalizedAllowedRole) {
+    return <Navigate to='/' replace />;
+  }
+
+  return children;
+};
+
 const App = () => {
   return (
     <Router>
@@ -30,36 +52,125 @@ const App = () => {
         <Routes>
           <Route path='/' element={<LandingPage />} />
           <Route path='/login-admin' element={<AdminLogin />} />
-          <Route path='/admin-staff' element={<AdminStaffManagement />} />
           <Route path='/login-patient' element={<PatientLogin />} />
           <Route path='/signup-patient' element={<PatientSignUp />} />
           <Route path='/login-doctor' element={<DoctorLogin />} />
           <Route path='/login-staff' element={<StaffLogin />} />
-          <Route path='/patient-dashboard' element={<PatientDashboard />} />
-          <Route path='/edit-profile' element={<EditProfile />} />
-          <Route path='/my-records' element={<HealthVault />} />
-          <Route path='/search-doctor' element={<SearchDoctor />} />
-          <Route path='/appointments' element={<PatientAppointments />} />
-          <Route path='/billing' element={<PatientBilling />} />
-          <Route path='/confirm-upload' element={<ConfirmUpload />} />
-          <Route path='/assistant' element={<AssistantDashboard />} />
-          <Route path='/doctor-dashboard' element={<DoctorDashboard />} />
+          <Route path='/reset-password' element={<ResetPassword />} />
+
+          <Route
+            path='/patient-dashboard'
+            element={
+              <ProtectedRoute allowedRole='patient'>
+                <PatientDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/edit-profile'
+            element={
+              <ProtectedRoute allowedRole='patient'>
+                <EditProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/my-records'
+            element={
+              <ProtectedRoute allowedRole='patient'>
+                <HealthVault />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/search-doctor'
+            element={
+              <ProtectedRoute allowedRole='patient'>
+                <SearchDoctor />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/appointments'
+            element={
+              <ProtectedRoute allowedRole='patient'>
+                <PatientAppointments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/billing'
+            element={
+              <ProtectedRoute allowedRole='patient'>
+                <PatientBilling />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/confirm-upload'
+            element={
+              <ProtectedRoute allowedRole='patient'>
+                <ConfirmUpload />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path='/doctor-dashboard'
+            element={
+              <ProtectedRoute allowedRole='doctor'>
+                <DoctorDashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path='/doctor/patient-view/:patientId'
-            element={<DoctorPatientView />}
+            element={
+              <ProtectedRoute allowedRole='doctor'>
+                <DoctorPatientView />
+              </ProtectedRoute>
+            }
           />
-          <Route path='/doctor/change-password' element={<ChangePassword />} />
+          <Route
+            path='/doctor/change-password'
+            element={
+              <ProtectedRoute allowedRole='doctor'>
+                <ChangePassword />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path='/doctor/create-prescription/:id'
-            element={<DigitalPrescription />}
+            element={
+              <ProtectedRoute allowedRole='doctor'>
+                <DigitalPrescription />
+              </ProtectedRoute>
+            }
           />
-          <Route path='/reset-password' element={<ResetPassword />} />
-          <Route path='/receptionist' element={<ReceptionistBilling />} />
-          {/* <Route path='/reporter-dashboard' element={<ReporterDashboard />} />
           <Route
-            path='/reporter/manage-reports/:id'
-            element={<ReportManagement />}
-          /> */}
+            path='/assistant'
+            element={
+              <ProtectedRoute allowedRole='doctor-assistants'>
+                <AssistantDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/receptionist'
+            element={
+              <ProtectedRoute allowedRole='receptionists'>
+                <ReceptionistBilling />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/admin-staff'
+            element={
+              <ProtectedRoute allowedRole='admin'>
+                <AdminStaffManagement />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </div>
     </Router>
