@@ -5,26 +5,46 @@ import cookieParser from "cookie-parser";
 const app = express();
 
 //middlewares--- check are user capable of doing the request
-app.use(
-  cors({
-    origin: [
-      process.env.CORS_ORIGIN,
-      "http://localhost:5173",
-      "http://localhost:3000",
-      "http://localhost:8000",
-    ],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "X-Requested-With",
-      "Accept",
-    ],
-  }),
-);
+const corsOptions = {
+  origin: [
+    process.env.CORS_ORIGIN,
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://localhost:8000",
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+  ],
+};
 
-app.options("/{*path}", cors());
+app.use(cors(corsOptions));
+
+// app.use(
+//   cors({
+//     origin: [
+//       process.env.CORS_ORIGIN,
+//       "http://localhost:5173",
+//       "http://localhost:3000",
+//       "http://localhost:8000",
+//     ],
+//     credentials: true,
+//     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+//     allowedHeaders: [
+//       "Content-Type",
+//       "Authorization",
+//       "X-Requested-With",
+//       "Accept",
+//     ],
+//   }),
+// );
+
+// app.options("/{*path}", cors());
+
 
 app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
