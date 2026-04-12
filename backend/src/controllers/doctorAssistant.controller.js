@@ -46,7 +46,7 @@ const loginAssistant = asyncHandler(async (req, res) => {
 
   const loggedInAssistant = await DoctorAssistant.findById(assistant._id)
     .select("-password -refreshToken")
-    .populate("doctor", "fullName email"); 
+    .populate("doctor", "fullName email");
 
   const options = {
     httpOnly: true,
@@ -207,13 +207,9 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
 
 //***************Fetch That Days Queue For Assistant Table******* */
 const getDailyAppointmentList = asyncHandler(async (req, res) => {
-  //steps:
-  //1. Get today's date and tomorrow's date
-  //2. Query appointments for the doctor and hospital for today with status "scheduled"
-  //3. Populate patient details
-  //4. Sort by serial number and return the list
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -222,8 +218,11 @@ const getDailyAppointmentList = asyncHandler(async (req, res) => {
       $match: {
         doctor: new mongoose.Types.ObjectId(req.user.doctor),
         hospital: new mongoose.Types.ObjectId(req.user.hospital),
-        appointmentDate: { $gte: today, $lt: tomorrow },
-        bookingStatus: "scheduled",
+        appointmentDate: { 
+          $gte: today, 
+          $lt: tomorrow 
+        },
+        bookingStatus: "scheduled", 
       },
     },
     {
@@ -245,7 +244,7 @@ const getDailyAppointmentList = asyncHandler(async (req, res) => {
         serialNumber: 1,
         arrivalTime: 1,
         queueStatus: 1,
-        appointmentType: 1,
+        appointmentType: 1, 
         "patient.fullName": 1,
         "patient.upid": 1,
         "patient.gender": 1,
