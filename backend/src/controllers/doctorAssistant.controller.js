@@ -430,7 +430,7 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
     timeSlot: currentAppt.timeSlot,
     appointmentType: "follow_up",
     bookingStatus: "scheduled",
-    queueStatus: "not_added",
+    queueStatus: "pending",
     reasonForVisit: `Follow-up for ${currentAppt.appointmentId}`,
   });
 
