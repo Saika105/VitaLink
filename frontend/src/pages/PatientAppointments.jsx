@@ -19,21 +19,18 @@ const PatientAppointments = () => {
         const response = await protectedFetch(
           `/api/v1/patients/my-appointments?status=${activeTab}`,
         );
-
         if (response.ok) {
           const result = await response.json();
           const mappedData = result.data.map(apt => ({
             id: apt._id,
-            hospital: apt.hospital?.name || apt.hospitalName || 'Clinic',
+            hospital:
+              apt.hospital?.name ||
+              apt.hospital?.fullName ||
+              apt.manualHospitalName ||
+              'Clinic',
             doctor: apt.doctor?.fullName || apt.manualDoctorName || 'Staff',
             specialization: apt.doctor?.specialization || 'General',
             date: new Date(apt.appointmentDate).toLocaleDateString(),
-            time:
-              apt.startTime && apt.endTime
-                ? `${apt.startTime} - ${apt.endTime}`
-                : apt.timeSlot?.startTime
-                  ? `${apt.timeSlot.startTime} - ${apt.timeSlot.endTime}`
-                  : 'TBA',
             phone: apt.doctor?.phone || apt.phone,
             followUpDate: apt.followUpDate
               ? new Date(apt.followUpDate).toLocaleDateString()
@@ -163,11 +160,11 @@ const PatientAppointments = () => {
                   </th>
                   {activeTab !== 'completed' && (
                     <th className='p-4 md:p-5 text-[11px] md:text-[12px] uppercase tracking-widest text-black font-black'>
-                      Schedule
+                      Date
                     </th>
                   )}
                   <th className='p-4 md:p-5 text-[11px] md:text-[12px] uppercase tracking-widest text-black font-black text-center'>
-                    Action
+                    {activeTab === 'completed' ? 'Follow Up' : 'Action'}
                   </th>
                 </tr>
               </thead>
@@ -195,9 +192,6 @@ const PatientAppointments = () => {
                       <td className='p-4 md:p-5'>
                         <div className='font-bold text-slate-900'>
                           {apt.date}
-                        </div>
-                        <div className='text-[9px] md:text-[10px] font-bold text-black uppercase'>
-                          {apt.time}
                         </div>
                       </td>
                     )}
@@ -275,8 +269,23 @@ const PatientAppointments = () => {
 
       {showPopup && activeAssistant && (
         <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
-          <div className='bg-white rounded-[40px] p-8 max-w-sm w-full text-center shadow-2xl'>
-            <h3 className='text-xl md:text-2xl font-black text-slate-900 uppercase'>
+          <div className='bg-white rounded-[40px] p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center'>
+            <div className='w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6'>
+              <svg
+                className='w-8 h-8'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth='2.5'
+                  d='M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z'
+                />
+              </svg>
+            </div>
+            <h3 className='text-2xl font-black text-slate-900 uppercase'>
               Reschedule Slot
             </h3>
             <p className='text-slate-500 text-xs mt-2'>
@@ -299,12 +308,30 @@ const PatientAppointments = () => {
                   →
                 </div>
               </a>
+              <a
+                href={`https://wa.me/${activeAssistant.phone?.replace(/\D/g, '')}`}
+                target='_blank'
+                rel='noreferrer'
+                className='flex items-center justify-between p-5 bg-green-50 rounded-2xl border border-green-100 hover:border-green-400 transition-all'
+              >
+                <div className='text-left'>
+                  <p className='text-[10px] font-black text-green-600/60 uppercase tracking-widest'>
+                    WhatsApp Chat
+                  </p>
+                  <p className='text-sm font-bold text-slate-900'>
+                    {activeAssistant.phone}
+                  </p>
+                </div>
+                <div className='w-8 h-8 bg-green-500 text-white rounded-lg flex items-center justify-center font-bold'>
+                  →
+                </div>
+              </a>
             </div>
             <button
               onClick={() => setShowPopup(false)}
               className='w-full bg-slate-900 text-white py-4 rounded-2xl text-xs font-black uppercase hover:bg-blue-600 transition-all'
             >
-              Close
+              Got it
             </button>
           </div>
         </div>

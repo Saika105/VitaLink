@@ -169,9 +169,10 @@ const SearchDoctor = () => {
                         Hospital:
                       </span>
                       <span className='text-xs font-bold'>
-                        {doc.hospital?.fullName ||
+                        {doc.hospital?.name ||
+                          doc.hospital?.fullName ||
                           doc.hospitalName ||
-                          'Private Clinic'}
+                          'VitaLink Partner'}
                       </span>
                     </div>
 
