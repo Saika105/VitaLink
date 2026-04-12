@@ -407,6 +407,7 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
     doctor: currentAppt.doctor,
     appointmentDate: futureDate,
     bookingStatus: "scheduled",
+    _id: { $ne: currentAppt._id },
   });
 
   if (existingEntry) {
