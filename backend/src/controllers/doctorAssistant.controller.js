@@ -398,7 +398,7 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
   const futureDate = new Date(followUpDate);
   futureDate.setHours(0, 0, 0, 0);
 
-  if (futureDate <= new Date().setHours(0, 0, 0, 0)) {
+  if (futureDate < new Date().setHours(0, 0, 0, 0)) {
     throw new ApiError(400, "Follow-up date must be a future date.");
   }
 
