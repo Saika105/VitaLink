@@ -30,13 +30,18 @@ const AdminLogin = () => {
       if (response.ok) {
         const token = data.data?.accessToken || data.data?.token || data.token;
 
-        if (token) {
-          localStorage.setItem('token', token);
-          localStorage.setItem('role', 'admin');
-          navigate('/admin-staff');
-        } else {
-          setError('Authorization failed: No access token provided by server.');
-        }
+       if (token) {
+         localStorage.setItem('token', token);
+         localStorage.setItem(
+           'refreshToken',
+           data.data?.refreshToken || data.refreshToken || '',
+         );
+         localStorage.setItem('role', 'admin');
+         navigate('/admin-staff');
+       }
+       else {
+         setError('Authorization failed: No access token provided by server.');
+       }
       } else {
         if (response.status === 404) {
           setError(
