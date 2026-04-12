@@ -245,6 +245,7 @@ const getDailyAppointmentList = asyncHandler(async (req, res) => {
         arrivalTime: 1,
         queueStatus: 1,
         appointmentType: 1, 
+        followUpDate: 1,
         "patient.fullName": 1,
         "patient.upid": 1,
         "patient.gender": 1,
@@ -398,7 +399,7 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
   const futureDate = new Date(followUpDate);
   futureDate.setHours(0, 0, 0, 0);
 
-  if (futureDate < new Date().setHours(0, 0, 0, 0)) {
+  if (futureDate <= new Date().setHours(0, 0, 0, 0)) {
     throw new ApiError(400, "Follow-up date must be a future date.");
   }
 
@@ -407,7 +408,7 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
     doctor: currentAppt.doctor,
     appointmentDate: futureDate,
     bookingStatus: "scheduled",
-    _id: { $ne: currentAppt._id },
+    // _id: { $ne: currentAppt._id },
   });
 
   if (existingEntry) {
