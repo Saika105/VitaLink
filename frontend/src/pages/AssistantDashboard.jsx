@@ -24,6 +24,19 @@ const AssistantDashboard = () => {
   const [noteInput, setNoteInput] = useState('');
   const [notes, setNotes] = useState([]);
 
+  const fetchDailyList = async () => {
+  try {
+    const response = await protectedFetch(
+      `/api/v1/doctor-assistants/daily-list?t=${Date.now()}`, 
+    );
+    if (response.ok) {
+      const result = await response.json();
+      setSessionList(result.data || []);
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
   useEffect(() => {
     const today = new Date();
     setCurrentDate(
@@ -34,21 +47,7 @@ const AssistantDashboard = () => {
       }),
     );
 
-    const fetchInitialData = async () => {
-      try {
-        const response = await protectedFetch(
-          `/api/v1/doctor-assistants/daily-list`,
-        );
-        if (response.ok) {
-          const result = await response.json();
-          setSessionList(result.data || []);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    fetchInitialData();
+fetchDailyList();
 
     const savedUser = JSON.parse(localStorage.getItem('user'));
     const savedNotes = localStorage.getItem(
@@ -116,7 +115,7 @@ const AssistantDashboard = () => {
       if (response.ok) {
         setCurrentPatient(null);
         setPatientId('');
-        await fetchDailyList();  order
+        await fetchDailyList();
       } else {
         const errorData = await response.json();
         alert(errorData.message);
@@ -137,13 +136,11 @@ const AssistantDashboard = () => {
           body: JSON.stringify({ status: newStatus }),
         },
       );
-      if (response.ok) {
-       const updatedList = sessionList.map((item, i) =>
-         i === index ? { ...item, queueStatus: newStatus } : item,
-       );
-       setSessionList(updatedList); 
-       if (newStatus === 'no_show') alert('Patient marked as No Show');
-      }
+    if (response.ok) {
+      await fetchDailyList();
+      if (newStatus === 'no_show') alert('Patient marked as No Show');
+    }
+      
     } catch (err) {
       console.error(err);
     }
@@ -160,15 +157,12 @@ const AssistantDashboard = () => {
           body: JSON.stringify({ followUpDate: date }),
         },
       );
+      
       if (response.ok) {
-       const updatedList = sessionList.map((item, i) =>
-         i === index ? { ...item, followUpDate: date } : item,
-       );
-        setSessionList(updatedList);
-        alert(
-          "✅ Follow-up scheduled! It will appear in the patient's upcoming list.",
-        );
-      } else {
+        await fetchDailyList();
+        alert('✅ Follow-up scheduled!');
+      }
+      else {
         const errorData = await response.json();
         alert(errorData.message || 'Failed to schedule follow-up');
       }
