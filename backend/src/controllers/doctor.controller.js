@@ -96,10 +96,29 @@ const logoutDoctor = asyncHandler(async (req, res) => {
 
 //**************Fetch Todays Appointments*********** */
 const getTodayAppointments = asyncHandler(async (req, res) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const endOfToday = new Date();
-  endOfToday.setHours(23, 59, 59, 999);
+  const now = new Date();
+  const today = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      0,
+      0,
+      0,
+      0,
+    ),
+  );
+  const endOfToday = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      23,
+      59,
+      59,
+      999,
+    ),
+  );
 
   const queue = await Appointment.find({
     doctor: req.user._id,
@@ -197,13 +216,15 @@ const startConsultationSession = asyncHandler(async (req, res) => {
 const getPatientProfileForDoctor = asyncHandler(async (req, res) => {
   const { patientId } = req.params;
 
-  let patient = await Patient.findOne({ 
-    upid: patientId.toUpperCase().trim() 
+  let patient = await Patient.findOne({
+    upid: patientId.toUpperCase().trim(),
   }).select("-password -refreshToken");
 
   if (!patient) {
     if (mongoose.Types.ObjectId.isValid(patientId)) {
-      patient = await Patient.findById(patientId).select("-password -refreshToken");
+      patient = await Patient.findById(patientId).select(
+        "-password -refreshToken",
+      );
     }
   }
 
