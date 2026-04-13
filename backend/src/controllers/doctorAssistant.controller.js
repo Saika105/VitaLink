@@ -162,7 +162,7 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
     hospital: req.user.hospital,
     appointmentDate: { $gte: today, $lte: endOfToday },
     bookingStatus: "scheduled",
-    appointmentType: { $ne: "follow_up" },
+    // appointmentType: { $ne: "follow_up" },
   });
 
   if (alreadyInQueue) {
