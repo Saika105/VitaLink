@@ -236,7 +236,7 @@ const getDailyAppointmentList = asyncHandler(async (req, res) => {
           $gte: today,
           $lt: tomorrow,
         },
-        bookingStatus: "scheduled",
+        bookingStatus: "scheduled", 
       },
     },
     {
@@ -251,7 +251,11 @@ const getDailyAppointmentList = asyncHandler(async (req, res) => {
       $addFields: {
         patient: { $first: "$patientDetails" },
         sortPriority: {
-          $cond: [{ $eq: ["$appointmentType", "follow_up"] }, 0, 1],
+          $cond: {
+            if: { $eq: ["$appointmentType", "follow_up"] },
+            then: 0, 
+            else: 1  
+          }
         },
       },
     },
@@ -273,10 +277,70 @@ const getDailyAppointmentList = asyncHandler(async (req, res) => {
     },
   ]);
 
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  
   return res
     .status(200)
     .json(new ApiResponse(200, dailyQueue, "Daily queue synchronized"));
 });
+
+// const getDailyAppointmentList = asyncHandler(async (req, res) => {
+//   const today = new Date();
+//   today.setHours(0, 0, 0, 0);
+
+//   const tomorrow = new Date(today);
+//   tomorrow.setDate(tomorrow.getDate() + 1);
+
+//   const dailyQueue = await Appointment.aggregate([
+//     {
+//       $match: {
+//         doctor: new mongoose.Types.ObjectId(req.user.doctor),
+//         hospital: new mongoose.Types.ObjectId(req.user.hospital),
+//         appointmentDate: {
+//           $gte: today,
+//           $lt: tomorrow,
+//         },
+//         bookingStatus: "scheduled",
+//       },
+//     },
+//     {
+//       $lookup: {
+//         from: "patients",
+//         localField: "patient",
+//         foreignField: "_id",
+//         as: "patientDetails",
+//       },
+//     },
+//     {
+//       $addFields: {
+//         patient: { $first: "$patientDetails" },
+//         sortPriority: {
+//           $cond: [{ $eq: ["$appointmentType", "follow_up"] }, 0, 1],
+//         },
+//       },
+//     },
+//     {
+//       $sort: { sortPriority: 1, serialNumber: 1 },
+//     },
+//     {
+//       $project: {
+//         _id: 1,
+//         serialNumber: 1,
+//         arrivalTime: 1,
+//         queueStatus: 1,
+//         appointmentType: 1,
+//         followUpDate: 1,
+//         "patient.fullName": 1,
+//         "patient.upid": 1,
+//         "patient.gender": 1,
+//       },
+//     },
+//   ]);
+
+//   return res
+//     .status(200)
+//     .json(new ApiResponse(200, dailyQueue, "Daily queue synchronized"));
+// });
 
 //*********Update Queue Status For Specific Appointment********** */
 const updateQueueStatus = asyncHandler(async (req, res) => {
@@ -418,9 +482,12 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
   const futureDate = new Date(followUpDate);
   futureDate.setHours(0, 0, 0, 0);
 
-  // if (futureDate <= new Date().setHours(0, 0, 0, 0)) {
-  //   throw new ApiError(400, "Follow-up date must be a future date.");
-  // }
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  if (futureDate <= todayStart) {
+    throw new ApiError(400, "Follow-up date must be a future date.");
+  }
 
   const existingEntry = await Appointment.findOne({
     patient: currentAppt.patient,
