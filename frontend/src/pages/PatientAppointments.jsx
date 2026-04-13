@@ -276,7 +276,7 @@ const PatientAppointments = () => {
       )}
 
       {showPopup && activeAssistant && (
-        <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
+        <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-100 flex items-center justify-center p-4'>
           <div className='bg-white rounded-[40px] p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center'>
             <div className='w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6'>
               <svg
@@ -294,33 +294,35 @@ const PatientAppointments = () => {
               </svg>
             </div>
             <h3 className='text-2xl font-black text-slate-900 uppercase'>
-              Reschedule Slot
+              Book Slot
             </h3>
-            <p className='text-slate-500 text-xs mt-2'>
-              Contact the assistant of <b>{activeAssistant.name}</b>
+            <p className='text-slate-500 text-sm mt-2'>
+              Contact the assistant of <b>{activeAssistant.fullName}</b>.
             </p>
+
             <div className='my-8 space-y-3'>
               <a
                 href={`tel:${activeAssistant.phone}`}
-                className='flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-200 hover:border-blue-400 transition-all'
+                className='flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-200 hover:border-blue-400 transition-all group'
               >
                 <div className='text-left'>
-                  <p className='text-[10px] font-black text-black uppercase tracking-widest'>
+                  <p className='text-[10px] font-black text-slate-400 uppercase tracking-widest'>
                     Call Assistant
                   </p>
                   <p className='text-sm font-bold text-slate-900'>
                     {activeAssistant.phone}
                   </p>
                 </div>
-                <div className='w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold'>
+                <div className='w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center'>
                   →
                 </div>
               </a>
+
               <a
                 href={`https://wa.me/${activeAssistant.phone?.replace(/\D/g, '')}`}
                 target='_blank'
                 rel='noreferrer'
-                className='flex items-center justify-between p-5 bg-green-50 rounded-2xl border border-green-100 hover:border-green-400 transition-all'
+                className='flex items-center justify-between p-5 bg-green-50 rounded-2xl border border-green-100 hover:border-green-400 transition-all group'
               >
                 <div className='text-left'>
                   <p className='text-[10px] font-black text-green-600/60 uppercase tracking-widest'>
@@ -330,14 +332,15 @@ const PatientAppointments = () => {
                     {activeAssistant.phone}
                   </p>
                 </div>
-                <div className='w-8 h-8 bg-green-500 text-white rounded-lg flex items-center justify-center font-bold'>
+                <div className='w-8 h-8 bg-green-500 text-white rounded-lg flex items-center justify-center'>
                   →
                 </div>
               </a>
             </div>
+
             <button
               onClick={() => setShowPopup(false)}
-              className='w-full bg-slate-900 text-white py-4 rounded-2xl text-xs font-black uppercase hover:bg-blue-600 transition-all'
+              className='w-full bg-slate-900 text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 transition-all'
             >
               Got it
             </button>
