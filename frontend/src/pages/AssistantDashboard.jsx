@@ -85,7 +85,8 @@ const AssistantDashboard = () => {
         const result = await response.json();
         setCurrentPatient(result.data);
       } else {
-        alert('Patient not found');
+          const errorData = await response.json();
+        alert(errorData.message || 'Patient not found');
         setCurrentPatient(null);
       }
     } catch (err) {
@@ -105,17 +106,9 @@ const AssistantDashboard = () => {
         },
       );
       if (response.ok) {
-        const result = await response.json();
-        const fullNewPatient = {
-          ...result.data,
-          patient: {
-            fullName: currentPatient.fullName,
-            upid: currentPatient.upid,
-          },
-        };
-        setSessionList(prev => [...prev, fullNewPatient]);
         setCurrentPatient(null);
         setPatientId('');
+        await fetchDailyList();  order
       } else {
         const errorData = await response.json();
         alert(errorData.message);
@@ -137,10 +130,11 @@ const AssistantDashboard = () => {
         },
       );
       if (response.ok) {
-        const updatedList = [...sessionList];
-        updatedList[index].queueStatus = newStatus;
-        setSessionList(updatedList);
-        if (newStatus === 'no_show') alert('Patient marked as No Show');
+       const updatedList = sessionList.map((item, i) =>
+         i === index ? { ...item, queueStatus: newStatus } : item,
+       );
+       setSessionList(updatedList); 
+       if (newStatus === 'no_show') alert('Patient marked as No Show');
       }
     } catch (err) {
       console.error(err);
@@ -159,8 +153,9 @@ const AssistantDashboard = () => {
         },
       );
       if (response.ok) {
-        const updatedList = [...sessionList];
-        updatedList[index].followUpDate = date;
+       const updatedList = sessionList.map((item, i) =>
+         i === index ? { ...item, followUpDate: date } : item,
+       );
         setSessionList(updatedList);
         alert(
           "✅ Follow-up scheduled! It will appear in the patient's upcoming list.",
@@ -391,7 +386,10 @@ const AssistantDashboard = () => {
                                 ? item.followUpDate.split('T')[0]
                                 : ''
                             }
-                            onChange={e => updateFollowUp(idx, e.target.value)}
+                            onBlur={e => {
+                              if (e.target.value)
+                                updateFollowUp(idx, e.target.value);
+                            }}
                             className='bg-slate-50 border border-slate-300 rounded-lg text-[10px] p-2 font-black outline-none focus:ring-2 focus:ring-blue-500 text-slate-900'
                           />
                         </td>
@@ -417,7 +415,7 @@ const AssistantDashboard = () => {
                 onClick={handleLogout}
                 className='border-2 border-slate-300 text-slate-600 px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all'
               >
-                Sign Out
+                LogOut
               </button>
             </div>
           </section>
