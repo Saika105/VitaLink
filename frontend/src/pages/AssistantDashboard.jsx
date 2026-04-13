@@ -50,7 +50,10 @@ const AssistantDashboard = () => {
 
     fetchInitialData();
 
-    const savedNotes = localStorage.getItem('vitalink_assistant_notes');
+    const savedUser = JSON.parse(localStorage.getItem('user'));
+    const savedNotes = localStorage.getItem(
+      `vitalink_assistant_notes_${savedUser?._id}`,
+    );
     if (savedNotes) {
       setNotes(JSON.parse(savedNotes));
     }
@@ -61,17 +64,22 @@ const AssistantDashboard = () => {
     if (!noteInput.trim()) return;
     const newNotes = [...notes, { id: Date.now(), text: noteInput }];
     setNotes(newNotes);
-    localStorage.setItem('vitalink_assistant_notes', JSON.stringify(newNotes));
+   const u = JSON.parse(localStorage.getItem('user'));
+   localStorage.setItem(
+     `vitalink_assistant_notes_${u?._id}`,
+     JSON.stringify(newNotes),
+   );
     setNoteInput('');
   };
 
   const handleDeleteNote = id => {
     const filteredNotes = notes.filter(n => n.id !== id);
     setNotes(filteredNotes);
-    localStorage.setItem(
-      'vitalink_assistant_notes',
-      JSON.stringify(filteredNotes),
-    );
+   const u = JSON.parse(localStorage.getItem('user'));
+   localStorage.setItem(
+     `vitalink_assistant_notes_${u?._id}`,
+     JSON.stringify(filteredNotes),
+   );
   };
 
   const handleSearchPatient = async e => {
@@ -206,7 +214,17 @@ const AssistantDashboard = () => {
   };
 
   const handleLogout = () => {
+    const user = localStorage.getItem('user');
+    const notes = localStorage.getItem(
+      `vitalink_assistant_notes_${JSON.parse(user)?._id}`,
+    );
     localStorage.clear();
+    if (user && notes) {
+      localStorage.setItem(
+        `vitalink_assistant_notes_${JSON.parse(user)?._id}`,
+        notes,
+      );
+    }
     navigate('/login-staff', { replace: true });
   };
 
@@ -265,7 +283,7 @@ const AssistantDashboard = () => {
                   </p>
                   <button
                     onClick={handleConfirmArrival}
-                    className='w-full mt-4 bg-slate-900 text-white py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-colors'
+                    className='w-full mt-4 bg-blue-800 text-white py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-400 transition-colors'
                   >
                     Confirm Check-In
                   </button>
@@ -407,13 +425,13 @@ const AssistantDashboard = () => {
             <div className='flex justify-between items-center pt-4'>
               <button
                 onClick={() => setShowClearModal(true)}
-                className='border-2 border-red-200 text-red-700 px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all'
+                className='w-48 border-2 border-red-200 text-red-700 rounded-xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all focus:ring-2 focus:ring-red-500 outline-none font-inter'
               >
                 Clear Daily Queue
               </button>
               <button
                 onClick={handleLogout}
-                className='border-2 border-slate-300 text-slate-600 px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all'
+                className='w-48 border-2 border-red-200 text-red-700 rounded-xl py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all focus:ring-2 focus:ring-red-500 outline-none font-inter'
               >
                 LogOut
               </button>
