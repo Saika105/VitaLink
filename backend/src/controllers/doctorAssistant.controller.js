@@ -176,8 +176,8 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
 
   const alreadyInQueue = await Appointment.findOne({
     patient: patientRecord._id,
-    doctor: req.user.doctor,
-    hospital: req.user.hospital,
+    doctor: req.user.doctor?._id || req.user.doctor,
+    hospital: req.user.hospital?._id || req.user.hospital,
     appointmentDate: { $gte: today, $lte: endOfToday },
     bookingStatus: "scheduled",
     // appointmentType: { $ne: "follow_up" },
@@ -188,8 +188,8 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
   }
 
   const lastAppointment = await Appointment.findOne({
-    doctor: req.user.doctor,
-    hospital: req.user.hospital,
+    doctor: req.user.doctor?._id || req.user.doctor,
+    hospital: req.user.hospital?._id || req.user.hospital,
     appointmentDate: { $gte: today, $lte: endOfToday },
   })
     .sort({ serialNumber: -1 })
@@ -198,8 +198,8 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
   const nextSerial = lastAppointment ? lastAppointment.serialNumber + 1 : 1;
 
   const schedule = await DoctorSchedule.findOne({
-    doctor: req.user.doctor,
-    hospital: req.user.hospital,
+    doctor: req.user.doctor?._id || req.user.doctor,
+    hospital: req.user.hospital?._id || req.user.hospital,
   });
 
   if (!schedule) {
@@ -215,8 +215,8 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
   const appointment = await Appointment.create({
     appointmentId: generateAppointmentId(),
     patient: patientRecord._id,
-    doctor: req.user.doctor,
-    hospital: req.user.hospital,
+    doctor: req.user.doctor?._id || req.user.doctor,
+    hospital: req.user.hospital?._id || req.user.hospital,
     addedToQueueByAssistant: req.user._id,
     appointmentDate: today,
     serialNumber: nextSerial,
@@ -268,8 +268,12 @@ const getDailyAppointmentList = asyncHandler(async (req, res) => {
   const dailyQueue = await Appointment.aggregate([
     {
       $match: {
-        doctor: new mongoose.Types.ObjectId(req.user.doctor),
-        hospital: new mongoose.Types.ObjectId(req.user.hospital),
+        doctor: new mongoose.Types.ObjectId(
+          req.user.doctor?._id || req.user.doctor,
+        ),
+        hospital: new mongoose.Types.ObjectId(
+          req.user.hospital?._id || req.user.hospital,
+        ),
         appointmentDate: {
           $gte: today,
           $lt: tomorrow,
@@ -397,8 +401,8 @@ const updateQueueStatus = asyncHandler(async (req, res) => {
   const appointment = await Appointment.findOneAndUpdate(
     {
       _id: appointmentId,
-      doctor: req.user.doctor,
-      hospital: req.user.hospital,
+      doctor: req.user.doctor?._id || req.user.doctor,
+      hospital: req.user.hospital?._id || req.user.hospital,
     },
     { $set: updateData },
     { new: true },
@@ -501,8 +505,8 @@ const clearDailyQueue = asyncHandler(async (req, res) => {
 
   const result = await Appointment.updateMany(
     {
-      doctor: req.user.doctor,
-      hospital: req.user.hospital,
+      doctor: req.user.doctor?._id || req.user.doctor,
+      hospital: req.user.hospital?._id || req.user.hospital,
       appointmentDate: { $gte: today, $lte: endOfToday },
       bookingStatus: "scheduled",
     },
