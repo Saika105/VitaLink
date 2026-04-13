@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { domToPng } from 'modern-screenshot';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -58,9 +58,7 @@ const PatientDashboard = () => {
     } catch (error) {
       console.error('Logout Error:', error);
     } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('role');
+      localStorage.clear();
       navigate('/login-patient');
     }
   };
@@ -101,6 +99,12 @@ const PatientDashboard = () => {
       }
     }
   };
+
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  if (!token || role !== 'patient') {
+    return <Navigate to='/login-patient' replace />;
+  }
 
   return (
     <div className='min-h-screen bg-[#F8FAFC] flex flex-col font-inter text-slate-900'>
