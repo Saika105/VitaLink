@@ -151,10 +151,28 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
   }
 
   const now = new Date();
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-  const endOfToday = new Date(now);
-  endOfToday.setHours(23, 59, 59, 999);
+  const today = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      0,
+      0,
+      0,
+      0,
+    ),
+  );
+  const endOfToday = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      23,
+      59,
+      59,
+      999,
+    ),
+  );
 
   const alreadyInQueue = await Appointment.findOne({
     patient: patientRecord._id,
@@ -221,11 +239,31 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
 
 //***************Fetch That Days Queue For Assistant Table******* */
 const getDailyAppointmentList = asyncHandler(async (req, res) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const now = new Date();
 
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const today = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      0,
+      0,
+      0,
+      0,
+    ),
+  );
+
+  const tomorrow = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() + 1,
+      0,
+      0,
+      0,
+      0,
+    ),
+  );
 
   const dailyQueue = await Appointment.aggregate([
     {
@@ -236,7 +274,7 @@ const getDailyAppointmentList = asyncHandler(async (req, res) => {
           $gte: today,
           $lt: tomorrow,
         },
-        bookingStatus: "scheduled", 
+        bookingStatus: "scheduled",
       },
     },
     {
@@ -253,9 +291,9 @@ const getDailyAppointmentList = asyncHandler(async (req, res) => {
         sortPriority: {
           $cond: {
             if: { $eq: ["$appointmentType", "follow_up"] },
-            then: 0, 
-            else: 1  
-          }
+            then: 0,
+            else: 1,
+          },
         },
       },
     },
@@ -277,8 +315,11 @@ const getDailyAppointmentList = asyncHandler(async (req, res) => {
     },
   ]);
 
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate",
+  );
+
   return res
     .status(200)
     .json(new ApiResponse(200, dailyQueue, "Daily queue synchronized"));
@@ -429,10 +470,34 @@ const uploadPrescriptionByAssistant = asyncHandler(async (req, res) => {
 
 // *******************Clear Daily Queue ********************* */
 const clearDailyQueue = asyncHandler(async (req, res) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const endOfToday = new Date();
-  endOfToday.setHours(23, 59, 59, 999);
+  const now = new Date();
+  const today = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      0,
+      0,
+      0,
+      0,
+    ),
+  );
+  const endOfToday = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      23,
+      59,
+      59,
+      999,
+    ),
+  );
+
+  // const today = new Date();
+  // today.setHours(0, 0, 0, 0);
+  // const endOfToday = new Date();
+  // endOfToday.setHours(23, 59, 59, 999);
 
   const result = await Appointment.updateMany(
     {
@@ -479,11 +544,24 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
   const currentAppt = await Appointment.findById(appointmentId);
   if (!currentAppt) throw new ApiError(404, "Original appointment not found");
 
-  const futureDate = new Date(followUpDate);
-  futureDate.setHours(0, 0, 0, 0);
+  const [year, month, day] = followUpDate.split("-").map(Number);
+  const futureDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
 
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+  // const todayStart = new Date();
+  // todayStart.setHours(0, 0, 0, 0);
+
+  const now = new Date();
+  const todayStart = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      0,
+      0,
+      0,
+      0,
+    ),
+  );
 
   if (futureDate <= todayStart) {
     throw new ApiError(400, "Follow-up date must be a future date.");
