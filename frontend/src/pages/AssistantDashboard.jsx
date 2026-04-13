@@ -398,7 +398,7 @@ fetchDailyList();
                                 ? item.followUpDate.split('T')[0]
                                 : ''
                             }
-                            onBlur={e => {
+                            onChange={e => {
                               if (e.target.value)
                                 updateFollowUp(idx, e.target.value);
                             }}
