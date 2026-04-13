@@ -235,9 +235,9 @@ const DoctorDashboard = () => {
 
       {showConfirmModal && selectedPatient && (
         <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
-          <div className='bg-white rounded-[3rem] shadow-2xl w-full max-sm overflow-hidden animate-in zoom-in-95 duration-200'>
-            <div className='p-10 flex flex-col items-center text-center'>
-              <div className='w-28 h-28 rounded-full border-4 border-blue-50 overflow-hidden mb-6 shadow-xl'>
+          <div className='bg-white rounded-4xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200'>
+            <div className='p-8 flex flex-col items-center text-center'>
+              <div className='w-24 h-24 rounded-full border-4 border-blue-50 overflow-hidden mb-5 shadow-lg'>
                 <img
                   src={
                     selectedPatient.patient?.profilePhoto?.url ||

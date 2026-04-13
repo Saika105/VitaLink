@@ -138,7 +138,7 @@ const DigitalPrescription = () => {
 
       const formData = new FormData();
       formData.append('prescriptionFile', pdfFile);
-      
+
       formData.append(
         'diagnosis',
         prescriptionData.illness || 'General Consultation',
@@ -153,7 +153,7 @@ const DigitalPrescription = () => {
       );
 
       const response = await protectedFetch(
-        `/api/v1/doctors/prescription/create/${appointmentId}`,
+        `/api/v1/doctors/sign-prescription/${appointmentId}`,
         {
           method: 'POST',
           body: formData,
