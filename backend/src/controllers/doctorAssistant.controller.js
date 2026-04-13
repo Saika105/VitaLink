@@ -150,10 +150,24 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Patient with this ID does not exist");
   }
 
-  const today = new Date();
+  const now = new Date();
+  const today = new Date(now);
   today.setHours(0, 0, 0, 0);
-  const endOfToday = new Date();
+  const endOfToday = new Date(now);
   endOfToday.setHours(23, 59, 59, 999);
+
+  const alreadyInQueue = await Appointment.findOne({
+    patient: patientRecord._id,
+    doctor: req.user.doctor,
+    hospital: req.user.hospital,
+    appointmentDate: { $gte: today, $lte: endOfToday },
+    bookingStatus: "scheduled",
+    appointmentType: { $ne: "follow_up" },
+  });
+
+  if (alreadyInQueue) {
+    throw new ApiError(400, "This patient is already in today's queue.");
+  }
 
   const lastAppointment = await Appointment.findOne({
     doctor: req.user.doctor,
@@ -209,7 +223,7 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
 const getDailyAppointmentList = asyncHandler(async (req, res) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -218,11 +232,11 @@ const getDailyAppointmentList = asyncHandler(async (req, res) => {
       $match: {
         doctor: new mongoose.Types.ObjectId(req.user.doctor),
         hospital: new mongoose.Types.ObjectId(req.user.hospital),
-        appointmentDate: { 
-          $gte: today, 
-          $lt: tomorrow 
+        appointmentDate: {
+          $gte: today,
+          $lt: tomorrow,
         },
-        bookingStatus: "scheduled", 
+        bookingStatus: "scheduled",
       },
     },
     {
@@ -236,7 +250,13 @@ const getDailyAppointmentList = asyncHandler(async (req, res) => {
     {
       $addFields: {
         patient: { $first: "$patientDetails" },
+        sortPriority: {
+          $cond: [{ $eq: ["$appointmentType", "follow_up"] }, 0, 1],
+        },
       },
+    },
+    {
+      $sort: { sortPriority: 1, serialNumber: 1 },
     },
     {
       $project: {
@@ -244,14 +264,13 @@ const getDailyAppointmentList = asyncHandler(async (req, res) => {
         serialNumber: 1,
         arrivalTime: 1,
         queueStatus: 1,
-        appointmentType: 1, 
+        appointmentType: 1,
         followUpDate: 1,
         "patient.fullName": 1,
         "patient.upid": 1,
         "patient.gender": 1,
       },
     },
-    { $sort: { serialNumber: 1 } },
   ]);
 
   return res
@@ -399,28 +418,29 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
   const futureDate = new Date(followUpDate);
   futureDate.setHours(0, 0, 0, 0);
 
-  if (futureDate <= new Date().setHours(0, 0, 0, 0)) {
-    throw new ApiError(400, "Follow-up date must be a future date.");
-  }
+  // if (futureDate <= new Date().setHours(0, 0, 0, 0)) {
+  //   throw new ApiError(400, "Follow-up date must be a future date.");
+  // }
 
   const existingEntry = await Appointment.findOne({
     patient: currentAppt.patient,
     doctor: currentAppt.doctor,
     appointmentDate: futureDate,
     bookingStatus: "scheduled",
-    // _id: { $ne: currentAppt._id },
   });
 
   if (existingEntry) {
     throw new ApiError(400, "A follow-up is already scheduled for this date.");
   }
 
-  const lastAppt = await Appointment.findOne({
+  const existingFollowUpCount = await Appointment.countDocuments({
     doctor: currentAppt.doctor,
+    hospital: currentAppt.hospital,
     appointmentDate: futureDate,
-  }).sort({ serialNumber: -1 });
+    appointmentType: "follow_up",
+  });
 
-  const newFollowUpSerial = lastAppt ? lastAppt.serialNumber + 1 : 1;
+  const newFollowUpSerial = existingFollowUpCount + 1;
 
   const followUpAppt = await Appointment.create({
     appointmentId: generateAppointmentId(),
