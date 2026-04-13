@@ -26,6 +26,8 @@ import ChangePassword from './pages/ChangePassword.jsx';
 import DigitalPrescription from './pages/DigitalPrescription.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
 import ReceptionistBilling from './pages/ReceptionistBilling.jsx';
+import ReporterDashboard from './pages/ReporterDashboard.jsx';
+import ReportManagement from './pages/ReportManagement.jsx';
 
 const ProtectedRoute = ({ children, allowedRole }) => {
   const token = localStorage.getItem('token');
@@ -171,6 +173,22 @@ const App = () => {
             element={
               <ProtectedRoute allowedRole='doctor-assistants'>
                 <AssistantDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/reporter-dashboard'
+            element={
+              <ProtectedRoute allowedRole='lab-assistants'>
+                <ReporterDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/reporter/manage-reports/:id'
+            element={
+              <ProtectedRoute allowedRole='lab-assistants'>
+                <ReportManagement />
               </ProtectedRoute>
             }
           />
