@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { toPng } from 'html-to-image';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import DoctorNavbar from '../components/DoctorNavbar';
 import Footer from '../components/Footer';
 import { protectedFetch } from '../utils/api';
@@ -10,7 +11,6 @@ const DigitalPrescription = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
   const appointmentId = state?.appointmentId;
-  const prescriptionRef = useRef(null);
 
   const [medicineInput, setMedicineInput] = useState('');
   const [medicineList, setMedicineList] = useState([]);
@@ -52,7 +52,7 @@ const DigitalPrescription = () => {
     if (savedUser) setDoctorInfo(savedUser);
 
     if (!appointmentId) {
-      alert('Session expired. Please return to dashboard.');
+      alert('Session reference missing.');
       navigate(-1);
     }
   }, [appointmentId, navigate]);
@@ -75,19 +75,70 @@ const DigitalPrescription = () => {
     }
 
     try {
-      // html-to-image is much better at handling custom fonts and oklch
-      const dataUrl = await toPng(prescriptionRef.current, {
-        cacheBust: true,
-        backgroundColor: '#ffffff',
-        pixelRatio: 2,
-        filter: node =>
-          node.tagName !== 'BUTTON' &&
-          !node.classList?.contains('exclude-capture'),
+      const doc = new jsPDF();
+
+      doc.setFontSize(22);
+      doc.setTextColor(59, 130, 246);
+      doc.text('VITALINK DIGITAL PRESCRIPTION', 14, 20);
+
+      doc.setDrawColor(200, 200, 200);
+      doc.rect(14, 25, 182, 25);
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`PATIENT: ${patientInfo.fullName.toUpperCase()}`, 18, 35);
+      doc.text(`ID: ${patientInfo.upid}`, 18, 42);
+      doc.text(`DATE: ${todayDate}`, 140, 35);
+      doc.text(
+        `AGE/GENDER: ${calculateAge(patientInfo.dateOfBirth)}Y / ${patientInfo.gender}`,
+        140,
+        42,
+      );
+
+      doc.setFontSize(12);
+      doc.setTextColor(0);
+      doc.text('OBSERVATION:', 14, 65);
+      doc.setFontSize(10);
+      doc.text(prescriptionData.illness || 'General Consultation', 14, 72);
+
+      autoTable(doc, {
+        startY: 85,
+        head: [['#', 'MEDICATION PLAN']],
+        body: medicineList.map((m, i) => [i + 1, m]),
+        headStyles: { fillColor: [59, 130, 246] },
       });
 
-      const blob = await (await fetch(dataUrl)).blob();
+      const finalY = doc.lastAutoTable.finalY + 15;
+      doc.setFontSize(12);
+      doc.text('REQUIRED TESTS:', 14, finalY);
+      doc.setFontSize(10);
+      doc.text(prescriptionData.tests || 'None', 14, finalY + 7);
+
+      doc.setFontSize(12);
+      doc.text("DOCTOR'S ADVICE:", 14, finalY + 20);
+      doc.setFontSize(10);
+      doc.text(
+        prescriptionData.advice || 'Follow up as needed',
+        14,
+        finalY + 27,
+      );
+
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text(`DR. ${doctorInfo?.fullName.toUpperCase()}`, 140, finalY + 50);
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`${doctorInfo?.specialization.toUpperCase()}`, 140, finalY + 55);
+
+      const pdfBlob = doc.output('blob');
+      const pdfFile = new File(
+        [pdfBlob],
+        `Prescription_${patientInfo.upid}.pdf`,
+        { type: 'application/pdf' },
+      );
+
       const formData = new FormData();
-      formData.append('prescriptionFile', blob, `RX_${patientInfo.upid}.png`);
+      formData.append('prescriptionFile', pdfFile);
+      
       formData.append(
         'diagnosis',
         prescriptionData.illness || 'General Consultation',
@@ -97,13 +148,11 @@ const DigitalPrescription = () => {
       formData.append(
         'requiredTests',
         JSON.stringify(
-          prescriptionData.tests
-            ? prescriptionData.tests.split(',').map(t => t.trim())
-            : [],
+          prescriptionData.tests ? prescriptionData.tests.split(',') : [],
         ),
       );
 
-      const res = await protectedFetch(
+      const response = await protectedFetch(
         `/api/v1/doctors/prescription/create/${appointmentId}`,
         {
           method: 'POST',
@@ -111,16 +160,15 @@ const DigitalPrescription = () => {
         },
       );
 
-      if (res.ok) {
-        alert('Digital Prescription secured successfully.');
+      if (response.ok) {
+        alert('Prescription successfully synced to HealthVault.');
         navigate(`/doctor/patient-view/${id}`);
       } else {
-        const error = await res.json();
-        alert(error.message || 'Save failed.');
+        alert('Sync failed. Backend error.');
       }
     } catch (err) {
       console.error(err);
-      alert('Critical: Failed to generate image. Try using Chrome or Edge.');
+      alert('Error generating medical record.');
     }
   };
 
@@ -130,7 +178,6 @@ const DigitalPrescription = () => {
         doctorName={doctorInfo?.fullName}
         doctorPhoto={doctorInfo?.profilePhoto?.url}
       />
-
       <main className='grow max-w-6xl mx-auto w-full p-4 md:p-10 flex flex-col'>
         <div className='flex justify-between items-end mb-6'>
           <div>
@@ -149,10 +196,7 @@ const DigitalPrescription = () => {
           </button>
         </div>
 
-        <div
-          ref={prescriptionRef}
-          className='bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden flex flex-col'
-        >
+        <div className='bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden flex flex-col'>
           <div className='bg-[#3B82F6] p-8 text-white grid grid-cols-2 md:grid-cols-4 gap-8'>
             <div>
               <p className='text-[12px] font-bold opacity-80 uppercase tracking-widest mb-1'>
@@ -251,7 +295,7 @@ const DigitalPrescription = () => {
                         </p>
                         <button
                           onClick={() => removeMedicine(index)}
-                          className='text-red-600 opacity-0 group-hover:opacity-100 transition-all font-black text-[10px] uppercase'
+                          className='text-red-600 opacity-0 group-hover:opacity-100 transition-all font-black text-[10px] uppercase tracking-widest'
                         >
                           Remove
                         </button>
@@ -263,7 +307,7 @@ const DigitalPrescription = () => {
                     value={medicineInput}
                     onChange={e => setMedicineInput(e.target.value)}
                     onKeyDown={addMedicine}
-                    className='exclude-capture w-full bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-5 text-md font-black text-black outline-none focus:border-blue-600 focus:bg-white transition-all shadow-inner'
+                    className='w-full bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-5 text-md font-black text-black outline-none focus:border-blue-600 focus:bg-white transition-all shadow-inner'
                     placeholder='Type medicine + Enter...'
                   />
                 </div>
@@ -303,7 +347,7 @@ const DigitalPrescription = () => {
         <div className='mt-8 flex justify-end items-center'>
           <button
             onClick={handleSave}
-            className='px-20 py-5 rounded-2xl bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[12px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-200 transition-all active:scale-95'
+            className='px-20 py-5 rounded-2xl bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[12px] font-black uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95'
           >
             Sign & Save Rx
           </button>
