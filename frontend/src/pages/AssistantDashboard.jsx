@@ -391,19 +391,30 @@ fetchDailyList();
                           </label>
                         </td>
                         <td className='p-6'>
-                          <input
-                            type='date'
-                            value={
-                              item.followUpDate
-                                ? item.followUpDate.split('T')[0]
-                                : ''
-                            }
-                            onChange={e => {
-                              if (e.target.value)
-                                updateFollowUp(idx, e.target.value);
-                            }}
-                            className='bg-slate-50 border border-slate-300 rounded-lg text-[10px] p-2 font-black outline-none focus:ring-2 focus:ring-blue-500 text-slate-900'
-                          />
+                          <div className='flex flex-col gap-2'>
+                            <input
+                              type='date'
+                              id={`followup-${item._id}`}
+                              defaultValue={
+                                item.followUpDate
+                                  ? item.followUpDate.split('T')[0]
+                                  : ''
+                              }
+                              className='bg-slate-50 border border-slate-300 rounded-lg text-[10px] p-2 font-black outline-none focus:ring-2 focus:ring-blue-500 text-slate-900'
+                            />
+                            <button
+                              onClick={() => {
+                                const val = document.getElementById(
+                                  `followup-${item._id}`,
+                                ).value;
+                                if (val) updateFollowUp(idx, val);
+                                else alert('Please select a date first');
+                              }}
+                              className='bg-blue-600 text-white text-[9px] font-black uppercase rounded-lg py-1 px-2 hover:bg-blue-700 transition-colors'
+                            >
+                              Set
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
