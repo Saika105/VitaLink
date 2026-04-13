@@ -297,7 +297,7 @@ const PatientAppointments = () => {
               Book Slot
             </h3>
             <p className='text-slate-500 text-sm mt-2'>
-              Contact the assistant of <b>{activeAssistant.fullName}</b>.
+              Contact the assistant of <b>{activeAssistant.name}</b>.
             </p>
 
             <div className='my-8 space-y-3'>
