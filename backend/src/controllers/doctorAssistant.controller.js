@@ -143,11 +143,23 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Patient with this ID does not exist");
   }
 
+  // const now = new Date();
+  // const localDateString = now.toLocaleDateString("en-CA");
+
+  // const today = new Date(`${localDateString}T00:00:00.000Z`);
+
+  // const tomorrow = new Date(today);
+  // tomorrow.setUTCDate(today.getUTCDate() + 1);
+
   const now = new Date();
-  const localDateString = now.toLocaleDateString("en-CA"); 
+  const dhakaDate = now.toLocaleDateString("en-CA", {
+    timeZone: "Asia/Dhaka",
+  });
 
-  const today = new Date(`${localDateString}T00:00:00.000Z`);
+  // Create UTC Midnight for the start of the Bangladesh day
+  const today = new Date(`${dhakaDate}T00:00:00.000Z`);
 
+  // Create UTC Midnight for the start of the next day
   const tomorrow = new Date(today);
   tomorrow.setUTCDate(today.getUTCDate() + 1);
 
@@ -215,9 +227,21 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
 
 //***************Fetch That Days Queue For Assistant Table******* */
 const getDailyAppointmentList = asyncHandler(async (req, res) => {
+  // const now = new Date();
+  // const localDateString = now.toLocaleDateString("en-CA");
+  // const today = new Date(`${localDateString}T00:00:00.000Z`);
+  // const tomorrow = new Date(today);
+  // tomorrow.setUTCDate(today.getUTCDate() + 1);
+
   const now = new Date();
-  const localDateString = now.toLocaleDateString("en-CA");
-  const today = new Date(`${localDateString}T00:00:00.000Z`);
+  const dhakaDate = now.toLocaleDateString("en-CA", {
+    timeZone: "Asia/Dhaka",
+  });
+
+  // Create UTC Midnight for the start of the Bangladesh day
+  const today = new Date(`${dhakaDate}T00:00:00.000Z`);
+
+  // Create UTC Midnight for the start of the next day
   const tomorrow = new Date(today);
   tomorrow.setUTCDate(today.getUTCDate() + 1);
 
@@ -394,19 +418,21 @@ const clearDailyQueue = asyncHandler(async (req, res) => {
     },
   );
 
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      { modifiedCount: result.modifiedCount },
-      `Shift ended. ${result.modifiedCount} no-shows moved to Canceled tab.`
-    )
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { modifiedCount: result.modifiedCount },
+        `Shift ended. ${result.modifiedCount} no-shows moved to Canceled tab.`,
+      ),
+    );
 });
 
 // ************** Schedule Follow-Up Appointment ********** */
 const scheduleFollowUp = asyncHandler(async (req, res) => {
   const { appointmentId } = req.params;
-  const { followUpDate } = req.body; 
+  const { followUpDate } = req.body;
 
   const currentAppt = await Appointment.findById(appointmentId);
   if (!currentAppt) throw new ApiError(404, "Original appointment not found");
@@ -415,7 +441,7 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
   const futureDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
 
   const now = new Date();
-  const localDateString = now.toLocaleDateString("en-CA"); 
+  const localDateString = now.toLocaleDateString("en-CA");
   const todayStart = new Date(`${localDateString}T00:00:00.000Z`);
 
   if (futureDate <= todayStart) {
@@ -449,7 +475,7 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
     hospital: currentAppt.hospital,
     appointmentDate: futureDate,
     serialNumber: newFollowUpSerial,
-    timeSlot: currentAppt.timeSlot, 
+    timeSlot: currentAppt.timeSlot,
     appointmentType: "follow_up",
     bookingStatus: "scheduled",
     queueStatus: "pending",
@@ -459,13 +485,15 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
   currentAppt.followUpDate = futureDate;
   await currentAppt.save();
 
-  return res.status(201).json(
-    new ApiResponse(
-      201,
-      followUpAppt,
-      `Follow-up Serial #${newFollowUpSerial} booked for ${followUpDate}`
-    )
-  );
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(
+        201,
+        followUpAppt,
+        `Follow-up Serial #${newFollowUpSerial} booked for ${followUpDate}`,
+      ),
+    );
 });
 
 const checkInPatient = asyncHandler(async (req, res) => {
