@@ -97,40 +97,57 @@ const logoutDoctor = asyncHandler(async (req, res) => {
 //**************Fetch Todays Appointments*********** */
 const getTodayAppointments = asyncHandler(async (req, res) => {
   const now = new Date();
-  const today = new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      0,
-      0,
-      0,
-      0,
-    ),
-  );
-  const endOfToday = new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      23,
-      59,
-      59,
-      999,
-    ),
-  );
+  const localDateString = now.toLocaleDateString("en-CA"); 
+  const today = new Date(`${localDateString}T00:00:00.000Z`);
+  const tomorrow = new Date(today);
+  tomorrow.setUTCDate(today.getUTCDate() + 1);
 
-  const queue = await Appointment.find({
-    doctor: req.user._id,
-    hospital: req.user.hospital,
-    appointmentDate: { $gte: today, $lte: endOfToday },
-    bookingStatus: "scheduled",
-  })
-    .populate({
-      path: "patient",
-      select: "fullName upid profilePhoto gender age",
-    })
-    .sort({ serialNumber: 1 });
+  const queue = await Appointment.aggregate([
+    {
+      $match: {
+        doctor: new mongoose.Types.ObjectId(req.user._id),
+        hospital: new mongoose.Types.ObjectId(req.user.hospital),
+        appointmentDate: { $gte: today, $lt: tomorrow },
+        bookingStatus: "scheduled",
+      },
+    },
+    {
+      $lookup: {
+        from: "patients",
+        localField: "patient",
+        foreignField: "_id",
+        as: "patientDetails",
+      },
+    },
+    {
+      $addFields: {
+        patient: { $first: "$patientDetails" },
+        sortPriority: {
+          $cond: {
+            if: { $eq: ["$appointmentType", "follow_up"] },
+            then: 0,
+            else: 1,
+          },
+        },
+      },
+    },
+    {
+      $sort: { sortPriority: 1, serialNumber: 1 },
+    },
+    {
+      $project: {
+        _id: 1,
+        serialNumber: 1,
+        appointmentType: 1,
+        queueStatus: 1,
+        "patient.fullName": 1,
+        "patient.upid": 1,
+        "patient.profilePhoto": 1,
+        "patient.gender": 1,
+        "patient.age": 1,
+      },
+    },
+  ]);
 
   if (!queue || queue.length === 0) {
     return res
