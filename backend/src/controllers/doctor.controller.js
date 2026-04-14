@@ -97,11 +97,13 @@ const logoutDoctor = asyncHandler(async (req, res) => {
 //**************Fetch Todays Appointments*********** */
 const getTodayAppointments = asyncHandler(async (req, res) => {
   const now = new Date();
-  const localDateString = now.toLocaleDateString("en-CA"); 
-  const today = new Date(`${localDateString}T00:00:00.000Z`);
+  const dhakaDate = now.toLocaleDateString("en-CA", {
+    timeZone: "Asia/Dhaka",
+  });
+  const today = new Date(`${dhakaDate}T00:00:00.000Z`);
   const tomorrow = new Date(today);
   tomorrow.setUTCDate(today.getUTCDate() + 1);
-
+  
   const queue = await Appointment.aggregate([
     {
       $match: {

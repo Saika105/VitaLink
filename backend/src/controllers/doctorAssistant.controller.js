@@ -143,23 +143,11 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Patient with this ID does not exist");
   }
 
-  // const now = new Date();
-  // const localDateString = now.toLocaleDateString("en-CA");
-
-  // const today = new Date(`${localDateString}T00:00:00.000Z`);
-
-  // const tomorrow = new Date(today);
-  // tomorrow.setUTCDate(today.getUTCDate() + 1);
-
   const now = new Date();
   const dhakaDate = now.toLocaleDateString("en-CA", {
     timeZone: "Asia/Dhaka",
   });
-
-  // Create UTC Midnight for the start of the Bangladesh day
   const today = new Date(`${dhakaDate}T00:00:00.000Z`);
-
-  // Create UTC Midnight for the start of the next day
   const tomorrow = new Date(today);
   tomorrow.setUTCDate(today.getUTCDate() + 1);
 
@@ -237,11 +225,7 @@ const getDailyAppointmentList = asyncHandler(async (req, res) => {
   const dhakaDate = now.toLocaleDateString("en-CA", {
     timeZone: "Asia/Dhaka",
   });
-
-  // Create UTC Midnight for the start of the Bangladesh day
   const today = new Date(`${dhakaDate}T00:00:00.000Z`);
-
-  // Create UTC Midnight for the start of the next day
   const tomorrow = new Date(today);
   tomorrow.setUTCDate(today.getUTCDate() + 1);
 
@@ -397,8 +381,10 @@ const uploadPrescriptionByAssistant = asyncHandler(async (req, res) => {
 // *******************Clear Daily Queue ********************* */
 const clearDailyQueue = asyncHandler(async (req, res) => {
   const now = new Date();
-  const localDateString = now.toLocaleDateString("en-CA"); // YYYY-MM-DD
-  const today = new Date(`${localDateString}T00:00:00.000Z`);
+  const dhakaDate = now.toLocaleDateString("en-CA", {
+    timeZone: "Asia/Dhaka",
+  });
+  const today = new Date(`${dhakaDate}T00:00:00.000Z`);
   const tomorrow = new Date(today);
   tomorrow.setUTCDate(today.getUTCDate() + 1);
 
@@ -430,9 +416,10 @@ const clearDailyQueue = asyncHandler(async (req, res) => {
 });
 
 // ************** Schedule Follow-Up Appointment ********** */
+// ************** Schedule Follow-Up Appointment ********** */
 const scheduleFollowUp = asyncHandler(async (req, res) => {
   const { appointmentId } = req.params;
-  const { followUpDate } = req.body;
+  const { followUpDate } = req.body; 
 
   const currentAppt = await Appointment.findById(appointmentId);
   if (!currentAppt) throw new ApiError(404, "Original appointment not found");
@@ -441,8 +428,10 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
   const futureDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
 
   const now = new Date();
-  const localDateString = now.toLocaleDateString("en-CA");
-  const todayStart = new Date(`${localDateString}T00:00:00.000Z`);
+  const dhakaDateString = now.toLocaleDateString("en-CA", {
+    timeZone: "Asia/Dhaka",
+  });
+  const todayStart = new Date(`${dhakaDateString}T00:00:00.000Z`);
 
   if (futureDate <= todayStart) {
     throw new ApiError(400, "Follow-up date must be a future date.");
@@ -464,6 +453,7 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
     hospital: currentAppt.hospital,
     appointmentDate: futureDate,
     appointmentType: "follow_up",
+    bookingStatus: "scheduled", //newwwwwwww
   });
 
   const newFollowUpSerial = existingFollowUpCount + 1;
@@ -473,7 +463,7 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
     patient: currentAppt.patient,
     doctor: currentAppt.doctor,
     hospital: currentAppt.hospital,
-    appointmentDate: futureDate,
+    appointmentDate: futureDate, 
     serialNumber: newFollowUpSerial,
     timeSlot: currentAppt.timeSlot,
     appointmentType: "follow_up",
@@ -485,15 +475,13 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
   currentAppt.followUpDate = futureDate;
   await currentAppt.save();
 
-  return res
-    .status(201)
-    .json(
-      new ApiResponse(
-        201,
-        followUpAppt,
-        `Follow-up Serial #${newFollowUpSerial} booked for ${followUpDate}`,
-      ),
-    );
+  return res.status(201).json(
+    new ApiResponse(
+      201,
+      followUpAppt,
+      `Follow-up Serial #${newFollowUpSerial} booked for ${followUpDate}`
+    )
+  );
 });
 
 const checkInPatient = asyncHandler(async (req, res) => {
