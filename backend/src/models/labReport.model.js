@@ -33,6 +33,12 @@ const labReportSchema = new mongoose.Schema(
       index: true,
     },
 
+    bill: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Bill",
+      index: true,
+    },
+
     prescription: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Prescription",
@@ -69,13 +75,19 @@ const labReportSchema = new mongoose.Schema(
 
     reportFile: {
       type: fileSchema,
-      required: true,
+      required: false, 
     },
 
     reportDate: {
       type: Date,
       required: true,
       default: Date.now,
+    },
+
+    status: {
+      type: String,
+      enum: ["pending", "completed", "cancelled"],
+      default: "pending",
     },
 
     notes: {
@@ -97,14 +109,26 @@ const labReportSchema = new mongoose.Schema(
       default: "lab_assistant",
     },
   },
-  baseSchemaOptions,
+  baseSchemaOptions
 );
 
 labReportSchema.index({ patient: 1, reportDate: -1 });
 
 labReportSchema.pre("validate", async function () {
-  if (this.source === "lab_assistant" && !this.labAssistant) {
-    throw new Error("labAssistant is required when source is lab_assistant");
+  if (this.source === "imported") {
+    this.status = "completed";
+    this.isPaid = true;
+    if (!this.reportFile) {
+      throw new Error("File is required for imported reports");
+    }
+  }
+
+  if (
+    this.source === "lab_assistant" && 
+    this.status === "completed" && 
+    !this.labAssistant
+  ) {
+    throw new Error("labAssistant is required to finalize hospital reports");
   }
 });
 

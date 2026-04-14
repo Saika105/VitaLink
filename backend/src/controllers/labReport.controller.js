@@ -47,6 +47,8 @@ const addPatientLabReport = asyncHandler(async (req, res) => {
       source: "imported",
       price: 0,
       isPaid: true,
+      status: "completed", 
+      hospital: null,
       reportFile: {
         url: uploadResult.secure_url,
         public_id: uploadResult.public_id,
