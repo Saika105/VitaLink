@@ -29,11 +29,17 @@ const Navbar = () => {
         </div>
 
         <div className='hidden md:flex items-center space-x-8 text-white'>
-          <button onClick={() => navigate('/')} className={navLinkClass}>
+          <button
+            onClick={() => navigate('/AboutPage')}
+            className={navLinkClass}
+          >
             About Us
           </button>
-          <button onClick={() => navigate('/contact')} className={navLinkClass}>
-            Contact
+          <button
+            onClick={() => navigate('/TeamPage')}
+            className={navLinkClass}
+          >
+            Our Team
           </button>
         </div>
 
@@ -79,7 +85,7 @@ const Navbar = () => {
         <div className='flex flex-col space-y-1 px-4 py-4 text-white'>
           <button
             onClick={() => {
-              navigate('/');
+              navigate('/AboutPage');
               setIsOpen(false);
             }}
             className='flex items-center justify-between py-3 px-4 hover:bg-blue-500 rounded-xl transition-all'
@@ -92,13 +98,13 @@ const Navbar = () => {
 
           <button
             onClick={() => {
-              navigate('/contact');
+              navigate('/TeamPage');
               setIsOpen(false);
             }}
             className='flex items-center justify-between py-3 px-4 hover:bg-blue-500 rounded-xl transition-all'
           >
             <span className='text-sm font-bold uppercase tracking-wide'>
-              Contact
+              Our Team
             </span>
             <span>→</span>
           </button>

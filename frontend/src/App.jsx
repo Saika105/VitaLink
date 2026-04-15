@@ -28,6 +28,8 @@ import ResetPassword from './pages/ResetPassword.jsx';
 import ReceptionistBilling from './pages/ReceptionistBilling.jsx';
 import ReporterDashboard from './pages/ReporterDashboard.jsx';
 import ReportManagement from './pages/ReportManagement.jsx';
+import AboutPage from './pages/AboutPage.jsx';
+import TeamPage from './pages/TeamPage.jsx';
 
 const ProtectedRoute = ({ children, allowedRole }) => {
   const token = localStorage.getItem('token');
@@ -72,6 +74,8 @@ const App = () => {
       <div className='App'>
         <Routes>
           <Route path='/' element={<LandingPage />} />
+          <Route path='/about' element={<AboutPage />} />
+          <Route path='/team' element={<TeamPage />} />
           <Route path='/login-admin' element={<AdminLogin />} />
           <Route path='/login-patient' element={<PatientLogin />} />
           <Route path='/signup-patient' element={<PatientSignUp />} />
