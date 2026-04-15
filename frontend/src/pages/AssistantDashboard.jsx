@@ -25,18 +25,18 @@ const AssistantDashboard = () => {
   const [notes, setNotes] = useState([]);
 
   const fetchDailyList = async () => {
-  try {
-    const response = await protectedFetch(
-      `/api/v1/doctor-assistants/daily-list?t=${Date.now()}`, 
-    );
-    if (response.ok) {
-      const result = await response.json();
-      setSessionList(result.data || []);
+    try {
+      const response = await protectedFetch(
+        `/api/v1/doctor-assistants/daily-list?t=${Date.now()}`,
+      );
+      if (response.ok) {
+        const result = await response.json();
+        setSessionList(result.data || []);
+      }
+    } catch (err) {
+      console.error(err);
     }
-  } catch (err) {
-    console.error(err);
-  }
-};
+  };
   useEffect(() => {
     const today = new Date();
     setCurrentDate(
@@ -44,10 +44,11 @@ const AssistantDashboard = () => {
         day: '2-digit',
         month: 'long',
         year: 'numeric',
+        timeZone: 'Asia/Dhaka',
       }),
     );
 
-fetchDailyList();
+    fetchDailyList();
 
     const savedUser = JSON.parse(localStorage.getItem('user'));
     const savedNotes = localStorage.getItem(
@@ -63,22 +64,22 @@ fetchDailyList();
     if (!noteInput.trim()) return;
     const newNotes = [...notes, { id: Date.now(), text: noteInput }];
     setNotes(newNotes);
-   const u = JSON.parse(localStorage.getItem('user'));
-   localStorage.setItem(
-     `vitalink_assistant_notes_${u?._id}`,
-     JSON.stringify(newNotes),
-   );
+    const u = JSON.parse(localStorage.getItem('user'));
+    localStorage.setItem(
+      `vitalink_assistant_notes_${u?._id}`,
+      JSON.stringify(newNotes),
+    );
     setNoteInput('');
   };
 
   const handleDeleteNote = id => {
     const filteredNotes = notes.filter(n => n.id !== id);
     setNotes(filteredNotes);
-   const u = JSON.parse(localStorage.getItem('user'));
-   localStorage.setItem(
-     `vitalink_assistant_notes_${u?._id}`,
-     JSON.stringify(filteredNotes),
-   );
+    const u = JSON.parse(localStorage.getItem('user'));
+    localStorage.setItem(
+      `vitalink_assistant_notes_${u?._id}`,
+      JSON.stringify(filteredNotes),
+    );
   };
 
   const handleSearchPatient = async e => {
@@ -92,7 +93,7 @@ fetchDailyList();
         const result = await response.json();
         setCurrentPatient(result.data);
       } else {
-          const errorData = await response.json();
+        const errorData = await response.json();
         alert(errorData.message || 'Patient not found');
         setCurrentPatient(null);
       }
@@ -136,11 +137,10 @@ fetchDailyList();
           body: JSON.stringify({ status: newStatus }),
         },
       );
-    if (response.ok) {
-      await fetchDailyList();
-      if (newStatus === 'no_show') alert('Patient marked as No Show');
-    }
-      
+      if (response.ok) {
+        await fetchDailyList();
+        if (newStatus === 'no_show') alert('Patient marked as No Show');
+      }
     } catch (err) {
       console.error(err);
     }
@@ -157,12 +157,11 @@ fetchDailyList();
           body: JSON.stringify({ followUpDate: date }),
         },
       );
-      
+
       if (response.ok) {
         await fetchDailyList();
         alert('✅ Follow-up scheduled!');
-      }
-      else {
+      } else {
         const errorData = await response.json();
         alert(errorData.message || 'Failed to schedule follow-up');
       }
@@ -196,7 +195,7 @@ fetchDailyList();
         },
       );
       if (response.ok) {
-        setSessionList([]);
+        await fetchDailyList();
         setShowClearModal(false);
         alert(
           'Daily queue cleared. All remaining appointments marked as Cancelled.',
@@ -395,6 +394,13 @@ fetchDailyList();
                             <input
                               type='date'
                               id={`followup-${item._id}`}
+                              min={
+                                new Date(
+                                  new Date().getTime() + 24 * 60 * 60 * 1000,
+                                )
+                                  .toISOString()
+                                  .split('T')[0]
+                              }
                               defaultValue={
                                 item.followUpDate
                                   ? item.followUpDate.split('T')[0]
