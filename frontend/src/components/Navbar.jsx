@@ -30,13 +30,13 @@ const Navbar = () => {
 
         <div className='hidden md:flex items-center space-x-8 text-white'>
           <button
-            onClick={() => navigate('/AboutPage')}
+            onClick={() => navigate('/about')}
             className={navLinkClass}
           >
             About Us
           </button>
           <button
-            onClick={() => navigate('/TeamPage')}
+            onClick={() => navigate('/team')}
             className={navLinkClass}
           >
             Our Team
@@ -85,7 +85,7 @@ const Navbar = () => {
         <div className='flex flex-col space-y-1 px-4 py-4 text-white'>
           <button
             onClick={() => {
-              navigate('/AboutPage');
+              navigate('/about');
               setIsOpen(false);
             }}
             className='flex items-center justify-between py-3 px-4 hover:bg-blue-500 rounded-xl transition-all'
@@ -98,7 +98,7 @@ const Navbar = () => {
 
           <button
             onClick={() => {
-              navigate('/TeamPage');
+              navigate('/team');
               setIsOpen(false);
             }}
             className='flex items-center justify-between py-3 px-4 hover:bg-blue-500 rounded-xl transition-all'
