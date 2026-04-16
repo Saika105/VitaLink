@@ -29,20 +29,19 @@ const DoctorDashboard = () => {
         day: '2-digit',
         month: 'long',
         year: 'numeric',
+        timeZone: 'Asia/Dhaka',
       }),
     );
 
     const fetchDailyQueue = async () => {
       try {
-        const response = await protectedFetch(`/api/v1/doctors/today-queue`);
+          const response = await protectedFetch(`/api/v1/doctors/today-queue?t=${Date.now()}`,);
         if (response.ok) {
           const result = await response.json();
           const activeQueue = result.data.filter(
             item =>
               item.bookingStatus === 'scheduled' &&
-              item.queueStatus !== 'done' &&
-              item.queueStatus !== 'completed' &&
-              item.queueStatus !== 'cancelled',
+              !['done', 'completed', 'cancelled'].includes(item.queueStatus),
           );
           setQueue(activeQueue);
         }
