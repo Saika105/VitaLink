@@ -10,6 +10,7 @@ import {
   getAllDoctors,
   getPatientAppointments,
   cancelAppointment,
+  getAssistantContactForReschedule,
   bulkDeleteAppointments,
 } from "../controllers/patient.controller.js";
 import{ 
@@ -47,6 +48,7 @@ router.route("/change-password").post(verifyJWT, isPatient, changeCurrentPasswor
 router.route("/doctors").get(verifyJWT, isPatient, getAllDoctors);
 router.route("/my-appointments").get(verifyJWT, isPatient, getPatientAppointments);
 router.route("/cancel-appointment/:appointmentId").patch(verifyJWT, isPatient, cancelAppointment);
+router.route("/reschedule-info/:appointmentId").get(verifyJWT, isPatient, getAssistantContactForReschedule);
 router.route("/delete-appointments").delete(verifyJWT, isPatient, bulkDeleteAppointments);
 
 //from prescription.controller.js

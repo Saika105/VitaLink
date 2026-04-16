@@ -2,6 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { Patient } from "../models/patient.model.js";
 import { Doctor } from "../models/doctor.model.js";
+import { DoctorAssistant } from "../models/doctorAssistant.model.js";
 import { DoctorSchedule } from "../models/doctorSchedule.model.js";
 import { Appointment } from "../models/appointment.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
@@ -511,6 +512,38 @@ const cancelAppointment = asyncHandler(async (req, res) => {
     );
 });
 
+// **********Get Assistant Contact for Rescheduling *************
+const getAssistantContactForReschedule = asyncHandler(async (req, res) => {
+  const { appointmentId } = req.params;
+
+  const appointment = await Appointment.findById(appointmentId).populate("doctor", "fullName");
+
+  if (!appointment) {
+    throw new ApiError(404, "Appointment record not found.");
+  }
+
+  const assistant = await DoctorAssistant.findOne({ 
+    doctor: appointment.doctor._id 
+  }).select("fullName phoneNumber email");
+
+  if (!assistant) {
+    throw new ApiError(404, `No designated assistant found for ${appointment.doctor.fullName}.`);
+  }
+
+  return res.status(200).json(
+    new ApiResponse(
+      200, 
+      {
+        doctorName: appointment.doctor.fullName,
+        assistantName: assistant.fullName,
+        contactNumber: assistant.phoneNumber || "N/A", 
+        email: assistant.email
+      }, 
+      "Assistant contact details retrieved successfully."
+    )
+  );
+});
+
 //*********************Delete Appointments************* */
 const bulkDeleteAppointments = asyncHandler(async (req, res) => {
   const { status } = req.query;
@@ -558,5 +591,6 @@ export {
   getAllDoctors,
   getPatientAppointments,
   cancelAppointment,
+  getAssistantContactForReschedule,
   bulkDeleteAppointments,
 };

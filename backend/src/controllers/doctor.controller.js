@@ -256,57 +256,102 @@ const getPatientProfileForDoctor = asyncHandler(async (req, res) => {
 
 //**************** Upload Prescription ************/
 const createDigitalPrescription = asyncHandler(async (req, res) => {
-  const { appointmentId } = req.params;
-  const { diagnosis, medications, advice, requiredTests } = req.body;
+    const { appointmentId } = req.params;
+    const { diagnosis, advice, requiredTests, medications } = req.body;
 
-  const appointment = await Appointment.findById(appointmentId)
-    .populate("patient")
-    .populate("doctor")
-    .populate("hospital");
+    if (!req.file) throw new ApiError(400, "Prescription PDF file is required");
 
-  if (!appointment) throw new ApiError(404, "Appointment not found");
+    const appointment = await Appointment.findById(appointmentId).populate("doctor patient hospital");
+    if (!appointment) {
+        if (req.file) fs.unlinkSync(req.file.path); 
+        throw new ApiError(404, "Appointment session not found");
+    }
 
-  if (appointment.doctor._id.toString() !== req.user._id.toString()) {
-    throw new ApiError(
-      403,
-      "You can only sign prescriptions for your own appointments",
+    const uploadResult = await uploadOnCloudinary(req.file.path);
+    if (!uploadResult) {
+        throw new ApiError(500, "Failed to upload prescription to cloud storage");
+    }
+
+    const prescription = await Prescription.create({
+        prescriptionId: generatePrescriptionId(),
+        patient: appointment.patient._id,
+        doctor: appointment.doctor._id,
+        hospital: appointment.hospital._id,
+        appointment: appointment._id,
+        diagnosis: diagnosis || "General Consultation",
+        advice: advice || "Follow prescribed plan",
+        
+        medications: medications ? JSON.parse(medications) : [],
+        requiredTests: requiredTests ? JSON.parse(requiredTests) : [],
+        
+        source: "doctor", 
+        prescriptionFile: {
+            url: uploadResult.secure_url,
+            public_id: uploadResult.public_id,
+        },
+    });
+
+
+    appointment.hasDigitalPrescription = true;
+    await appointment.save();
+
+    return res.status(201).json(
+        new ApiResponse(201, prescription, "Digital Prescription stored and synced to HealthVault")
     );
-  }
-
-  const prescription = await Prescription.create({
-    prescriptionId: generatePrescriptionId(),
-    patient: appointment.patient._id,
-    doctor: appointment.doctor._id,
-    hospital: appointment.hospital._id,
-    appointment: appointment._id,
-
-    manualDoctorName: appointment.doctor.fullName,
-    manualHospitalName: appointment.hospital.fullName,
-
-    diagnosis: diagnosis || "Consultation",
-    medications: medications,
-    advice: advice,
-    requiredTests: requiredTests,
-
-    source: "doctor",
-    prescribedDate: new Date(),
-  });
-
-  appointment.hasDigitalPrescription = true;
-  await appointment.save();
-
-  return res.status(201).json(
-    new ApiResponse(
-      201,
-      {
-        prescription,
-        patientId: appointment.patient._id,
-        appointmentId: appointment._id,
-      },
-      "Prescription saved successfully",
-    ),
-  );
 });
+
+// const createDigitalPrescription = asyncHandler(async (req, res) => {
+//   const { appointmentId } = req.params;
+//   const { diagnosis, medications, advice, requiredTests } = req.body;
+
+//   const appointment = await Appointment.findById(appointmentId)
+//     .populate("patient")
+//     .populate("doctor")
+//     .populate("hospital");
+
+//   if (!appointment) throw new ApiError(404, "Appointment not found");
+
+//   if (appointment.doctor._id.toString() !== req.user._id.toString()) {
+//     throw new ApiError(
+//       403,
+//       "You can only sign prescriptions for your own appointments",
+//     );
+//   }
+
+//   const prescription = await Prescription.create({
+//     prescriptionId: generatePrescriptionId(),
+//     patient: appointment.patient._id,
+//     doctor: appointment.doctor._id,
+//     hospital: appointment.hospital._id,
+//     appointment: appointment._id,
+
+//     manualDoctorName: appointment.doctor.fullName,
+//     manualHospitalName: appointment.hospital.fullName,
+
+//     diagnosis: diagnosis || "Consultation",
+//     medications: medications,
+//     advice: advice,
+//     requiredTests: requiredTests,
+
+//     source: "doctor",
+//     prescribedDate: new Date(),
+//   });
+
+//   appointment.hasDigitalPrescription = true;
+//   await appointment.save();
+
+//   return res.status(201).json(
+//     new ApiResponse(
+//       201,
+//       {
+//         prescription,
+//         patientId: appointment.patient._id,
+//         appointmentId: appointment._id,
+//       },
+//       "Prescription saved successfully",
+//     ),
+//   );
+// });
 
 export {
   loginDoctor,
