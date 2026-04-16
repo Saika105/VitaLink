@@ -12,7 +12,13 @@ import {
 
 const patientSchema = new mongoose.Schema(
   {
-    upid: externalIdField("PT"),
+    upid: {
+      type: String,
+      required: true,
+      unique: true,
+      uppercase: true,
+      trim: true,
+    },
 
     fullName: {
       type: String,
@@ -113,7 +119,7 @@ const patientSchema = new mongoose.Schema(
 
     isActive: {
       type: Boolean,
-      default:false,
+      default: false,
     },
   },
   baseSchemaOptions,
