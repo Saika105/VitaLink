@@ -429,9 +429,8 @@ const getAllDoctors = asyncHandler(async (req, res) => {
         isActive: true,
       }).select("consultationFee sittingTimeLabel workingDays timeSlots");
 
-      const assistant = await DoctorAssistant.findOne({ 
-        doctor: doc._id 
-      }).select("phone"); 
+      const assistant = await DoctorAssistant.findOne(
+        { doctor: doc._id }).select("phone"); 
 
       return {
         ...doc._doc,
