@@ -134,11 +134,11 @@ const DigitalPrescription = () => {
         prescriptionData.illness || 'General Consultation',
       );
 
-      const medicationsObjArray = medicineList.map(med => ({
-        name: med,
-        dosage: 'As directed',
-        duration: 'As directed',
-      }));
+     const medicationsObjArray = medicineList.map(med => ({
+       name: med,
+       dosage: 'As directed',
+       duration: 'As directed',
+     }));
       formData.append('medications', JSON.stringify(medicationsObjArray));
       formData.append('advice', prescriptionData.advice || 'N/A');
 
