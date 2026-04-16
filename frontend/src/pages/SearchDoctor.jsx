@@ -12,7 +12,7 @@ const SearchDoctor = () => {
   const [specialties, setSpecialties] = useState(['All']);
   const [searchQuery, setSearchQuery] = useState('');
   const [showPopup, setShowPopup] = useState(false);
-  const [activeDoctor, setActiveDoctor] = useState(null);
+  const [activeAssistant, setActiveAssistant] = useState(null);
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -51,9 +51,26 @@ const SearchDoctor = () => {
     doc.fullName?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const handleBookNow = doctor => {
-    setActiveDoctor(doctor);
-    setShowPopup(true);
+  const handleBookNow = async doctor => {
+    try {
+      const response = await protectedFetch(
+        `/api/v1/patients/assistant-info/${doctor._id}`,
+      );
+      const result = await response.json();
+      if (response.ok) {
+        setActiveAssistant({
+          doctorName: doctor.fullName,
+          name: result.data.assistantName,
+          phone: result.data.contactNumber,
+        });
+        setShowPopup(true);
+      } else {
+        alert(result.message || 'Could not retrieve assistant contact info.');
+      }
+    } catch (err) {
+      console.error('Fetch Assistant Error:', err);
+      alert('Error connecting to server.');
+    }
   };
 
   const handleLogout = async () => {
@@ -249,7 +266,7 @@ const SearchDoctor = () => {
         </section>
       </main>
 
-      {showPopup && activeDoctor && (
+      {showPopup && activeAssistant && (
         <div className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-100 flex items-center justify-center p-4'>
           <div className='bg-white rounded-[40px] p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center'>
             <div className='w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6'>
@@ -271,12 +288,13 @@ const SearchDoctor = () => {
               Book Slot
             </h3>
             <p className='text-slate-500 text-sm mt-2'>
-              Contact the assistant of <b>{activeDoctor.fullName}</b>.
+              Contact <b>{activeAssistant.name}</b>, assistant of{' '}
+              <b>{activeAssistant.doctorName}</b>.
             </p>
 
             <div className='my-8 space-y-3'>
               <a
-                href={`tel:${activeDoctor.phone}`}
+                href={`tel:${activeAssistant.phone}`}
                 className='flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-200 hover:border-blue-400 transition-all group'
               >
                 <div className='text-left'>
@@ -284,7 +302,7 @@ const SearchDoctor = () => {
                     Call Assistant
                   </p>
                   <p className='text-sm font-bold text-slate-900'>
-                    {activeDoctor.phone}
+                    {activeAssistant.phone}
                   </p>
                 </div>
                 <div className='w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center'>
@@ -293,7 +311,7 @@ const SearchDoctor = () => {
               </a>
 
               <a
-                href={`https://wa.me/${activeDoctor.phone?.replace(/\D/g, '')}`}
+                href={`https://wa.me/${activeAssistant.phone?.replace(/\D/g, '')}`}
                 target='_blank'
                 rel='noreferrer'
                 className='flex items-center justify-between p-5 bg-green-50 rounded-2xl border border-green-100 hover:border-green-400 transition-all group'
@@ -303,7 +321,7 @@ const SearchDoctor = () => {
                     WhatsApp Chat
                   </p>
                   <p className='text-sm font-bold text-slate-900'>
-                    {activeDoctor.phone}
+                    {activeAssistant.phone}
                   </p>
                 </div>
                 <div className='w-8 h-8 bg-green-500 text-white rounded-lg flex items-center justify-center'>

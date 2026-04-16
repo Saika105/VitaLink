@@ -57,12 +57,27 @@ const PatientAppointments = () => {
     fetchAppointments();
   }, [activeTab]);
 
-  const handleRescheduleClick = apt => {
-    setActiveAssistant({
-      name: apt.doctor,
-      phone: apt.phone,
-    });
-    setShowPopup(true);
+  const handleRescheduleClick = async apt => {
+    try {
+      const response = await protectedFetch(
+        `/api/v1/patients/reschedule-info/${apt.id}`,
+      );
+      const result = await response.json();
+      if (response.ok) {
+        setActiveAssistant({
+          doctorName: result.data.doctorName,
+          name: result.data.assistantName,
+          phone: result.data.contactNumber,
+          email: result.data.email,
+        });
+        setShowPopup(true);
+      } else {
+        alert(result.message || 'Could not retrieve assistant contact info.');
+      }
+    } catch (err) {
+      console.error('Fetch Assistant Error:', err);
+      alert('Error connecting to server.');
+    }
   };
 
   const handleCancel = async id => {
@@ -297,7 +312,8 @@ const PatientAppointments = () => {
               Book Slot
             </h3>
             <p className='text-slate-500 text-sm mt-2'>
-              Contact the assistant of <b>{activeAssistant.name}</b>.
+              Contact <b>{activeAssistant.name}</b>, assistant of{' '}
+              <b>{activeAssistant.doctorName}</b>.
             </p>
 
             <div className='my-8 space-y-3'>
