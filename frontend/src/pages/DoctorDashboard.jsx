@@ -43,7 +43,7 @@ const DoctorDashboard = () => {
               item.bookingStatus === 'scheduled' &&
               !['done', 'completed', 'cancelled'].includes(item.queueStatus),
           );
-          setQueue(activeQueue);
+          setQueue(result.data);
         }
       } catch (err) {
         setQueue([]);
