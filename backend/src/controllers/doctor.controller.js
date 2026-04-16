@@ -256,48 +256,68 @@ const getPatientProfileForDoctor = asyncHandler(async (req, res) => {
 
 //**************** Upload Prescription ************/
 const createDigitalPrescription = asyncHandler(async (req, res) => {
-    const { appointmentId } = req.params;
-    const { diagnosis, advice, requiredTests, medications } = req.body;
+  const { appointmentId } = req.params;
+  const { diagnosis, medications, advice, requiredTests } = req.body;
 
-    if (!req.file) throw new ApiError(400, "Prescription PDF file is required");
+  const appointment = await Appointment.findById(appointmentId)
+    .populate("patient doctor hospital");
 
-    const appointment = await Appointment.findById(appointmentId).populate("doctor patient hospital");
-    if (!appointment) {
-        if (req.file) fs.unlinkSync(req.file.path); 
-        throw new ApiError(404, "Appointment session not found");
-    }
+  if (!appointment) {
+    if (req.file) fs.unlinkSync(req.file.path); 
+    throw new ApiError(404, "Appointment not found");
+  }
 
-    const uploadResult = await uploadOnCloudinary(req.file.path);
-    if (!uploadResult) {
-        throw new ApiError(500, "Failed to upload prescription to cloud storage");
-    }
+  let formattedMedications = [];
+  try {
+    const parsedMeds = medications ? JSON.parse(medications) : [];
+    
+    formattedMedications = parsedMeds.map(med => ({
+      name: typeof med === 'string' ? med : med.name,
+      dosage: med.dosage || "As directed",
+      frequency: med.frequency || "N/A",
+      duration: med.duration || "As directed",
+      instructions: med.instructions || ""
+    }));
+  } catch (e) {
+    throw new ApiError(400, "Invalid medications format. Expected JSON array.");
+  }
 
-    const prescription = await Prescription.create({
-        prescriptionId: generatePrescriptionId(),
-        patient: appointment.patient._id,
-        doctor: appointment.doctor._id,
-        hospital: appointment.hospital._id,
-        appointment: appointment._id,
-        diagnosis: diagnosis || "General Consultation",
-        advice: advice || "Follow prescribed plan",
-        
-        medications: medications ? JSON.parse(medications) : [],
-        requiredTests: requiredTests ? JSON.parse(requiredTests) : [],
-        
-        source: "doctor", 
-        prescriptionFile: {
-            url: uploadResult.secure_url,
-            public_id: uploadResult.public_id,
-        },
-    });
+  const formattedTests = requiredTests ? JSON.parse(requiredTests) : [];
 
+  if (!req.file) throw new ApiError(400, "Prescription file is missing");
+  
+  const uploadResult = await uploadOnCloudinary(req.file.path);
+  if (!uploadResult) throw new ApiError(500, "Cloudinary upload failed");
 
-    appointment.hasDigitalPrescription = true;
-    await appointment.save();
+  const prescription = await Prescription.create({
+    patient: appointment.patient._id,
+    doctor: appointment.doctor._id,
+    hospital: appointment.hospital?._id,
+    appointment: appointment._id,
 
-    return res.status(201).json(
-        new ApiResponse(201, prescription, "Digital Prescription stored and synced to HealthVault")
-    );
+    manualDoctorName: appointment.doctor.fullName,
+    manualHospitalName: appointment.hospital?.fullName || "General",
+
+    diagnosis: diagnosis || "Consultation",
+    medications: formattedMedications, 
+    advice: advice,
+    requiredTests: formattedTests,
+
+    source: "doctor",
+    prescribedDate: new Date(),
+    
+    prescriptionFile: {
+      url: uploadResult.secure_url,
+      public_id: uploadResult.public_id,
+    },
+  });
+
+  appointment.hasDigitalPrescription = true;
+  await appointment.save();
+
+  return res.status(201).json(
+    new ApiResponse(201, prescription, "Prescription saved and file uploaded!")
+  );
 });
 
 // const createDigitalPrescription = asyncHandler(async (req, res) => {
