@@ -268,9 +268,9 @@ const createDigitalPrescription = asyncHandler(async (req, res) => {
   }
 
   let formattedMedications = [];
+  let formattedTests = [];
   try {
     const parsedMeds = medications ? JSON.parse(medications) : [];
-    
     formattedMedications = parsedMeds.map(med => ({
       name: typeof med === 'string' ? med : med.name,
       dosage: med.dosage || "As directed",
@@ -278,46 +278,58 @@ const createDigitalPrescription = asyncHandler(async (req, res) => {
       duration: med.duration || "As directed",
       instructions: med.instructions || ""
     }));
+    formattedTests = requiredTests ? JSON.parse(requiredTests) : [];
   } catch (e) {
-    throw new ApiError(400, "Invalid medications format. Expected JSON array.");
+    if (req.file) fs.unlinkSync(req.file.path);
+    throw new ApiError(400, "Invalid JSON format for medications or tests.");
   }
-
-  const formattedTests = requiredTests ? JSON.parse(requiredTests) : [];
 
   if (!req.file) throw new ApiError(400, "Prescription file is missing");
   
   const uploadResult = await uploadOnCloudinary(req.file.path);
   if (!uploadResult) throw new ApiError(500, "Cloudinary upload failed");
 
-  const prescription = await Prescription.create({
-    patient: appointment.patient._id,
-    doctor: appointment.doctor._id,
-    hospital: appointment.hospital?._id,
-    appointment: appointment._id,
+  try {
+    const prescription = await Prescription.create({
+      prescriptionId: generatePrescriptionId(), 
+      patient: appointment.patient._id,
+      doctor: appointment.doctor._id,
+      hospital: appointment.hospital?._id,
+      appointment: appointment._id,
 
-    manualDoctorName: appointment.doctor.fullName,
-    manualHospitalName: appointment.hospital?.fullName || "General",
+      manualDoctorName: appointment.doctor.fullName,
+      manualHospitalName: appointment.hospital?.fullName || "General",
 
-    diagnosis: diagnosis || "Consultation",
-    medications: formattedMedications, 
-    advice: advice,
-    requiredTests: formattedTests,
+      diagnosis: diagnosis || "Consultation",
+      medications: formattedMedications, 
+      advice: advice,
+      requiredTests: formattedTests,
 
-    source: "doctor",
-    prescribedDate: new Date(),
-    
-    prescriptionFile: {
-      url: uploadResult.secure_url,
-      public_id: uploadResult.public_id,
-    },
-  });
+      source: "doctor",
+      prescribedDate: new Date(),
+      
+      prescriptionFile: {
+        url: uploadResult.secure_url,
+        public_id: uploadResult.public_id,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        size: uploadResult.bytes,
+      },
+    });
 
-  appointment.hasDigitalPrescription = true;
-  await appointment.save();
+    appointment.hasDigitalPrescription = true;
+    await appointment.save();
 
-  return res.status(201).json(
-    new ApiResponse(201, prescription, "Prescription saved and file uploaded!")
-  );
+    return res.status(201).json(
+      new ApiResponse(201, prescription, "Prescription saved and file uploaded!")
+    );
+
+  } catch (error) {
+    if (uploadResult?.public_id) {
+      await deleteFromCloudinary(uploadResult.public_id);
+    }
+    throw new ApiError(500, error?.message || "Database saving failed. File rolled back.");
+  }
 });
 
 // const createDigitalPrescription = asyncHandler(async (req, res) => {
