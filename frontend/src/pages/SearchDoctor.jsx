@@ -51,26 +51,13 @@ const SearchDoctor = () => {
     doc.fullName?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const handleBookNow = async doctor => {
-    try {
-      const response = await protectedFetch(
-        `/api/v1/patients/assistant-info/${doctor._id}`,
-      );
-      const result = await response.json();
-      if (response.ok) {
-        setActiveAssistant({
-          doctorName: doctor.fullName,
-          name: result.data.assistantName,
-          phone: result.data.contactNumber,
-        });
-        setShowPopup(true);
-      } else {
-        alert(result.message || 'Could not retrieve assistant contact info.');
-      }
-    } catch (err) {
-      console.error('Fetch Assistant Error:', err);
-      alert('Error connecting to server.');
-    }
+  const handleBookNow = doctor => {
+    setActiveAssistant({
+      doctorName: doctor.fullName,
+      name: doctor.assistantName || 'Booking Assistant',
+      assistantPhone: doctor.assistantPhone || 'N/A',
+    });
+    setShowPopup(true);
   };
 
   const handleLogout = async () => {
@@ -294,7 +281,7 @@ const SearchDoctor = () => {
 
             <div className='my-8 space-y-3'>
               <a
-                href={`tel:${activeAssistant.phone}`}
+                href={`tel:${activeAssistant.assistantPhone}`}
                 className='flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-200 hover:border-blue-400 transition-all group'
               >
                 <div className='text-left'>
@@ -302,7 +289,7 @@ const SearchDoctor = () => {
                     Call Assistant
                   </p>
                   <p className='text-sm font-bold text-slate-900'>
-                    {activeAssistant.phone}
+                    {activeAssistant.assistantPhone || 'N/A'}{' '}
                   </p>
                 </div>
                 <div className='w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center'>
@@ -311,7 +298,7 @@ const SearchDoctor = () => {
               </a>
 
               <a
-                href={`https://wa.me/${activeAssistant.phone?.replace(/\D/g, '')}`}
+                href={`https://wa.me/${activeAssistant.assistantPhone?.replace(/\D/g, '')}`}
                 target='_blank'
                 rel='noreferrer'
                 className='flex items-center justify-between p-5 bg-green-50 rounded-2xl border border-green-100 hover:border-green-400 transition-all group'
@@ -321,7 +308,7 @@ const SearchDoctor = () => {
                     WhatsApp Chat
                   </p>
                   <p className='text-sm font-bold text-slate-900'>
-                    {activeAssistant.phone}
+                    {activeAssistant.assistantPhone || 'N/A'}
                   </p>
                 </div>
                 <div className='w-8 h-8 bg-green-500 text-white rounded-lg flex items-center justify-center'>
