@@ -419,7 +419,7 @@ const getAllDoctors = asyncHandler(async (req, res) => {
   }
 
   const doctors = await Doctor.find(filter)
-    .select("-password -refreshToken -email")
+    .select("-password -refreshToken -email -phone") 
     .populate("hospital", "name address");
 
   const doctorsWithSchedules = await Promise.all(
@@ -429,9 +429,14 @@ const getAllDoctors = asyncHandler(async (req, res) => {
         isActive: true,
       }).select("consultationFee sittingTimeLabel workingDays timeSlots");
 
+      const assistant = await DoctorAssistant.findOne({ 
+        doctor: doc._id 
+      }).select("phone"); 
+
       return {
         ...doc._doc,
         schedule: schedule || null,
+        assistantPhone: assistant ? assistant.phone : "N/A", 
       };
     }),
   );
@@ -442,7 +447,7 @@ const getAllDoctors = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         doctorsWithSchedules,
-        "Doctors and schedules fetched successfully",
+        "Doctors, schedules, and assistant contacts fetched successfully",
       ),
     );
 });
