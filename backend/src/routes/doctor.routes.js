@@ -8,6 +8,7 @@ import {
   getPatientProfileForDoctor,
   createDigitalPrescription,
 } from "../controllers/doctor.controller.js";
+import { searchPatientByUPID } from "../controllers/doctorAssistant.controller.js";
 import { getPatientPrescriptions } from "../controllers/prescription.controller.js";
 import { getPatientLabReports } from "../controllers/labReport.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -24,9 +25,13 @@ router.route("/today-queue").get(verifyJWT, isDoctor, getTodayAppointments);
 router.route("/verify-patient/:appointmentId").get(verifyJWT, isDoctor, verifyPatientStart);
 router.route("/start-session/:appointmentId").patch(verifyJWT, isDoctor, startConsultationSession);
 router.route("/patient-profile/:patientId").get(verifyJWT, isDoctor, getPatientProfileForDoctor);
+
+//from doctorAssistant.controller.js
+router.route("/search-patient/:upid").get(verifyJWT, isDoctor, searchPatientByUPID);
+
 router
   .route("/sign-prescription/:appointmentId")
-  .post(verifyJWT, isDoctor, createDigitalPrescription);
+  .post(verifyJWT, isDoctor, upload.single("prescriptionFile"), createDigitalPrescription);
 
 //from prescription.controller.js
 router.route("/prescriptions/get/:patientId").get(verifyJWT, isDoctor, getPatientPrescriptions); 
