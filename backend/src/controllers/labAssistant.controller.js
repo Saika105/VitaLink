@@ -1,6 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { LabAssistant } from "../models/labAssistant.model.js";
+import { LabReport } from "../models/labReport.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { deleteFromCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -85,4 +86,131 @@ const logoutLabAssistant = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Lab Assistant logged out successfully"));
 });
 
-export { loginLabAssistant, logoutLabAssistant };
+//*************Get prioritized patient list for Diagnostic Dashboard  ********** */
+const getLabDashboard = asyncHandler(async (req, res) => {
+    // Aggregation to count PAID vs DUE tests and prioritize sorting
+    const dashboardData = await LabReport.aggregate([
+        { $match: { hospital: new mongoose.Types.ObjectId(req.user.hospital) } },
+        {
+            $group: {
+                _id: "$patient",
+                totalTests: { $sum: 1 },
+                paidTests: { $sum: { $cond: ["$isPaid", 1, 0] } },
+                dueTests: { $sum: { $cond: ["$isPaid", 0, 1] } }
+            }
+        },
+        {
+            $lookup: {
+                from: "patients",
+                localField: "_id",
+                foreignField: "_id",
+                as: "patientInfo"
+            }
+        },
+        { $unwind: "$patientInfo" },
+        {
+            $project: {
+                upid: "$patientInfo.upid",
+                fullName: "$patientInfo.fullName",
+                totalTests: 1,
+                paidTests: 1,
+                dueTests: 1,
+                // Logic: Prioritize patients who have at least 1 paid test
+                priority: { $cond: [{ $gt: ["$paidTests", 0] }, 1, 0] }
+            }
+        },
+        { $sort: { priority: -1, fullName: 1 } }
+    ]);
+
+    return res.status(200).json(
+        new ApiResponse(200, dashboardData, "Diagnostic dashboard fetched successfully")
+    );
+});
+
+//*************Securely upload report and update database ********** */
+const uploadDiagnosticReport = asyncHandler(async (req, res) => {
+    const { reportId } = req.params;
+
+    // 1. Find the report record first
+    const report = await LabReport.findById(reportId);
+    if (!report) throw new ApiError(404, "Test record not found");
+
+    // 2. STRICT LOGIC: Deny access if payment is not confirmed
+    // This uses the 'isPaid' boolean created by the receptionist
+    if (!report.isPaid) {
+        throw new ApiError(403, "Access Denied: Payment is DUE for this test. Cannot upload report.");
+    }
+    
+    // 3. Prevent overwriting an existing report
+    if (report.status === "completed" || report.reportFile?.url) {
+        throw new ApiError(400, "Conflict: A report has already been uploaded for this test.");
+    }
+
+    // 4. Validate that a file was actually provided in the request
+    if (!req.file) {
+        throw new ApiError(400, "Diagnostic report file (PDF/JPG/PNG) is required");
+    }
+
+    // 5. Generate a unique file name for Cloudinary (PatientUPID_TestName_Timestamp)
+    const uniqueFileName = `${report.reportId}_${Date.now()}`;
+
+    // 6. Upload to Cloudinary
+    const uploadResult = await uploadOnCloudinary(req.file.path, uniqueFileName);
+    
+    if (!uploadResult) {
+        throw new ApiError(500, "Cloudinary upload failed");
+    }
+
+    try {
+        // 7. Update the database with the new file details
+        report.reportFile = {
+            url: uploadResult.secure_url,
+            public_id: uploadResult.public_id,
+            originalName: req.file.originalname,
+            mimeType: req.file.mimetype,
+            size: uploadResult.bytes,
+        };
+        report.status = "completed"; // Officially close the test lifecycle
+        report.labAssistant = req.user._id; // Track who uploaded it
+        report.reportDate = new Date(); 
+
+        await report.save();
+
+        return res.status(200).json(
+            new ApiResponse(200, report, "Success: Report uploaded and test marked as completed")
+        );
+    } catch (error) {
+        // 8. FAIL-SAFE: If DB update fails, delete the orphan file from Cloudinary
+        if (uploadResult?.public_id) {
+            const isPdf = req.file.mimetype === "application/pdf";
+            await deleteFromCloudinary(uploadResult.public_id, isPdf ? "raw" : "image");
+        }
+        throw new ApiError(500, error?.message || "Internal Server Error: Failed to save record details.");
+    }
+});
+
+//************* Get all tests for a specific patient ********** */
+const getPatientTests = asyncHandler(async (req, res) => {
+    const { patientId } = req.params;
+
+    const reports = await LabReport.find({ 
+        patient: patientId,
+        hospital: req.user.hospital 
+    }).populate("patient", "fullName upid");
+
+    if (!reports || reports.length === 0) {
+        throw new ApiError(404, "No tests found for this patient");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, reports, "Patient tests retrieved successfully")
+    );
+});
+
+export {
+   loginLabAssistant,
+   logoutLabAssistant, 
+   getLabDashboard, 
+   uploadDiagnosticReport,
+   getPatientTests 
+  };

@@ -108,6 +108,6 @@ export const isReceptionist = (req, res, next) => {
     if (req.user && req.role === "receptionist") {
         next();
     } else {
-        throw new ApiError(401, "Access denied. Receptionist rights required.");
+        throw new ApiError(403, "Access denied. Receptionist credentials required.");
     }
 };

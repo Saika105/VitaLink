@@ -2,17 +2,26 @@ import { Router } from "express";
 import { 
     loginLabAssistant, 
     logoutLabAssistant,
-
+    getLabDashboard,
+    uploadDiagnosticReport
 } from "../controllers/labAssistant.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { verifyJWT , isLabAssistant} from "../middlewares/auth.middleware.js";
+import { verifyJWT, isLabAssistant } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
 router.route("/login").post(loginLabAssistant);
 
 // Secured Routes
-router.route("/logout").post(verifyJWT, isLabAssistant, logoutLabAssistant);
+router.use(verifyJWT, isLabAssistant); 
 
+router.route("/logout").post(logoutLabAssistant);
+router.route("/dashboard").get(getLabDashboard);
+
+// Upload Route for Lab Assistant to upload diagnostic report files (PDF/JPG/PNG)
+router.route("/upload-report/:reportId").patch(
+    upload.single("reportFile"), 
+    uploadDiagnosticReport
+);
 
 export default router;
