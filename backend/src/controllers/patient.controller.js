@@ -524,7 +524,7 @@ const getAssistantContactForReschedule = asyncHandler(async (req, res) => {
 
   const assistant = await DoctorAssistant.findOne({ 
     doctor: appointment.doctor._id 
-  }).select("fullName phoneNumber email");
+  }).select("fullName phone email"); 
 
   if (!assistant) {
     throw new ApiError(404, `No designated assistant found for ${appointment.doctor.fullName}.`);
@@ -536,7 +536,7 @@ const getAssistantContactForReschedule = asyncHandler(async (req, res) => {
       {
         doctorName: appointment.doctor.fullName,
         assistantName: assistant.fullName,
-        contactNumber: assistant.phoneNumber || "N/A", 
+        contactNumber: assistant.phone || "N/A", 
         email: assistant.email
       }, 
       "Assistant contact details retrieved successfully."
