@@ -14,12 +14,9 @@ import mongoose from "mongoose";
 
 // Utility function to generate a unique patient ID
 const generateUniquePatientId = () => {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let result = "";
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return `PT-${result}`;
+  const digits = Math.floor(1000 + Math.random() * 9000);
+  const year = new Date().getFullYear();
+  return `PT-${year}-${digits}`;
 };
 
 //*********************register patient*****************
