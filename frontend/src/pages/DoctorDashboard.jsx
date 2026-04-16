@@ -62,7 +62,8 @@ const DoctorDashboard = () => {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  },
+    []);
 
   const handleSearchPatient = async e => {
     e.preventDefault();
