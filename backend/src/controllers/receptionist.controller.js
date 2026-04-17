@@ -93,114 +93,134 @@ const logoutReceptionist = asyncHandler(async (req, res) => {
 
 //*************search patient by UPID ********** */
 const findPatientByUpid = asyncHandler(async (req, res) => {
-    const { upid } = req.query;
+  const { upid } = req.query;
 
-    if (!upid) {
-        throw new ApiError(400, "Patient UPID is required for search");
-    }
+  if (!upid) {
+    throw new ApiError(400, "Patient UPID is required for search");
+  }
 
-    const patient = await Patient.findOne({ upid: upid.toUpperCase().trim() }).select(
-        "fullName upid gender age phone profilePhoto"
-    );
+  const patient = await Patient.findOne({
+    upid: upid.toUpperCase().trim(),
+  }).select("fullName upid gender age phone profilePhoto");
 
-    if (!patient) {
-        throw new ApiError(404, "No patient found with this VitaLink ID");
-    }
+  if (!patient) {
+    throw new ApiError(404, "No patient found with this VitaLink ID");
+  }
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200, patient, "Patient record located"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, patient, "Patient record located"));
 });
 
 //*************Search Diagnostic Tests (Fetches room details automatically) ********** */
 const searchTestsForBilling = asyncHandler(async (req, res) => {
-    const { name } = req.query;
+  const { name } = req.query;
 
-    const tests = await DiagnosticTest.find({
-        name: { $regex: name || "", $options: "i" }
-    })
+  const tests = await DiagnosticTest.find({
+    name: { $regex: name || "", $options: "i" },
+  })
     .populate("room", "roomNumber floor")
     .limit(10);
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200, tests, "Tests and rooms fetched successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, tests, "Tests and rooms fetched successfully"));
 });
 
 //*************Create Test Order / Invoice ***********/
 const createTestInvoice = asyncHandler(async (req, res) => {
-    const { patientId, testItems, paidAmount, paymentMethod } = req.body;
+  const { patientId, testItems, paidAmount, paymentMethod } = req.body;
 
-    if (!patientId || !testItems || testItems.length === 0) {
-        throw new ApiError(400, "Patient ID and selected tests are required");
-    }
+  if (!patientId || !testItems || testItems.length === 0) {
+    throw new ApiError(400, "Patient ID and selected tests are required");
+  }
 
-    let calculatedTotal = 0;
-    const validatedItems = await Promise.all(testItems.map(async (item) => {
-        const testData = await DiagnosticTest.findOne({ name: item.testName });
-        
-        if (!testData) {
-            throw new ApiError(404, `Test '${item.testName}' not found in hospital directory`);
-        }
+  let calculatedTotal = 0;
+  const validatedItems = await Promise.all(
+    testItems.map(async (item) => {
+      const testData = await DiagnosticTest.findOne({
+        name: { $regex: item.testName, $options: "i" },
+      });
 
-        calculatedTotal += testData.price;
-        return {
-            name: testData.name,
-            price: testData.price,
-            roomId: testData.room 
-        };
-    }));
+      if (!testData) {
+        throw new ApiError(
+          404,
+          `Test '${item.testName}' not found in hospital directory`,
+        );
+      }
 
-    const isFullyPaid = Number(paidAmount) >= calculatedTotal;
+      calculatedTotal += testData.price;
+      return {
+        name: testData.name,
+        price: testData.price,
+        roomId: testData.room,
+      };
+    }),
+  );
 
-    const createdReports = await Promise.all(validatedItems.map(async (item) => {
-        const uniqueId = `REP-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)}`;
+  const isFullyPaid = Number(paidAmount) >= calculatedTotal;
 
-        return await LabReport.create({
-            reportId: uniqueId,
-            patient: patientId,
-            hospital: req.user.hospital, 
-            testName: item.name,
-            price: item.price,
-            room: item.roomId, 
-            isPaid: isFullyPaid, 
-            source: "lab_assistant"
-        });
-    }));
+  const createdReports = await Promise.all(
+    validatedItems.map(async (item) => {
+      const uniqueId = `REP-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)}`;
 
-    const billItems = validatedItems.map(item => ({
-        itemType: "labtest", 
-        description: item.name, 
-        quantity: 1,
-        unitPrice: item.price,
-        amount: item.price,
-    }));
-
-    const bill = await Bill.create({
-        invoiceNumber: `INV-${Math.random().toString(36).toUpperCase().slice(2, 10)}`, 
+      return await LabReport.create({
+        reportId: uniqueId,
         patient: patientId,
         hospital: req.user.hospital,
-        receptionist: req.user._id,
-        labReports: createdReports.map(r => r._id),
-        items: billItems, 
-        totalAmount: calculatedTotal, 
-        payments: Number(paidAmount) > 0 ? [{
-            amount: Number(paidAmount),
-            method: paymentMethod || "cash", 
-            paidAt: new Date()
-        }] : [],
-        discount: 0
-    });
+        testName: item.name,
+        price: item.price,
+        room: item.roomId,
+        isPaid: isFullyPaid,
+        source: "lab_assistant",
+      });
+    }),
+  );
 
-    return res.status(201).json(
-        new ApiResponse(201, { bill, reports: createdReports }, "Invoice generated successfully")
+  const billItems = validatedItems.map((item) => ({
+    itemType: "labtest",
+    description: item.name,
+    quantity: 1,
+    unitPrice: item.price,
+    amount: item.price,
+  }));
+
+  const bill = await Bill.create({
+    invoiceNumber: `INV-${Math.random().toString(36).toUpperCase().slice(2, 10)}`,
+    patient: patientId,
+    hospital: req.user.hospital,
+    receptionist: req.user._id,
+    labReports: createdReports.map((r) => r._id),
+    items: billItems,
+    totalAmount: calculatedTotal,
+    payments:
+      Number(paidAmount) > 0
+        ? [
+            {
+              amount: Number(paidAmount),
+              method: paymentMethod || "cash",
+              paidAt: new Date(),
+            },
+          ]
+        : [],
+    discount: 0,
+  });
+
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(
+        201,
+        { bill, reports: createdReports },
+        "Invoice generated successfully",
+      ),
     );
 });
 
 export {
-    loginReceptionist,
-    logoutReceptionist,
-    findPatientByUpid,
-    searchTestsForBilling,
-    createTestInvoice
+  loginReceptionist,
+  logoutReceptionist,
+  findPatientByUpid,
+  searchTestsForBilling,
+  createTestInvoice,
 };
