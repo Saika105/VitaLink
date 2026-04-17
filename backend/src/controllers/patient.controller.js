@@ -581,11 +581,8 @@ const bulkDeleteAppointments = asyncHandler(async (req, res) => {
     );
 });
 
-// src/controllers/patient.controller.js
-
 // ********************* View Transaction History & Pending Dues    ************* */
 const getBillingOverview = asyncHandler(async (req, res) => {
-    // Fetch all invoices related to this patient
     const invoices = await Invoice.find({ patient: req.user._id })
         .sort({ createdAt: -1 })
         .populate("hospital", "name");
@@ -594,7 +591,6 @@ const getBillingOverview = asyncHandler(async (req, res) => {
         throw new ApiError(404, "No billing records found");
     }
 
-    // Calculate totals for the overview
     const transactionHistory = invoices.filter(inv => inv.isPaid === true);
     const pendingDues = invoices.filter(inv => inv.isPaid === false);
 
@@ -615,7 +611,7 @@ const getBillingOverview = asyncHandler(async (req, res) => {
 
 // ********************* Pay Bills Online (Simulated Portal) ************* */
 const payBillOnline = asyncHandler(async (req, res) => {
-    const { invoiceId, paymentMethod } = req.body; // e.g., "SSLCommerz", "Bkash", "Card"
+    const { invoiceId, paymentMethod } = req.body; 
 
     if (!invoiceId) {
         throw new ApiError(400, "Invoice ID is required");
@@ -628,10 +624,6 @@ const payBillOnline = asyncHandler(async (req, res) => {
         throw new ApiError(400, "This invoice is already paid");
     }
 
-    // --- INTEGRATION POINT ---
-    // Here you would normally integrate a payment gateway API.
-    // For now, we simulate a successful transaction:
-    
     invoice.paidAmount = invoice.totalAmount;
     invoice.isPaid = true;
     invoice.status = "paid";
@@ -639,7 +631,6 @@ const payBillOnline = asyncHandler(async (req, res) => {
     
     await invoice.save();
 
-    // Unlock Lab Reports automatically upon payment
     if (invoice.labReports && invoice.labReports.length > 0) {
         await LabReport.updateMany(
             { _id: { $in: invoice.labReports } },

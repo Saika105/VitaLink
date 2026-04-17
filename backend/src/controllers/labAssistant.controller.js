@@ -224,17 +224,18 @@ const getPatientTests = asyncHandler(async (req, res) => {
   const reports = await LabReport.find({
     patient: patientId,
     hospital: req.user.hospital,
-  }).populate("patient", "fullName upid");
+  })
+    .populate("patient", "fullName upid")
+    .populate("room", "roomName roomNumber floor") 
+    .sort({ createdAt: -1 }); 
 
   if (!reports || reports.length === 0) {
-    throw new ApiError(404, "No tests found for this patient");
+    throw new ApiError(404, "No tests found for this patient at this hospital");
   }
 
   return res
     .status(200)
-    .json(
-      new ApiResponse(200, reports, "Patient tests retrieved successfully"),
-    );
+    .json(new ApiResponse(200, reports, "Patient tests retrieved successfully"));
 });
 
 export {

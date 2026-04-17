@@ -3,6 +3,7 @@ import {
     loginLabAssistant, 
     logoutLabAssistant,
     getLabDashboard,
+    getPatientTests ,
     uploadDiagnosticReport
 } from "../controllers/labAssistant.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -17,8 +18,8 @@ router.use(verifyJWT, isLabAssistant);
 
 router.route("/logout").post(logoutLabAssistant);
 router.route("/dashboard").get(getLabDashboard);
+router.route("/patient-tests/:patientId").get(getPatientTests);
 
-// Upload Route for Lab Assistant to upload diagnostic report files (PDF/JPG/PNG)
 router.route("/upload-report/:reportId").patch(
     upload.single("reportFile"), 
     uploadDiagnosticReport
