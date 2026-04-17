@@ -153,18 +153,19 @@ const getPatientTests = asyncHandler(async (req, res) => {
   const reports = await LabReport.find({
     patient: patientId,
     hospital: req.user.hospital,
+    status: "pending", 
   })
     .populate("patient", "fullName upid")
     .populate("room", "roomName roomNumber floor") 
     .sort({ createdAt: -1 }); 
 
   if (!reports || reports.length === 0) {
-    throw new ApiError(404, "No tests found for this patient at this hospital");
+    throw new ApiError(404, "No pending tests found for this patient at your hospital");
   }
 
   return res
     .status(200)
-    .json(new ApiResponse(200, reports, "Patient tests retrieved successfully"));
+    .json(new ApiResponse(200, reports, "Pending patient tests retrieved successfully"));
 });
 
 //************* Upload Diagnostic Report (PDF/JPG/PNG) ********** */
