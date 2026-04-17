@@ -129,91 +129,92 @@ const searchTestsForBilling = asyncHandler(async (req, res) => {
 
 //*************Create Test Order / Invoice ***********/
 const createTestInvoice = asyncHandler(async (req, res) => {
-  const { patientId, testItems, paidAmount, paymentMethod } = req.body;
+    const { patientId, testItems, paidAmount, paymentMethod } = req.body;
 
-  if (!patientId || !testItems || testItems.length === 0) {
-    throw new ApiError(400, "Patient ID and selected tests are required");
-  }
+    if (!patientId || !testItems || testItems.length === 0) {
+        throw new ApiError(400, "Patient ID and selected tests are required");
+    }
 
-  let calculatedTotal = 0;
-  const validatedItems = await Promise.all(
-    testItems.map(async (item) => {
-      const testData = await DiagnosticTest.findOne({
-        name: { $regex: item.testName, $options: "i" },
-      });
+    let calculatedTotal = 0;
 
-      if (!testData) {
-        throw new ApiError(
-          404,
-          `Test '${item.testName}' not found in hospital directory`,
-        );
-      }
+    const validatedItems = await Promise.all(
+        testItems.map(async (item) => {
+            const escapedName = item.testName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            
+            const testData = await DiagnosticTest.findOne({
+                name: { $regex: `^${escapedName}$`, $options: "i" },
+            });
 
-      calculatedTotal += testData.price;
-      return {
-        name: testData.name,
-        price: testData.price,
-        roomId: testData.room,
-      };
-    }),
-  );
+            if (!testData) {
+                throw new ApiError(404, `Test '${item.testName}' not found in directory.`);
+            }
 
-  const isFullyPaid = Number(paidAmount) >= calculatedTotal;
+            const correctRoom = await LabRoom.findOne({
+                hospital: req.user.hospital,
+                roomName: { 
+                    $regex: testData.category === "Radiology" ? "Radiology" : "Pathology", 
+                    $options: "i" 
+                }
+            });
 
-  const createdReports = await Promise.all(
-    validatedItems.map(async (item) => {
-      const uniqueId = `REP-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)}`;
+            if (!correctRoom) {
+                throw new ApiError(404, `No ${testData.category} lab room found for your hospital.`);
+            }
 
-      return await LabReport.create({
-        reportId: uniqueId,
+            calculatedTotal += testData.price;
+            return {
+                name: testData.name,
+                price: testData.price,
+                roomId: correctRoom._id, 
+            };
+        })
+    );
+
+    const isFullyPaid = Number(paidAmount) >= calculatedTotal;
+
+    const createdReports = await Promise.all(
+        validatedItems.map(async (item) => {
+            const uniqueId = `REP-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 10)}`;
+
+            return await LabReport.create({
+                reportId: uniqueId,
+                patient: patientId,
+                hospital: req.user.hospital,
+                testName: item.name,
+                price: item.price,
+                room: item.roomId,
+                isPaid: isFullyPaid,
+                source: "lab_assistant",
+            });
+        })
+    );
+
+    const billItems = validatedItems.map((item) => ({
+        itemType: "labtest",
+        description: item.name,
+        quantity: 1,
+        unitPrice: item.price,
+        amount: item.price,
+    }));
+
+    const bill = await Bill.create({
+        invoiceNumber: `INV-${Math.random().toString(36).toUpperCase().slice(2, 10)}`,
         patient: patientId,
         hospital: req.user.hospital,
-        testName: item.name,
-        price: item.price,
-        room: item.roomId,
-        isPaid: isFullyPaid,
-        source: "lab_assistant",
-      });
-    }),
-  );
+        receptionist: req.user._id,
+        labReports: createdReports.map((r) => r._id),
+        items: billItems,
+        totalAmount: calculatedTotal,
+        payments: Number(paidAmount) > 0 ? [{
+            amount: Number(paidAmount),
+            method: paymentMethod || "cash",
+            paidAt: new Date(),
+        }] : [],
+        discount: 0,
+    });
 
-  const billItems = validatedItems.map((item) => ({
-    itemType: "labtest",
-    description: item.name,
-    quantity: 1,
-    unitPrice: item.price,
-    amount: item.price,
-  }));
-
-  const bill = await Bill.create({
-    invoiceNumber: `INV-${Math.random().toString(36).toUpperCase().slice(2, 10)}`,
-    patient: patientId,
-    hospital: req.user.hospital,
-    receptionist: req.user._id,
-    labReports: createdReports.map((r) => r._id),
-    items: billItems,
-    totalAmount: calculatedTotal,
-    payments:
-      Number(paidAmount) > 0
-        ? [
-            {
-              amount: Number(paidAmount),
-              method: paymentMethod || "cash",
-              paidAt: new Date(),
-            },
-          ]
-        : [],
-    discount: 0,
-  });
-
-  return res
-    .status(201)
-    .json(
-      new ApiResponse(
-        201,
-        { bill, reports: createdReports },
-        "Invoice generated successfully",
-      ),
+    return res.status(201).json(
+        new ApiResponse(201, { bill, reports: createdReports }, "Invoice generated successfully")
     );
 });
 
