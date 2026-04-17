@@ -12,6 +12,8 @@ import {
   cancelAppointment,
   getAssistantContactForReschedule,
   bulkDeleteAppointments,
+  getBillingOverview,
+  payBillOnline
 } from "../controllers/patient.controller.js";
 import{ 
   addPatientPrescription, 
@@ -72,6 +74,12 @@ router.route("/lab-reports/add").post(
 );
 router.route("/lab-reports/delete/:id").delete(verifyJWT, isPatient, deletePatientLabReport);
 router.route("/lab-reports").get(verifyJWT, isPatient, getPatientLabReports);
+
+
+// src/routes/patient.routes.js
+
+router.route("/billing-overview").get(verifyJWT, isPatient, getBillingOverview);
+router.route("/pay-online").post(verifyJWT, isPatient, payBillOnline);
 
 export default router;
 

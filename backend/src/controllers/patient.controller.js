@@ -581,6 +581,77 @@ const bulkDeleteAppointments = asyncHandler(async (req, res) => {
     );
 });
 
+// src/controllers/patient.controller.js
+
+// ********************* View Transaction History & Pending Dues    ************* */
+const getBillingOverview = asyncHandler(async (req, res) => {
+    // Fetch all invoices related to this patient
+    const invoices = await Invoice.find({ patient: req.user._id })
+        .sort({ createdAt: -1 })
+        .populate("hospital", "name");
+
+    if (!invoices) {
+        throw new ApiError(404, "No billing records found");
+    }
+
+    // Calculate totals for the overview
+    const transactionHistory = invoices.filter(inv => inv.isPaid === true);
+    const pendingDues = invoices.filter(inv => inv.isPaid === false);
+
+    const totalDueAmount = pendingDues.reduce((acc, inv) => acc + (inv.totalAmount - inv.paidAmount), 0);
+
+    return res.status(200).json(
+        new ApiResponse(200, {
+            summary: {
+                totalInvoices: invoices.length,
+                pendingCount: pendingDues.length,
+                totalDueAmount
+            },
+            pendingDues,
+            transactionHistory
+        }, "Billing records retrieved successfully")
+    );
+});
+
+// ********************* Pay Bills Online (Simulated Portal) ************* */
+const payBillOnline = asyncHandler(async (req, res) => {
+    const { invoiceId, paymentMethod } = req.body; // e.g., "SSLCommerz", "Bkash", "Card"
+
+    if (!invoiceId) {
+        throw new ApiError(400, "Invoice ID is required");
+    }
+
+    const invoice = await Invoice.findById(invoiceId);
+    if (!invoice) throw new ApiError(404, "Invoice not found");
+
+    if (invoice.isPaid) {
+        throw new ApiError(400, "This invoice is already paid");
+    }
+
+    // --- INTEGRATION POINT ---
+    // Here you would normally integrate a payment gateway API.
+    // For now, we simulate a successful transaction:
+    
+    invoice.paidAmount = invoice.totalAmount;
+    invoice.isPaid = true;
+    invoice.status = "paid";
+    invoice.paymentMethod = paymentMethod || "Online Portal";
+    
+    await invoice.save();
+
+    // Unlock Lab Reports automatically upon payment
+    if (invoice.labReports && invoice.labReports.length > 0) {
+        await LabReport.updateMany(
+            { _id: { $in: invoice.labReports } },
+            { $set: { isPaid: true } }
+        );
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, invoice, "Payment successful! Your reports are now unlocked.")
+    );
+});
+
 export {
   initializeRegistration,
   finalizeRegistration,
@@ -594,4 +665,6 @@ export {
   cancelAppointment,
   getAssistantContactForReschedule,
   bulkDeleteAppointments,
+  getBillingOverview,
+  payBillOnline
 };
