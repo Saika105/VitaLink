@@ -146,77 +146,6 @@ const getLabDashboard = asyncHandler(async (req, res) => {
     );
 });
 
-//*************Securely upload report and update database ********** */
-const uploadDiagnosticReport = asyncHandler(async (req, res) => {
-  const { reportId } = req.params;
-
-  const report = await LabReport.findById(reportId);
-  if (!report) throw new ApiError(404, "Test record not found");
-
-  if (!report.isPaid) {
-    throw new ApiError(
-      403,
-      "Access Denied: Payment is DUE for this test. Cannot upload report.",
-    );
-  }
-
-  if (report.status === "completed" || report.reportFile?.url) {
-    throw new ApiError(
-      400,
-      "Conflict: A report has already been uploaded for this test.",
-    );
-  }
-
-  if (!req.file) {
-    throw new ApiError(400, "Diagnostic report file (PDF/JPG/PNG) is required");
-  }
-
-  const uniqueFileName = `${report.reportId}_${Date.now()}`;
-
-  const uploadResult = await uploadOnCloudinary(req.file.path, uniqueFileName);
-
-  if (!uploadResult) {
-    throw new ApiError(500, "Cloudinary upload failed");
-  }
-
-  try {
-    report.reportFile = {
-      url: uploadResult.secure_url,
-      public_id: uploadResult.public_id,
-      originalName: req.file.originalname,
-      mimeType: req.file.mimetype,
-      size: uploadResult.bytes,
-    };
-    report.status = "completed";
-    report.labAssistant = req.user._id;
-    report.reportDate = new Date();
-
-    await report.save();
-
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          report,
-          "Success: Report uploaded and test marked as completed",
-        ),
-      );
-  } catch (error) {
-    if (uploadResult?.public_id) {
-      const isPdf = req.file.mimetype === "application/pdf";
-      await deleteFromCloudinary(
-        uploadResult.public_id,
-        isPdf ? "raw" : "image",
-      );
-    }
-    throw new ApiError(
-      500,
-      error?.message || "Internal Server Error: Failed to save record details.",
-    );
-  }
-});
-
 //************* Get all tests for a specific patient ********** */
 const getPatientTests = asyncHandler(async (req, res) => {
   const { patientId } = req.params;
@@ -238,10 +167,47 @@ const getPatientTests = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, reports, "Patient tests retrieved successfully"));
 });
 
+//************* Upload Diagnostic Report (PDF/JPG/PNG) ********** */
+const uploadDiagnosticReport = asyncHandler(async (req, res) => {
+  const { reportId } = req.params;
+
+  const report = await LabReport.findOne({ _id: reportId, hospital: req.user.hospital });
+  if (!report) throw new ApiError(404, "Test record not found");
+
+  if (!report.isPaid) throw new ApiError(403, "Payment is DUE. Cannot upload.");
+  if (report.status === "completed") throw new ApiError(400, "Report already exists.");
+  if (!req.file) throw new ApiError(400, "PDF or Image file is required");
+
+  const uploadResult = await uploadOnCloudinary(req.file.path);
+  if (!uploadResult) throw new ApiError(500, "Cloudinary upload failed");
+
+  try {
+    report.reportFile = {
+      url: uploadResult.secure_url,
+      public_id: uploadResult.public_id,
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      size: uploadResult.bytes,
+    };
+    report.status = "completed";
+    report.labAssistant = req.user._id;
+    report.reportDate = new Date();
+
+    await report.save();
+
+    return res.status(200).json(new ApiResponse(200, report, "Report uploaded successfully"));
+  } catch (error) {
+    if (uploadResult?.public_id) {
+      await deleteFromCloudinary(uploadResult.public_id, req.file.mimetype);
+    }
+    throw new ApiError(500, error?.message || "Failed to save record.");
+  }
+});
+
 export {
   loginLabAssistant,
   logoutLabAssistant,
   getLabDashboard,
-  uploadDiagnosticReport,
   getPatientTests,
+  uploadDiagnosticReport,
 };
