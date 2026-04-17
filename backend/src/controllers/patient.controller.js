@@ -5,6 +5,7 @@ import { Doctor } from "../models/doctor.model.js";
 import { DoctorAssistant } from "../models/doctorAssistant.model.js";
 import { DoctorSchedule } from "../models/doctorSchedule.model.js";
 import { Appointment } from "../models/appointment.model.js";
+import { Bill } from "../models/bill.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { deleteFromCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -287,13 +288,14 @@ const updatePatientProfile = asyncHandler(async (req, res) => {
   if (address) updateData.address = address;
 
   if (emergencyContact) {
-    const phoneValue = typeof emergencyContact === 'object' 
-        ? emergencyContact.phone 
+    const phoneValue =
+      typeof emergencyContact === "object"
+        ? emergencyContact.phone
         : emergencyContact;
 
     if (phoneValue) {
-        updateData["emergencyContact.phone"] = phoneValue;
-        updateData["emergencyContact.name"] = "Emergency Contact"; 
+      updateData["emergencyContact.phone"] = phoneValue;
+      updateData["emergencyContact.name"] = "Emergency Contact";
     }
   }
 
@@ -310,20 +312,29 @@ const updatePatientProfile = asyncHandler(async (req, res) => {
 
           await deleteFromCloudinary(publicId);
         } catch (delErr) {
-          console.error("Cloudinary Old Image Delete Error (Non-Fatal):", delErr.message);
+          console.error(
+            "Cloudinary Old Image Delete Error (Non-Fatal):",
+            delErr.message,
+          );
         }
       }
 
       const photoUpload = await uploadOnCloudinary(req.file.path);
 
       if (!photoUpload?.secure_url) {
-        throw new ApiError(400, "Failed to upload new profile photo to Cloudinary");
+        throw new ApiError(
+          400,
+          "Failed to upload new profile photo to Cloudinary",
+        );
       }
 
       updateData.profilePhoto = photoUpload.secure_url;
     } catch (uploadErr) {
       console.error("Cloudinary Upload Process Error:", uploadErr);
-      throw new ApiError(500, uploadErr.message || "Error processing image upload");
+      throw new ApiError(
+        500,
+        uploadErr.message || "Error processing image upload",
+      );
     }
   }
 
@@ -336,7 +347,7 @@ const updatePatientProfile = asyncHandler(async (req, res) => {
       req.user?._id,
       { $set: updateData },
       {
-        new: true, 
+        new: true,
         runValidators: true,
       },
     ).select("-password -refreshToken");
@@ -348,7 +359,11 @@ const updatePatientProfile = asyncHandler(async (req, res) => {
     return res
       .status(200)
       .json(
-        new ApiResponse(200, updatedPatient, "Health Vault updated successfully"),
+        new ApiResponse(
+          200,
+          updatedPatient,
+          "Health Vault updated successfully",
+        ),
       );
   } catch (dbErr) {
     console.error("Database Update Error:", dbErr);
@@ -416,7 +431,7 @@ const getAllDoctors = asyncHandler(async (req, res) => {
   }
 
   const doctors = await Doctor.find(filter)
-    .select("-password -refreshToken -email -phone") 
+    .select("-password -refreshToken -email -phone")
     .populate("hospital", "name address");
 
   const doctorsWithSchedules = await Promise.all(
@@ -426,13 +441,14 @@ const getAllDoctors = asyncHandler(async (req, res) => {
         isActive: true,
       }).select("consultationFee sittingTimeLabel workingDays timeSlots");
 
-      const assistant = await DoctorAssistant.findOne(
-        { doctor: doc._id }).select("phone"); 
+      const assistant = await DoctorAssistant.findOne({
+        doctor: doc._id,
+      }).select("phone");
 
       return {
         ...doc._doc,
         schedule: schedule || null,
-        assistantPhone: assistant ? assistant.phone : "N/A", 
+        assistantPhone: assistant ? assistant.phone : "N/A",
       };
     }),
   );
@@ -517,31 +533,37 @@ const cancelAppointment = asyncHandler(async (req, res) => {
 const getAssistantContactForReschedule = asyncHandler(async (req, res) => {
   const { appointmentId } = req.params;
 
-  const appointment = await Appointment.findById(appointmentId).populate("doctor", "fullName");
+  const appointment = await Appointment.findById(appointmentId).populate(
+    "doctor",
+    "fullName",
+  );
 
   if (!appointment) {
     throw new ApiError(404, "Appointment record not found.");
   }
 
-  const assistant = await DoctorAssistant.findOne({ 
-    doctor: appointment.doctor._id 
-  }).select("fullName phone email"); 
+  const assistant = await DoctorAssistant.findOne({
+    doctor: appointment.doctor._id,
+  }).select("fullName phone email");
 
   if (!assistant) {
-    throw new ApiError(404, `No designated assistant found for ${appointment.doctor.fullName}.`);
+    throw new ApiError(
+      404,
+      `No designated assistant found for ${appointment.doctor.fullName}.`,
+    );
   }
 
   return res.status(200).json(
     new ApiResponse(
-      200, 
+      200,
       {
         doctorName: appointment.doctor.fullName,
         assistantName: assistant.fullName,
-        contactNumber: assistant.phone || "N/A", 
-        email: assistant.email
-      }, 
-      "Assistant contact details retrieved successfully."
-    )
+        contactNumber: assistant.phone || "N/A",
+        email: assistant.email,
+      },
+      "Assistant contact details retrieved successfully.",
+    ),
   );
 });
 
@@ -583,63 +605,100 @@ const bulkDeleteAppointments = asyncHandler(async (req, res) => {
 
 // ********************* View Transaction History & Pending Dues    ************* */
 const getBillingOverview = asyncHandler(async (req, res) => {
-    const invoices = await Invoice.find({ patient: req.user._id })
-        .sort({ createdAt: -1 })
-        .populate("hospital", "name");
+  const bills = await Bill.find({ patient: req.user._id })
+    .sort({ createdAt: -1 })
+    .populate("hospital", "name");
 
-    if (!invoices) {
-        throw new ApiError(404, "No billing records found");
-    }
-
-    const transactionHistory = invoices.filter(inv => inv.isPaid === true);
-    const pendingDues = invoices.filter(inv => inv.isPaid === false);
-
-    const totalDueAmount = pendingDues.reduce((acc, inv) => acc + (inv.totalAmount - inv.paidAmount), 0);
-
+  if (!bills || bills.length === 0) {
     return res.status(200).json(
-        new ApiResponse(200, {
-            summary: {
-                totalInvoices: invoices.length,
-                pendingCount: pendingDues.length,
-                totalDueAmount
-            },
-            pendingDues,
-            transactionHistory
-        }, "Billing records retrieved successfully")
+      new ApiResponse(
+        200,
+        {
+          summary: { totalInvoices: 0, pendingCount: 0, totalDueAmount: 0 },
+          pendingDues: [],
+          transactionHistory: [],
+        },
+        "No billing records found",
+      ),
     );
+  }
+
+  const transactionHistory = [];
+  const pendingDues = [];
+  let totalDueAmount = 0;
+
+  bills.forEach((bill) => {
+    const paidSoFar = bill.payments.reduce((sum, p) => sum + p.amount, 0);
+    const due = bill.totalAmount - paidSoFar;
+
+    const billData = {
+      ...bill._doc,
+      amountPaid: paidSoFar,
+      balanceDue: due > 0 ? due : 0,
+    };
+
+    if (bill.paymentStatus === "paid") {
+      transactionHistory.push(billData);
+    } else {
+      pendingDues.push(billData);
+      totalDueAmount += due > 0 ? due : 0;
+    }
+  });
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        summary: {
+          totalInvoices: bills.length,
+          pendingCount: pendingDues.length,
+          totalDueAmount,
+        },
+        pendingDues,
+        transactionHistory,
+      },
+      "Billing records retrieved successfully",
+    ),
+  );
 });
 
 // ********************* Pay Bills Online (Simulated Portal) ************* */
 const payBillOnline = asyncHandler(async (req, res) => {
-    const { invoiceId, paymentMethod } = req.body; 
+  const { invoiceId, paymentMethod } = req.body;
 
-    if (!invoiceId) {
-        throw new ApiError(400, "Invoice ID is required");
-    }
+  if (!invoiceId) {
+    throw new ApiError(400, "Invoice ID is required");
+  }
 
-    const invoice = await Invoice.findById(invoiceId);
-    if (!invoice) throw new ApiError(404, "Invoice not found");
+  const invoice = await Invoice.findById(invoiceId);
+  if (!invoice) throw new ApiError(404, "Invoice not found");
 
-    if (invoice.isPaid) {
-        throw new ApiError(400, "This invoice is already paid");
-    }
+  if (invoice.isPaid) {
+    throw new ApiError(400, "This invoice is already paid");
+  }
 
-    invoice.paidAmount = invoice.totalAmount;
-    invoice.isPaid = true;
-    invoice.status = "paid";
-    invoice.paymentMethod = paymentMethod || "Online Portal";
-    
-    await invoice.save();
+  invoice.paidAmount = invoice.totalAmount;
+  invoice.isPaid = true;
+  invoice.status = "paid";
+  invoice.paymentMethod = paymentMethod || "Online Portal";
 
-    if (invoice.labReports && invoice.labReports.length > 0) {
-        await LabReport.updateMany(
-            { _id: { $in: invoice.labReports } },
-            { $set: { isPaid: true } }
-        );
-    }
+  await invoice.save();
 
-    return res.status(200).json(
-        new ApiResponse(200, invoice, "Payment successful! Your reports are now unlocked.")
+  if (invoice.labReports && invoice.labReports.length > 0) {
+    await LabReport.updateMany(
+      { _id: { $in: invoice.labReports } },
+      { $set: { isPaid: true } },
+    );
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        invoice,
+        "Payment successful! Your reports are now unlocked.",
+      ),
     );
 });
 
@@ -657,5 +716,5 @@ export {
   getAssistantContactForReschedule,
   bulkDeleteAppointments,
   getBillingOverview,
-  payBillOnline
+  payBillOnline,
 };
