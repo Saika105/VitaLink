@@ -609,7 +609,8 @@ const getBillingOverview = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 })
     .populate("hospital", "name");
 
-  if (!bills || bills.length === 0) {
+  if (!bills || bills.length === 0) 
+    {
     return res.status(200).json(
       new ApiResponse(
         200,
