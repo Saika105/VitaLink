@@ -128,25 +128,39 @@ const searchTestsForBilling = asyncHandler(async (req, res) => {
 });
 
 //*************Create Test Order / Invoice ***********/
-// POST: http://localhost:8000/api/v1/receptionists/create-invoice
 const createTestInvoice = asyncHandler(async (req, res) => {
-    const { patientId, testItems, totalAmount, paidAmount } = req.body;
+    const { patientId, testItems, paidAmount, paymentMethod } = req.body;
 
     if (!patientId || !testItems || testItems.length === 0) {
         throw new ApiError(400, "Patient ID and selected tests are required");
     }
 
-    const isFullyPaid = Number(paidAmount) >= Number(totalAmount);
+    let calculatedTotal = 0;
+    const validatedItems = await Promise.all(testItems.map(async (item) => {
+        const testData = await DiagnosticTest.findOne({ name: item.testName });
+        
+        if (!testData) {
+            throw new ApiError(404, `Test '${item.testName}' not found in hospital directory`);
+        }
 
-    // 1. Create Lab Reports
-    const createdReports = await Promise.all(testItems.map(async (item) => {
+        calculatedTotal += testData.price;
+        return {
+            name: testData.name,
+            price: testData.price,
+            roomId: testData.room 
+        };
+    }));
+
+    const isFullyPaid = Number(paidAmount) >= calculatedTotal;
+
+    const createdReports = await Promise.all(validatedItems.map(async (item) => {
         const uniqueId = `REP-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)}`;
 
         return await LabReport.create({
             reportId: uniqueId,
             patient: patientId,
             hospital: req.user.hospital, 
-            testName: item.testName,
+            testName: item.name,
             price: item.price,
             room: item.roomId, 
             isPaid: isFullyPaid, 
@@ -154,31 +168,29 @@ const createTestInvoice = asyncHandler(async (req, res) => {
         });
     }));
 
-   // 2. Prepare items 
-const billItems = testItems.map(item => ({
-    itemType: "labtest", 
-    description: item.testName, 
-    quantity: 1,
-    unitPrice: item.price,
-    amount: item.price,
-    linkedLabReport: null 
-}));
+    const billItems = validatedItems.map(item => ({
+        itemType: "labtest", 
+        description: item.name, 
+        quantity: 1,
+        unitPrice: item.price,
+        amount: item.price,
+    }));
 
-// 3. Create Bill Record
-const bill = await Bill.create({
-    invoiceNumber: `INV-${Math.random().toString(36).toUpperCase().slice(2, 10)}`, 
-    patient: patientId,
-    hospital: req.user.hospital,
-    receptionist: req.user._id,
-    labReports: createdReports.map(r => r._id),
-    items: billItems, 
-    payments: Number(paidAmount) > 0 ? [{
-        amount: Number(paidAmount),
-        method: req.body.paymentMethod || "cash", 
-        paidAt: new Date()
-    }] : [],
-    discount: 0
-});
+    const bill = await Bill.create({
+        invoiceNumber: `INV-${Math.random().toString(36).toUpperCase().slice(2, 10)}`, 
+        patient: patientId,
+        hospital: req.user.hospital,
+        receptionist: req.user._id,
+        labReports: createdReports.map(r => r._id),
+        items: billItems, 
+        totalAmount: calculatedTotal, 
+        payments: Number(paidAmount) > 0 ? [{
+            amount: Number(paidAmount),
+            method: paymentMethod || "cash", 
+            paidAt: new Date()
+        }] : [],
+        discount: 0
+    });
 
     return res.status(201).json(
         new ApiResponse(201, { bill, reports: createdReports }, "Invoice generated successfully")

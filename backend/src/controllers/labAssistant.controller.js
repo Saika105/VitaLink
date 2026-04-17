@@ -88,7 +88,6 @@ const logoutLabAssistant = asyncHandler(async (req, res) => {
 
 //*************Get prioritized patient list for Diagnostic Dashboard  ********** */
 const getLabDashboard = asyncHandler(async (req, res) => {
-    // Aggregation to count PAID vs DUE tests and prioritize sorting
     const dashboardData = await LabReport.aggregate([
         { $match: { hospital: new mongoose.Types.ObjectId(req.user.hospital) } },
         {
@@ -115,7 +114,6 @@ const getLabDashboard = asyncHandler(async (req, res) => {
                 totalTests: 1,
                 paidTests: 1,
                 dueTests: 1,
-                // Logic: Prioritize patients who have at least 1 paid test
                 priority: { $cond: [{ $gt: ["$paidTests", 0] }, 1, 0] }
             }
         },
@@ -131,30 +129,23 @@ const getLabDashboard = asyncHandler(async (req, res) => {
 const uploadDiagnosticReport = asyncHandler(async (req, res) => {
     const { reportId } = req.params;
 
-    // 1. Find the report record first
     const report = await LabReport.findById(reportId);
     if (!report) throw new ApiError(404, "Test record not found");
 
-    // 2. STRICT LOGIC: Deny access if payment is not confirmed
-    // This uses the 'isPaid' boolean created by the receptionist
     if (!report.isPaid) {
         throw new ApiError(403, "Access Denied: Payment is DUE for this test. Cannot upload report.");
     }
     
-    // 3. Prevent overwriting an existing report
     if (report.status === "completed" || report.reportFile?.url) {
         throw new ApiError(400, "Conflict: A report has already been uploaded for this test.");
     }
 
-    // 4. Validate that a file was actually provided in the request
     if (!req.file) {
         throw new ApiError(400, "Diagnostic report file (PDF/JPG/PNG) is required");
     }
 
-    // 5. Generate a unique file name for Cloudinary (PatientUPID_TestName_Timestamp)
     const uniqueFileName = `${report.reportId}_${Date.now()}`;
 
-    // 6. Upload to Cloudinary
     const uploadResult = await uploadOnCloudinary(req.file.path, uniqueFileName);
     
     if (!uploadResult) {
@@ -162,7 +153,6 @@ const uploadDiagnosticReport = asyncHandler(async (req, res) => {
     }
 
     try {
-        // 7. Update the database with the new file details
         report.reportFile = {
             url: uploadResult.secure_url,
             public_id: uploadResult.public_id,
@@ -170,8 +160,8 @@ const uploadDiagnosticReport = asyncHandler(async (req, res) => {
             mimeType: req.file.mimetype,
             size: uploadResult.bytes,
         };
-        report.status = "completed"; // Officially close the test lifecycle
-        report.labAssistant = req.user._id; // Track who uploaded it
+        report.status = "completed"; 
+        report.labAssistant = req.user._id; 
         report.reportDate = new Date(); 
 
         await report.save();
@@ -180,7 +170,6 @@ const uploadDiagnosticReport = asyncHandler(async (req, res) => {
             new ApiResponse(200, report, "Success: Report uploaded and test marked as completed")
         );
     } catch (error) {
-        // 8. FAIL-SAFE: If DB update fails, delete the orphan file from Cloudinary
         if (uploadResult?.public_id) {
             const isPdf = req.file.mimetype === "application/pdf";
             await deleteFromCloudinary(uploadResult.public_id, isPdf ? "raw" : "image");
