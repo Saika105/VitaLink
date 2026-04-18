@@ -79,7 +79,9 @@ const ReceptionistBilling = () => {
         itemName: testObj.name,
         unitPrice: testObj.price,
         quantity: 1,
-        room: testObj.room || 'General Lab',
+        room: testObj.room
+          ? `Floor ${testObj.room.floor} - Room ${testObj.room.roomNumber}`
+          : 'General Lab',
         amount: testObj.price,
         discount: 0,
       },
