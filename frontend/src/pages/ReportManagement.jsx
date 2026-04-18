@@ -31,7 +31,7 @@ const ReportManagement = () => {
   const fetchPatientTests = async () => {
     try {
       const response = await protectedFetch(
-        `/api/v1/reporter/patient/${id}/tests`,
+        `/api/v1/lab-assistants/patient-tests/${id}`,
       );
       if (response.ok) {
         const result = await response.json();
@@ -57,41 +57,38 @@ const ReportManagement = () => {
     setShowModal(true);
   };
 
-  const handleFileSelect = e => {
-    const file = e.target.files[0];
-    if (!manualTitle || !manualHospital) {
-      alert('Please enter details first.');
+const handleFileSelect = async e => {
+  const file = e.target.files[0];
+  if (!manualTitle || !manualHospital) {
+    alert('Please enter details first.');
+    return;
+  }
+
+  if (file) {
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('Unsupported format. Please upload PDF/JPG/PNG.');
+      e.target.value = '';
       return;
     }
-
-    if (file) {
-      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
-      if (!allowedTypes.includes(file.type)) {
-        alert('Unsupported format. Please upload PDF/JPG/PNG.');
-        e.target.value = '';
-        return;
-      }
-      if (file.size > 10 * 1024 * 1024) {
-        alert('File exceeds maximum allowed size of 10MB.');
-        e.target.value = '';
-        return;
-      }
-
-      navigate('/confirm-upload', {
-        state: {
-          selectedFile: file,
-          uploadType: 'report',
-          testId: selectedTest._id,
-          displayTitle: manualTitle.toUpperCase(),
-          displayHospital: manualHospital.toUpperCase(),
-          patientId: id,
-          patientName: patient.fullName,
-          patientUpid: patient.upid,
-          uploadDate: todayDate,
-        },
-      });
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File exceeds maximum allowed size of 10MB.');
+      e.target.value = '';
+      return;
     }
-  };
+    const formData = new FormData();
+    formData.append('reportFile', file);
+    await protectedFetch(
+      `/api/v1/lab-assistants/upload-report/${selectedTest._id}`,
+      {
+        method: 'PATCH',
+        body: formData,
+      },
+    );
+    setShowModal(false);
+    fetchPatientTests();
+  }
+};
 
   return (
     <div className='min-h-screen bg-[#F8FAFC] flex flex-col font-inter text-slate-900'>
@@ -156,14 +153,14 @@ const ReportManagement = () => {
                       </td>
                       <td className='p-6 text-center'>
                         <span className='text-[10px] font-bold text-slate-400 uppercase'>
-                          {test.reportFile ? 'COMPLETED' : 'PENDING'}
+                          {test.reportFile?.url ? 'COMPLETED' : 'PENDING'}
                         </span>
                       </td>
                       <td className='p-6 text-right'>
                         {test.isPaid ? (
-                          test.reportFile ? (
+                          test.reportFile?.url ? (
                             <a
-                              href={test.reportFile}
+                              href={test.reportFile.url}
                               target='_blank'
                               rel='noopener noreferrer'
                               className='bg-green-600 text-white px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-md active:scale-95 inline-block'

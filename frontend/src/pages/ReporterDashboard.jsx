@@ -12,18 +12,14 @@ const ReporterDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const profileRes = await protectedFetch(`/api/v1/reporter/profile`);
-      if (profileRes.ok) {
-        const profileResult = await profileRes.json();
-        setReporterInfo(profileResult.data);
-      }
-
-      const patientsRes = await protectedFetch(`/api/v1/reporter/patients`);
+      const patientsRes = await protectedFetch(
+        `/api/v1/lab-assistants/dashboard`,
+      );
       if (patientsRes.ok) {
         const patientsResult = await patientsRes.json();
         const sorted = (patientsResult.data || []).sort(
-            (a, b) => b.paidCount - a.paidCount,
-          );
+          (a, b) => b.paidTests - a.paidTests,
+        );
 setPatients(sorted);      }
     } catch (err) {
       console.error('Dashboard Sync Error:', err);
@@ -115,10 +111,10 @@ setPatients(sorted);      }
                         {p.totalTests}
                       </td>
                       <td className='p-6 text-center font-black text-green-600'>
-                        {p.paidCount}
+                        {p.paidTests}
                       </td>
                       <td className='p-6 text-center font-black text-red-500'>
-                        {p.dueCount}
+                        {p.dueTests}
                       </td>
                       <td className='p-6 text-right'>
                         <button
