@@ -287,15 +287,11 @@ const createDoctorAssistant = asyncHandler(async (req, res) => {
     address,
   } = req.body;
 
-  if (
-    [fullName, email, password, phone, doctor, emergencyPhone].some(
-      (f) => f?.trim() === "",
-    )
-  ) {
-    throw new ApiError(
-      400,
-      "All profile fields and emergency phone are required",
-    );
+  const required = { fullName, email, password, phone, doctor, emergencyPhone };
+  for (const [key, value] of Object.entries(required)) {
+    if (!value || String(value).trim() === "") {
+      throw new ApiError(400, `${key} is required and cannot be empty`);
+    }
   }
 
   const existedAssistant = await DoctorAssistant.findOne({
