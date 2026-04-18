@@ -13,12 +13,17 @@ const PatientBilling = () => {
   useEffect(() => {
     const fetchBilling = async () => {
       try {
-        const response = await protectedFetch('/api/v1/patients/billing');
+        const response = await protectedFetch(
+          '/api/v1/patients/billing-overview',
+        );
 
         if (response.ok) {
           const result = await response.json();
-          const billingData = result.data || [];
-          const mappedData = billingData.map(bill => ({
+          const allBills = [
+            ...(result.data?.pendingDues || []),
+            ...(result.data?.transactionHistory || []),
+          ];
+          const mappedData = allBills.map(bill => ({
             invoiceNumber: bill.invoiceNumber,
             status:
               bill.paymentStatus === 'paid'
@@ -27,13 +32,11 @@ const PatientBilling = () => {
                   ? 'Partial'
                   : 'Due',
             hospitalName:
-              bill.hospital?.fullName ||
-              bill.manualHospitalName ||
-              'VitaLink Partner',
-            date: new Date(
-              bill.invoiceDate || bill.createdAt,
-            ).toLocaleDateString(),
-            reason: bill.billSummary || 'Medical Services',
+             bill.hospital?.name || 'VitaLink Medical',
+            date: new Date(bill.createdAt).toLocaleDateString(),
+            reason:
+              bill.items?.map(i => i.description).join(', ') ||
+              'Medical Services',
             totalAmount: bill.totalAmount,
             balanceDue: bill.balanceDue,
             mongoId: bill._id,
