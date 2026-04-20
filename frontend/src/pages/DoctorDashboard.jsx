@@ -65,24 +65,27 @@ const DoctorDashboard = () => {
   },
     []);
 
-  const handleSearchPatient = async e => {
-    e.preventDefault();
-    if (!patientIdSearch) return;
+const handleSearchPatient = async e => {
+  e.preventDefault();
+  if (!patientIdSearch) return;
 
-    try {
-      const response = await protectedFetch(
-        `/api/v1/doctors/search-patient/${patientIdSearch.trim().toUpperCase()}`,
-      );
-      if (response.ok) {
-        const result = await response.json();
-        openConfirmModal(result.data, true);
-      } else {
-        alert('Patient not found in the health vault');
-      }
-    } catch (err) {
-      console.error(err);
+  try {
+    const response = await protectedFetch(
+      `/api/v1/doctors/search-patient/${patientIdSearch.trim().toUpperCase()}`,
+    );
+    if (response.ok) {
+      const result = await response.json();
+      console.log('Search result:', result); // add this temporarily
+      openConfirmModal(result.data, true);
+    } else {
+      const err = await response.json();
+      alert(err.message || 'Patient not found in the health vault');
     }
-  };
+  } catch (err) {
+    console.error(err);
+    alert('Something went wrong during search');
+  }
+};
 
   const openConfirmModal = (data, isFromSearch = false) => {
     if (isFromSearch) {
@@ -190,7 +193,7 @@ const DoctorDashboard = () => {
           <div className='overflow-x-auto custom-scrollbar'>
             <table className='w-full text-left border-collapse'>
               <thead>
-                <tr className='text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 bg-white'>
+                <tr className='text-[13px] font-black text-slate-600 uppercase tracking-[0.2em] border-b border-slate-100 bg-white'>
                   <th className='p-8 text-center w-24'>#</th>
                   <th className='p-8'>Patient ID</th>
                   <th className='p-8'>Full Name</th>
