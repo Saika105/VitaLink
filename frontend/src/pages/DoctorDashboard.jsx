@@ -170,10 +170,10 @@ const handleSearchPatient = async e => {
             </form>
 
             <div className='bg-white px-6 py-3 rounded-2xl border border-slate-200 shadow-sm text-center md:text-right flex flex-col justify-center min-w-40'>
-              <p className='text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1'>
+              <p className='text-[13px] font-black text-slate-900 uppercase tracking-widest mb-1'>
                 Session Date
               </p>
-              <p className='text-[13px] font-black text-slate-900 leading-none'>
+              <p className='text-[11px] font-black text-slate-700 leading-none'>
                 {currentDate}
               </p>
             </div>
@@ -193,7 +193,7 @@ const handleSearchPatient = async e => {
           <div className='overflow-x-auto custom-scrollbar'>
             <table className='w-full text-left border-collapse'>
               <thead>
-                <tr className='text-[13px] font-black text-slate-600 uppercase tracking-[0.2em] border-b border-slate-100 bg-white'>
+                <tr className='text-[13px] font-black text-slate-900 uppercase tracking-[0.2em] border-b border-slate-100 bg-white'>
                   <th className='p-8 text-center w-24'>#</th>
                   <th className='p-8'>Patient ID</th>
                   <th className='p-8'>Full Name</th>
