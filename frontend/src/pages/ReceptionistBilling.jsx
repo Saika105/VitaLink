@@ -468,7 +468,7 @@ const ReceptionistBilling = () => {
           <div className='no-print flex justify-end pt-1'>
             <button
               onClick={() => window.print()}
-              className='w-full h-12 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[11px] rounded-xl font-black uppercase tracking-widest shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98] disabled:opacity-50 font-inter'
+              className='w-64 py-3.5 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[11px] rounded-lg font-black uppercase tracking-widest shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98] disabled:opacity-50 font-inter border-none cursor-pointer'
             >
               Print Invoice
             </button>
