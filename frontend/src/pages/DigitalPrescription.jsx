@@ -125,8 +125,8 @@ const DigitalPrescription = () => {
       if (isVaultAccess) {
          doc.save(`Prescription_${patientInfo.upid}.pdf`);
          alert('Prescription downloaded successfully.');
-          navigate(`/doctor/patient-view/${upid}`);
-          return;
+        navigate(`/doctor/patient-view/${patientInfo.upid}`);
+        return;
     }
       const pdfBlob = doc.output('blob');
       const formData = new FormData();
@@ -164,7 +164,7 @@ const DigitalPrescription = () => {
 
       if (response.ok) {
         alert('Prescription successfully synced to HealthVault.');
-        navigate(`/doctor/patient-view/${upid}`);
+        navigate(`/doctor/patient-view/${patientInfo.upid}`);
       } else {
         const errData = await response.json().catch(() => ({}));
         alert(`Sync failed: ${errData.message || 'Server Error'}`);
