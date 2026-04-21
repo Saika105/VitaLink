@@ -11,7 +11,7 @@ const DigitalPrescription = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
   const appointmentId = state?.appointmentId;
-
+  const isVaultAccess = state?.isVaultAccess || false;
   const [medicineInput, setMedicineInput] = useState('');
   const [medicineList, setMedicineList] = useState([]);
   const [doctorInfo, setDoctorInfo] = useState(null);
@@ -51,7 +51,7 @@ const DigitalPrescription = () => {
     const savedUser = JSON.parse(localStorage.getItem('user'));
     if (savedUser) setDoctorInfo(savedUser);
 
-    if (!appointmentId) {
+    if (!appointmentId && !isVaultAccess) {
       alert('Session reference missing.');
       navigate(-1);
     }
@@ -122,6 +122,12 @@ const DigitalPrescription = () => {
       doc.setFont(undefined, 'normal');
       doc.text(`${doctorInfo?.specialization.toUpperCase()}`, 140, finalY + 55);
 
+      if (isVaultAccess) {
+         doc.save(`Prescription_${patientInfo.upid}.pdf`);
+         alert('Prescription downloaded successfully.');
+          navigate(`/doctor/patient-view/${upid}`);
+          return;
+    }
       const pdfBlob = doc.output('blob');
       const formData = new FormData();
       formData.append(

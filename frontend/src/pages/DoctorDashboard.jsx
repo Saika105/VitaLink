@@ -106,7 +106,9 @@ const handleSearchPatient = async e => {
     const isManual = selectedPatient._id.toString().startsWith('manual');
 
     if (isManual) {
-      navigate(`/doctor/patient-view/${selectedPatient.patient.upid}`);
+      navigate(`/doctor/patient-view/${selectedPatient.patient.upid}`, {
+        state: { appointmentId: null, isVaultAccess: true },
+      });
       return;
     }
 
