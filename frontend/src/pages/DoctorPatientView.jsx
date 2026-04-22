@@ -252,9 +252,16 @@ const DoctorPatientView = () => {
               <div className='flex flex-col gap-2'>
                 <button
                   onClick={() =>
-                    navigate(`/doctor/create-prescription/${patientData._id}`, {
-                      state: { patient: patientData, appointmentId },
-                    })
+                    navigate(
+                      `/doctor/create-prescription/${patientData.upid}`,
+                      {
+                        state: {
+                          patient: patientData,
+                          appointmentId,
+                          isVaultAccess: !appointmentId,
+                        },
+                      },
+                    )
                   }
                   className='w-54 h-12 bg-[#3B82F6] text-white text-[11px] font-black uppercase tracking-widest rounded-xl shadow-lg transition-all active:scale-95'
                 >

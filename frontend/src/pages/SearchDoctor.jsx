@@ -135,12 +135,12 @@ const SearchDoctor = () => {
                 key={doc._id}
                 className='bg-white border border-slate-200 rounded-3xl p-6 shadow-lg hover:shadow-2xl transition-all border-b-4 border-b-transparent hover:border-b-blue-600 flex flex-col'
               >
-                <div className='w-full h-32 bg-slate-50 rounded-2xl mb-5 flex items-center justify-center border border-slate-100 overflow-hidden'>
+                <div className='w-full h-48 bg-slate-50 rounded-2xl mb-5 flex items-center justify-center border border-slate-100 overflow-hidden'>
                   {doc.profilePhoto?.url ? (
                     <img
                       src={doc.profilePhoto.url}
                       alt={doc.fullName}
-                      className='w-full h-full object-cover'
+                      className='w-full h-full object-cover object-top'
                     />
                   ) : (
                     <svg

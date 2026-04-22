@@ -7,37 +7,37 @@ const TeamPage = () => {
     {
       name: 'Jannatul Fardush',
       email: 'jannatul.fardush.cse@ulab.edu.bd',
-      phone: '+880 1790-673563',
+      ID: '233014052',
       emoji: '🙋🏻‍♀️',
     },
     {
       name: 'Nargish Fatema Pata',
       email: 'nargish.fatema.cse@ulab.edu.bd',
-      phone: '+880 1779-756595',
+      ID: '233014196',
       emoji: '🙋🏻‍♀️',
     },
     {
       name: 'Mustara Khatun Mugni',
       email: 'mustara.khatun.cse@ulab.edu.bd',
-      phone: '+880 1746-121206',
+      ID: '233014130',
       emoji: '🙋🏻‍♀️',
     },
     {
       name: 'Mahdia Hossain',
       email: 'mahdia.hossain.cse@ulab.edu.bd',
-      phone: '+880 1407-008820',
+      ID: '233014123',
       emoji: '🙋🏻‍♀️',
     },
     {
       name: 'Nusrat Ahmed Niva',
       email: 'Nusrat.ahmed1.cse@ulab.edu.bd',
-      phone: '+880 1933-898744',
+      ID: '233014217',
       emoji: '🙋🏻‍♀️',
     },
     {
       name: 'Saika Mehnaz Khan',
       email: 'saika.mehnaz.cse@ulab.edu.bd',
-      phone: '+880 1876-947826',
+      ID: '233014105',
       emoji: '🙋🏻‍♀️',
     },
   ];
@@ -102,8 +102,8 @@ const TeamPage = () => {
                   </div>
 
                   <div className='flex items-center gap-2 text-slate-500'>
-                    <span className='text-xs'>📞</span>
-                    <p className='text-[11px] font-bold'>{member.phone}</p>
+                    <span className='text-xs'>🪪</span>
+                    <p className='text-[11px] font-bold'>{member.ID}</p>
                   </div>
                 </div>
               </div>
