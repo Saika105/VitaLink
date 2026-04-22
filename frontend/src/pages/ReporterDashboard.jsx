@@ -8,23 +8,26 @@ const ReporterDashboard = () => {
   const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [reporterInfo, setReporterInfo] = useState({ fullName: '' });
+ const [reporterInfo, setReporterInfo] = useState(() => {
+   try {
+     const user = JSON.parse(localStorage.getItem('user') || '{}');
+     return { fullName: user.fullName || '' };
+   } catch {
+     return { fullName: '' };
+   }
+ });
 
   const fetchDashboardData = async () => {
     try {
-      const profileRes = await protectedFetch(`/api/v1/reporter/profile`);
-      if (profileRes.ok) {
-        const profileResult = await profileRes.json();
-        setReporterInfo(profileResult.data);
-      }
-
-      const patientsRes = await protectedFetch(`/api/v1/reporter/patients`);
+      const patientsRes = await protectedFetch(
+        `/api/v1/lab-assistants/dashboard`,
+      );
       if (patientsRes.ok) {
         const patientsResult = await patientsRes.json();
-        const sorted = (patientsResult.data || []).sort(
-            (a, b) => b.paidCount - a.paidCount,
-          );
-setPatients(sorted);      }
+        const sorted = (patientsResult.data || [])
+          .filter(p => p.hasPendingWork > 0)
+          .sort((a, b) => b.paidTests - a.paidTests);
+  setPatients(sorted);      }
     } catch (err) {
       console.error('Dashboard Sync Error:', err);
     } finally {
@@ -115,10 +118,10 @@ setPatients(sorted);      }
                         {p.totalTests}
                       </td>
                       <td className='p-6 text-center font-black text-green-600'>
-                        {p.paidCount}
+                        {p.paidTests}
                       </td>
                       <td className='p-6 text-center font-black text-red-500'>
-                        {p.dueCount}
+                        {p.dueTests}
                       </td>
                       <td className='p-6 text-right'>
                         <button
@@ -127,7 +130,7 @@ setPatients(sorted);      }
                               state: { patient: p },
                             })
                           }
-                          className='bg-blue-600 text-white px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-md active:scale-95'
+                          className='bg-blue-500 text-white px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-900 transition-all shadow-md active:scale-95'
                         >
                           View Vault
                         </button>

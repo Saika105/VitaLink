@@ -7,11 +7,11 @@ import Footer from '../components/Footer';
 import { protectedFetch } from '../utils/api';
 
 const DigitalPrescription = () => {
-  const { id } = useParams();
+  const { upid } = useParams();
   const navigate = useNavigate();
   const { state } = useLocation();
   const appointmentId = state?.appointmentId;
-
+  const isVaultAccess = state?.isVaultAccess || false;
   const [medicineInput, setMedicineInput] = useState('');
   const [medicineList, setMedicineList] = useState([]);
   const [doctorInfo, setDoctorInfo] = useState(null);
@@ -36,7 +36,7 @@ const DigitalPrescription = () => {
 
   const patientInfo = state?.patient || {
     fullName: 'PATIENT',
-    upid: id,
+    upid: upid,
     dateOfBirth: null,
     gender: '--',
   };
@@ -51,7 +51,7 @@ const DigitalPrescription = () => {
     const savedUser = JSON.parse(localStorage.getItem('user'));
     if (savedUser) setDoctorInfo(savedUser);
 
-    if (!appointmentId) {
+    if (!appointmentId && !isVaultAccess) {
       alert('Session reference missing.');
       navigate(-1);
     }
@@ -76,11 +76,9 @@ const DigitalPrescription = () => {
 
     try {
       const doc = new jsPDF();
-
       doc.setFontSize(22);
       doc.setTextColor(59, 130, 246);
       doc.text('VITALINK DIGITAL PRESCRIPTION', 14, 20);
-
       doc.setDrawColor(200, 200, 200);
       doc.rect(14, 25, 182, 25);
       doc.setFontSize(10);
@@ -93,7 +91,6 @@ const DigitalPrescription = () => {
         140,
         42,
       );
-
       doc.setFontSize(12);
       doc.setTextColor(0);
       doc.text('OBSERVATION:', 14, 65);
@@ -112,16 +109,12 @@ const DigitalPrescription = () => {
       doc.text('REQUIRED TESTS:', 14, finalY);
       doc.setFontSize(10);
       doc.text(prescriptionData.tests || 'None', 14, finalY + 7);
-
-      doc.setFontSize(12);
       doc.text("DOCTOR'S ADVICE:", 14, finalY + 20);
-      doc.setFontSize(10);
       doc.text(
         prescriptionData.advice || 'Follow up as needed',
         14,
         finalY + 27,
       );
-
       doc.setFontSize(12);
       doc.setFont(undefined, 'bold');
       doc.text(`DR. ${doctorInfo?.fullName.toUpperCase()}`, 140, finalY + 50);
@@ -129,42 +122,52 @@ const DigitalPrescription = () => {
       doc.setFont(undefined, 'normal');
       doc.text(`${doctorInfo?.specialization.toUpperCase()}`, 140, finalY + 55);
 
+      if (isVaultAccess) {
+         doc.save(`Prescription_${patientInfo.upid}.pdf`);
+         alert('Prescription downloaded successfully.');
+        navigate(`/doctor/patient-view/${patientInfo.upid}`);
+        return;
+    }
       const pdfBlob = doc.output('blob');
-      const pdfFile = new File(
-        [pdfBlob],
-        `Prescription_${patientInfo.upid}.pdf`,
-        { type: 'application/pdf' },
-      );
-
       const formData = new FormData();
-      formData.append('prescriptionFile', pdfFile);
-
+      formData.append(
+        'prescriptionFile',
+        pdfBlob,
+        `Prescription_${patientInfo.upid}.pdf`,
+      );
       formData.append(
         'diagnosis',
         prescriptionData.illness || 'General Consultation',
       );
-      formData.append('medications', JSON.stringify(medicineList));
+
+     const medicationsObjArray = medicineList.map(med => ({
+       name: med,
+       dosage: 'As directed',
+       duration: 'As directed',
+     }));
+      formData.append('medications', JSON.stringify(medicationsObjArray));
       formData.append('advice', prescriptionData.advice || 'N/A');
-      formData.append(
-        'requiredTests',
-        JSON.stringify(
-          prescriptionData.tests ? prescriptionData.tests.split(',') : [],
-        ),
-      );
+
+      const testArray = prescriptionData.tests
+        ? prescriptionData.tests.split(',').map(t => t.trim())
+        : [];
+      formData.append('requiredTests', JSON.stringify(testArray));
 
       const response = await protectedFetch(
         `/api/v1/doctors/sign-prescription/${appointmentId}`,
         {
           method: 'POST',
           body: formData,
+          isMultipart: true,
         },
       );
 
       if (response.ok) {
         alert('Prescription successfully synced to HealthVault.');
-        navigate(`/doctor/patient-view/${id}`);
+        navigate(`/doctor/patient-view/${patientInfo.upid}`);
       } else {
-        alert('Sync failed. Backend error.');
+        const errData = await response.json().catch(() => ({}));
+        alert(`Sync failed: ${errData.message || 'Server Error'}`);
       }
     } catch (err) {
       console.error(err);
@@ -329,7 +332,6 @@ const DigitalPrescription = () => {
                   />
                 </div>
               </div>
-
               <div className='mt-20 flex justify-end pb-4 border-t border-slate-100 pt-8'>
                 <div className='text-right'>
                   <p className='text-md font-black text-black uppercase tracking-tight'>
@@ -343,7 +345,6 @@ const DigitalPrescription = () => {
             </section>
           </div>
         </div>
-
         <div className='mt-8 flex justify-end items-center'>
           <button
             onClick={handleSave}

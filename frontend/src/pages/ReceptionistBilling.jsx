@@ -28,7 +28,7 @@ const ReceptionistBilling = () => {
 
     const fetchTests = async () => {
       try {
-        const res = await protectedFetch(`/api/v1/receptionists/tests`);
+        const res = await protectedFetch(`/api/v1/receptionists/search-tests`);
         if (res.ok) {
           const result = await res.json();
           setTestCatalog(result.data || []);
@@ -56,7 +56,7 @@ const ReceptionistBilling = () => {
     if (!patientIdSearch.trim()) return;
     try {
       const res = await protectedFetch(
-        `/api/v1/receptionists/patient/${patientIdSearch}`,
+        `/api/v1/receptionists/search-patient?upid=${patientIdSearch}`,
       );
       if (res.ok) {
         const result = await res.json();
@@ -79,7 +79,9 @@ const ReceptionistBilling = () => {
         itemName: testObj.name,
         unitPrice: testObj.price,
         quantity: 1,
-        room: testObj.room || 'General Lab',
+        room: testObj.room
+          ? `Floor ${testObj.room.floor} - Room ${testObj.room.roomNumber}`
+          : 'General Lab',
         amount: testObj.price,
         discount: 0,
       },
@@ -123,24 +125,14 @@ const ReceptionistBilling = () => {
     );
 
     const payload = {
-      patient: currentPatient._id,
-      items: billItems.map(item => ({
-        test: item.testId,
-        name: item.itemName,
-        unitPrice: item.unitPrice,
-        amount: item.amount,
-      })),
-      subtotal: billItems.reduce((acc, item) => acc + item.unitPrice, 0),
-      discount: totalDisc,
-      totalAmount: calculateTotal,
-      amountPaid: parseFloat(amountPaidNow) || 0,
+      patientId: currentPatient._id,
+      testItems: billItems.map(item => ({ testName: item.itemName })),
+      paidAmount: parseFloat(amountPaidNow) || 0,
       paymentMethod: paymentMethod.toLowerCase(),
-      transactionId: trxId || null,
-      billSummary: billItems.map(i => i.itemName).join(', '),
     };
 
     try {
-      const res = await protectedFetch(`/api/v1/receptionists/create-bill`, {
+      const res = await protectedFetch(`/api/v1/receptionists/create-invoice`, {
         method: 'POST',
         body: JSON.stringify(payload),
       });
@@ -476,7 +468,7 @@ const ReceptionistBilling = () => {
           <div className='no-print flex justify-end pt-1'>
             <button
               onClick={() => window.print()}
-              className='w-full h-12 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[11px] rounded-xl font-black uppercase tracking-widest shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98] disabled:opacity-50 font-inter'
+              className='w-64 py-3.5 bg-[#3B82F6] hover:bg-[#1E40AF] text-white text-[11px] rounded-lg font-black uppercase tracking-widest shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98] disabled:opacity-50 font-inter border-none cursor-pointer'
             >
               Print Invoice
             </button>
