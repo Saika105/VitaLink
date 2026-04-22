@@ -291,7 +291,13 @@ const PatientSignUp = () => {
                     className='w-full border border-slate-200 rounded-lg p-3 bg-slate-50 font-inter text-[#3B82F6] text-center text-xl font-bold cursor-not-allowed'
                   />
                 </div>
-
+                <div className='flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 font-inter'>
+                  <span className='text-amber-500 text-base mt-px'>⚠️</span>
+                  <p className='text-[10px] font-black text-amber-700 uppercase tracking-wide leading-relaxed font-inter'>
+                    Important — Save your Unique ID now. You will need it to log
+                    in. This will not be shown again.
+                  </p>
+                </div>
                 <div className='flex flex-col gap-1 font-inter'>
                   <label className='text-[10px] font-black text-black uppercase tracking-widest font-inter'>
                     Secure Password
