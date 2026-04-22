@@ -1,6 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { LabAssistant } from "../models/labAssistant.model.js";
+import { LabReport } from "../models/labReport.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { deleteFromCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -85,4 +86,129 @@ const logoutLabAssistant = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Lab Assistant logged out successfully"));
 });
 
-export { loginLabAssistant, logoutLabAssistant };
+//*************Get prioritized patient list for Diagnostic Dashboard  ********** */
+const getLabDashboard = asyncHandler(async (req, res) => {
+  const hospitalId = req.user.hospital;
+
+  const dashboardData = await LabReport.aggregate([
+    {
+      $match: {
+        hospital: new mongoose.Types.ObjectId(String(hospitalId)),
+      },
+    },
+
+    {
+      $group: {
+        _id: "$patient",
+        totalTests: { $sum: 1 },
+        paidTests: { $sum: { $cond: ["$isPaid", 1, 0] } },
+        dueTests: { $sum: { $cond: ["$isPaid", 0, 1] } },
+        hasPendingWork: {
+          $sum: { $cond: [{ $eq: ["$status", "pending"] }, 1, 0] },
+        },
+      },
+    },
+
+    {
+      $lookup: {
+        from: "patients",
+        localField: "_id",
+        foreignField: "_id",
+        as: "patientInfo",
+      },
+    },
+
+    { $unwind: "$patientInfo" },
+
+    {
+      $project: {
+        upid: "$patientInfo.upid",
+        fullName: "$patientInfo.fullName",
+        totalTests: 1,
+        paidTests: 1,
+        dueTests: 1,
+        hasPendingWork: 1,
+        priority: { $cond: [{ $gt: ["$paidTests", 0] }, 1, 0] },
+      },
+    },
+
+    { $sort: { priority: -1, fullName: 1 } },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        dashboardData,
+        "Diagnostic dashboard fetched successfully",
+      ),
+    );
+});
+
+//************* Get all tests for a specific patient ********** */
+const getPatientTests = asyncHandler(async (req, res) => {
+  const { patientId } = req.params;
+
+  const reports = await LabReport.find({
+    patient: patientId,
+    hospital: req.user.hospital,
+    status: "pending", 
+  })
+    .populate("patient", "fullName upid")
+    .populate("room", "roomName roomNumber floor") 
+    .sort({ createdAt: -1 }); 
+
+  if (!reports || reports.length === 0) {
+    throw new ApiError(404, "No pending tests found for this patient at your hospital");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, reports, "Pending patient tests retrieved successfully"));
+});
+
+//************* Upload Diagnostic Report (PDF/JPG/PNG) ********** */
+const uploadDiagnosticReport = asyncHandler(async (req, res) => {
+  const { reportId } = req.params;
+
+  const report = await LabReport.findOne({ _id: reportId, hospital: req.user.hospital });
+  if (!report) throw new ApiError(404, "Test record not found");
+
+  if (!report.isPaid) throw new ApiError(403, "Payment is DUE. Cannot upload.");
+  if (report.status === "completed") throw new ApiError(400, "Report already exists.");
+  if (!req.file) throw new ApiError(400, "PDF or Image file is required");
+
+  const uploadResult = await uploadOnCloudinary(req.file.path);
+  if (!uploadResult) throw new ApiError(500, "Cloudinary upload failed");
+
+  try {
+    report.reportFile = {
+      url: uploadResult.secure_url,
+      public_id: uploadResult.public_id,
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      size: uploadResult.bytes,
+    };
+    report.status = "completed";
+    report.labAssistant = req.user._id;
+    report.reportDate = new Date();
+
+    await report.save();
+
+    return res.status(200).json(new ApiResponse(200, report, "Report uploaded successfully"));
+  } catch (error) {
+    if (uploadResult?.public_id) {
+      await deleteFromCloudinary(uploadResult.public_id, req.file.mimetype);
+    }
+    throw new ApiError(500, error?.message || "Failed to save record.");
+  }
+});
+
+export {
+  loginLabAssistant,
+  logoutLabAssistant,
+  getLabDashboard,
+  getPatientTests,
+  uploadDiagnosticReport,
+};

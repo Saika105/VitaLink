@@ -97,40 +97,59 @@ const logoutDoctor = asyncHandler(async (req, res) => {
 //**************Fetch Todays Appointments*********** */
 const getTodayAppointments = asyncHandler(async (req, res) => {
   const now = new Date();
-  const today = new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      0,
-      0,
-      0,
-      0,
-    ),
-  );
-  const endOfToday = new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      23,
-      59,
-      59,
-      999,
-    ),
-  );
-
-  const queue = await Appointment.find({
-    doctor: req.user._id,
-    hospital: req.user.hospital,
-    appointmentDate: { $gte: today, $lte: endOfToday },
-    bookingStatus: "scheduled",
-  })
-    .populate({
-      path: "patient",
-      select: "fullName upid profilePhoto gender age",
-    })
-    .sort({ serialNumber: 1 });
+  const dhakaDate = now.toLocaleDateString("en-CA", {
+    timeZone: "Asia/Dhaka",
+  });
+  const today = new Date(`${dhakaDate}T00:00:00.000Z`);
+  const tomorrow = new Date(today);
+  tomorrow.setUTCDate(today.getUTCDate() + 1);
+  
+  const queue = await Appointment.aggregate([
+    {
+      $match: {
+        doctor: new mongoose.Types.ObjectId(req.user._id),
+        hospital: new mongoose.Types.ObjectId(req.user.hospital),
+        appointmentDate: { $gte: today, $lt: tomorrow },
+        bookingStatus: "scheduled",
+      },
+    },
+    {
+      $lookup: {
+        from: "patients",
+        localField: "patient",
+        foreignField: "_id",
+        as: "patientDetails",
+      },
+    },
+    {
+      $addFields: {
+        patient: { $first: "$patientDetails" },
+        sortPriority: {
+          $cond: {
+            if: { $eq: ["$appointmentType", "follow_up"] },
+            then: 0,
+            else: 1,
+          },
+        },
+      },
+    },
+    {
+      $sort: { sortPriority: 1, serialNumber: 1 },
+    },
+    {
+      $project: {
+        _id: 1,
+        serialNumber: 1,
+        appointmentType: 1,
+        queueStatus: 1,
+        "patient.fullName": 1,
+        "patient.upid": 1,
+        "patient.profilePhoto": 1,
+        "patient.gender": 1,
+        "patient.age": 1,
+      },
+    },
+  ]);
 
   if (!queue || queue.length === 0) {
     return res
@@ -241,53 +260,130 @@ const createDigitalPrescription = asyncHandler(async (req, res) => {
   const { diagnosis, medications, advice, requiredTests } = req.body;
 
   const appointment = await Appointment.findById(appointmentId)
-    .populate("patient")
-    .populate("doctor")
-    .populate("hospital");
+    .populate("patient doctor hospital");
 
-  if (!appointment) throw new ApiError(404, "Appointment not found");
-
-  if (appointment.doctor._id.toString() !== req.user._id.toString()) {
-    throw new ApiError(
-      403,
-      "You can only sign prescriptions for your own appointments",
-    );
+  if (!appointment) {
+    if (req.file) fs.unlinkSync(req.file.path); 
+    throw new ApiError(404, "Appointment not found");
   }
 
-  const prescription = await Prescription.create({
-    prescriptionId: generatePrescriptionId(),
-    patient: appointment.patient._id,
-    doctor: appointment.doctor._id,
-    hospital: appointment.hospital._id,
-    appointment: appointment._id,
+  let formattedMedications = [];
+  let formattedTests = [];
+  try {
+    const parsedMeds = medications ? JSON.parse(medications) : [];
+    formattedMedications = parsedMeds.map(med => ({
+      name: typeof med === 'string' ? med : med.name,
+      dosage: med.dosage || "As directed",
+      frequency: med.frequency || "N/A",
+      duration: med.duration || "As directed",
+      instructions: med.instructions || ""
+    }));
+    formattedTests = requiredTests ? JSON.parse(requiredTests) : [];
+  } catch (e) {
+    if (req.file) fs.unlinkSync(req.file.path);
+    throw new ApiError(400, "Invalid JSON format for medications or tests.");
+  }
 
-    manualDoctorName: appointment.doctor.fullName,
-    manualHospitalName: appointment.hospital.fullName,
+  if (!req.file) throw new ApiError(400, "Prescription file is missing");
+  
+  const uploadResult = await uploadOnCloudinary(req.file.path);
+  if (!uploadResult) throw new ApiError(500, "Cloudinary upload failed");
 
-    diagnosis: diagnosis || "Consultation",
-    medications: medications,
-    advice: advice,
-    requiredTests: requiredTests,
+  try {
+    const prescription = await Prescription.create({
+      prescriptionId: generatePrescriptionId(), 
+      patient: appointment.patient._id,
+      doctor: appointment.doctor._id,
+      hospital: appointment.hospital?._id,
+      appointment: appointment._id,
 
-    source: "doctor",
-    prescribedDate: new Date(),
-  });
+      manualDoctorName: appointment.doctor.fullName,
+      manualHospitalName: appointment.hospital?.fullName || "General",
 
-  appointment.hasDigitalPrescription = true;
-  await appointment.save();
+      diagnosis: diagnosis || "Consultation",
+      medications: formattedMedications, 
+      advice: advice,
+      requiredTests: formattedTests,
 
-  return res.status(201).json(
-    new ApiResponse(
-      201,
-      {
-        prescription,
-        patientId: appointment.patient._id,
-        appointmentId: appointment._id,
+      source: "doctor",
+      prescribedDate: new Date(),
+      
+      prescriptionFile: {
+        url: uploadResult.secure_url,
+        public_id: uploadResult.public_id,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        size: uploadResult.bytes,
       },
-      "Prescription saved successfully",
-    ),
-  );
+    });
+
+    appointment.hasDigitalPrescription = true;
+    await appointment.save();
+
+    return res.status(201).json(
+      new ApiResponse(201, prescription, "Prescription saved and file uploaded!")
+    );
+
+  } catch (error) {
+    if (uploadResult?.public_id) {
+      await deleteFromCloudinary(uploadResult.public_id);
+    }
+    throw new ApiError(500, error?.message || "Database saving failed. File rolled back.");
+  }
 });
+
+// const createDigitalPrescription = asyncHandler(async (req, res) => {
+//   const { appointmentId } = req.params;
+//   const { diagnosis, medications, advice, requiredTests } = req.body;
+
+//   const appointment = await Appointment.findById(appointmentId)
+//     .populate("patient")
+//     .populate("doctor")
+//     .populate("hospital");
+
+//   if (!appointment) throw new ApiError(404, "Appointment not found");
+
+//   if (appointment.doctor._id.toString() !== req.user._id.toString()) {
+//     throw new ApiError(
+//       403,
+//       "You can only sign prescriptions for your own appointments",
+//     );
+//   }
+
+//   const prescription = await Prescription.create({
+//     prescriptionId: generatePrescriptionId(),
+//     patient: appointment.patient._id,
+//     doctor: appointment.doctor._id,
+//     hospital: appointment.hospital._id,
+//     appointment: appointment._id,
+
+//     manualDoctorName: appointment.doctor.fullName,
+//     manualHospitalName: appointment.hospital.fullName,
+
+//     diagnosis: diagnosis || "Consultation",
+//     medications: medications,
+//     advice: advice,
+//     requiredTests: requiredTests,
+
+//     source: "doctor",
+//     prescribedDate: new Date(),
+//   });
+
+//   appointment.hasDigitalPrescription = true;
+//   await appointment.save();
+
+//   return res.status(201).json(
+//     new ApiResponse(
+//       201,
+//       {
+//         prescription,
+//         patientId: appointment.patient._id,
+//         appointmentId: appointment._id,
+//       },
+//       "Prescription saved successfully",
+//     ),
+//   );
+// });
 
 export {
   loginDoctor,

@@ -129,13 +129,6 @@ const searchPatientByUPID = asyncHandler(async (req, res) => {
 
 //**************Add appointment ******************/
 const addAppointmentToQueue = asyncHandler(async (req, res) => {
-  //steps:
-  //1. Get patient ID from request body
-  //2. Validate patient exists
-  //3. Get today's date and count how many appointments doctor already has today to determine next serial number
-  //4. Get doctor's schedule to determine time slot (for simplicity, we will assign the first time slot of the day)
-  //5. Create new appointment with status "scheduled" and queueStatus "pending"
-  //6. Add new appointment to queue with current timestamp
   const { patientId } = req.body;
 
   if (!patientId) {
@@ -151,36 +144,19 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
   }
 
   const now = new Date();
-  const today = new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      0,
-      0,
-      0,
-      0,
-    ),
-  );
-  const endOfToday = new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      23,
-      59,
-      59,
-      999,
-    ),
-  );
+  const dhakaDate = now.toLocaleDateString("en-CA", {
+    timeZone: "Asia/Dhaka",
+  });
+  const today = new Date(`${dhakaDate}T00:00:00.000Z`);
+  const tomorrow = new Date(today);
+  tomorrow.setUTCDate(today.getUTCDate() + 1);
 
   const alreadyInQueue = await Appointment.findOne({
     patient: patientRecord._id,
     doctor: req.user.doctor?._id || req.user.doctor,
     hospital: req.user.hospital?._id || req.user.hospital,
-    appointmentDate: { $gte: today, $lte: endOfToday },
+    appointmentDate: { $gte: today, $lt: tomorrow },
     bookingStatus: "scheduled",
-    // appointmentType: { $ne: "follow_up" },
   });
 
   if (alreadyInQueue) {
@@ -190,7 +166,7 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
   const lastAppointment = await Appointment.findOne({
     doctor: req.user.doctor?._id || req.user.doctor,
     hospital: req.user.hospital?._id || req.user.hospital,
-    appointmentDate: { $gte: today, $lte: endOfToday },
+    appointmentDate: { $gte: today, $lt: tomorrow },
   })
     .sort({ serialNumber: -1 })
     .select("serialNumber");
@@ -239,31 +215,19 @@ const addAppointmentToQueue = asyncHandler(async (req, res) => {
 
 //***************Fetch That Days Queue For Assistant Table******* */
 const getDailyAppointmentList = asyncHandler(async (req, res) => {
+  // const now = new Date();
+  // const localDateString = now.toLocaleDateString("en-CA");
+  // const today = new Date(`${localDateString}T00:00:00.000Z`);
+  // const tomorrow = new Date(today);
+  // tomorrow.setUTCDate(today.getUTCDate() + 1);
+
   const now = new Date();
-
-  const today = new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      0,
-      0,
-      0,
-      0,
-    ),
-  );
-
-  const tomorrow = new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate() + 1,
-      0,
-      0,
-      0,
-      0,
-    ),
-  );
+  const dhakaDate = now.toLocaleDateString("en-CA", {
+    timeZone: "Asia/Dhaka",
+  });
+  const today = new Date(`${dhakaDate}T00:00:00.000Z`);
+  const tomorrow = new Date(today);
+  tomorrow.setUTCDate(today.getUTCDate() + 1);
 
   const dailyQueue = await Appointment.aggregate([
     {
@@ -328,64 +292,6 @@ const getDailyAppointmentList = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, dailyQueue, "Daily queue synchronized"));
 });
-
-// const getDailyAppointmentList = asyncHandler(async (req, res) => {
-//   const today = new Date();
-//   today.setHours(0, 0, 0, 0);
-
-//   const tomorrow = new Date(today);
-//   tomorrow.setDate(tomorrow.getDate() + 1);
-
-//   const dailyQueue = await Appointment.aggregate([
-//     {
-//       $match: {
-//         doctor: new mongoose.Types.ObjectId(req.user.doctor),
-//         hospital: new mongoose.Types.ObjectId(req.user.hospital),
-//         appointmentDate: {
-//           $gte: today,
-//           $lt: tomorrow,
-//         },
-//         bookingStatus: "scheduled",
-//       },
-//     },
-//     {
-//       $lookup: {
-//         from: "patients",
-//         localField: "patient",
-//         foreignField: "_id",
-//         as: "patientDetails",
-//       },
-//     },
-//     {
-//       $addFields: {
-//         patient: { $first: "$patientDetails" },
-//         sortPriority: {
-//           $cond: [{ $eq: ["$appointmentType", "follow_up"] }, 0, 1],
-//         },
-//       },
-//     },
-//     {
-//       $sort: { sortPriority: 1, serialNumber: 1 },
-//     },
-//     {
-//       $project: {
-//         _id: 1,
-//         serialNumber: 1,
-//         arrivalTime: 1,
-//         queueStatus: 1,
-//         appointmentType: 1,
-//         followUpDate: 1,
-//         "patient.fullName": 1,
-//         "patient.upid": 1,
-//         "patient.gender": 1,
-//       },
-//     },
-//   ]);
-
-//   return res
-//     .status(200)
-//     .json(new ApiResponse(200, dailyQueue, "Daily queue synchronized"));
-// });
 
 //*********Update Queue Status For Specific Appointment********** */
 const updateQueueStatus = asyncHandler(async (req, res) => {
@@ -475,39 +381,18 @@ const uploadPrescriptionByAssistant = asyncHandler(async (req, res) => {
 // *******************Clear Daily Queue ********************* */
 const clearDailyQueue = asyncHandler(async (req, res) => {
   const now = new Date();
-  const today = new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      0,
-      0,
-      0,
-      0,
-    ),
-  );
-  const endOfToday = new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      23,
-      59,
-      59,
-      999,
-    ),
-  );
-
-  // const today = new Date();
-  // today.setHours(0, 0, 0, 0);
-  // const endOfToday = new Date();
-  // endOfToday.setHours(23, 59, 59, 999);
+  const dhakaDate = now.toLocaleDateString("en-CA", {
+    timeZone: "Asia/Dhaka",
+  });
+  const today = new Date(`${dhakaDate}T00:00:00.000Z`);
+  const tomorrow = new Date(today);
+  tomorrow.setUTCDate(today.getUTCDate() + 1);
 
   const result = await Appointment.updateMany(
     {
       doctor: req.user.doctor?._id || req.user.doctor,
       hospital: req.user.hospital?._id || req.user.hospital,
-      appointmentDate: { $gte: today, $lte: endOfToday },
+      appointmentDate: { $gte: today, $lt: tomorrow },
       bookingStatus: "scheduled",
     },
     {
@@ -531,19 +416,10 @@ const clearDailyQueue = asyncHandler(async (req, res) => {
 });
 
 // ************** Schedule Follow-Up Appointment ********** */
+// ************** Schedule Follow-Up Appointment ********** */
 const scheduleFollowUp = asyncHandler(async (req, res) => {
-  //steps:
-  //1. Get appointment ID from params and followUpDate from body
-  //2. Validate appointment exists and belongs to this Assistant's Doctor
-  //3. Validate followUpDate is in the future
-  //4. Validate followUpDate is not already scheduled for this patient and doctor
-  //5. Count how many FOLLOW-UPS already exist for that future date to determine new serial number
-  //6. RE-SHUFFLE ONLY REGULAR PATIENTS: We only increment serials for patients who are NOT follow-ups OR whose serial is >= our new position.
-  //7. Create the New Future Appointment with type "follow_up"
-  //8. Update current record with followUpDate
-  //9. Return success response
   const { appointmentId } = req.params;
-  const { followUpDate } = req.body;
+  const { followUpDate } = req.body; 
 
   const currentAppt = await Appointment.findById(appointmentId);
   if (!currentAppt) throw new ApiError(404, "Original appointment not found");
@@ -551,21 +427,11 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
   const [year, month, day] = followUpDate.split("-").map(Number);
   const futureDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
 
-  // const todayStart = new Date();
-  // todayStart.setHours(0, 0, 0, 0);
-
   const now = new Date();
-  const todayStart = new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      0,
-      0,
-      0,
-      0,
-    ),
-  );
+  const dhakaDateString = now.toLocaleDateString("en-CA", {
+    timeZone: "Asia/Dhaka",
+  });
+  const todayStart = new Date(`${dhakaDateString}T00:00:00.000Z`);
 
   if (futureDate <= todayStart) {
     throw new ApiError(400, "Follow-up date must be a future date.");
@@ -587,6 +453,7 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
     hospital: currentAppt.hospital,
     appointmentDate: futureDate,
     appointmentType: "follow_up",
+    bookingStatus: "scheduled", //newwwwwwww
   });
 
   const newFollowUpSerial = existingFollowUpCount + 1;
@@ -596,7 +463,7 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
     patient: currentAppt.patient,
     doctor: currentAppt.doctor,
     hospital: currentAppt.hospital,
-    appointmentDate: futureDate,
+    appointmentDate: futureDate, 
     serialNumber: newFollowUpSerial,
     timeSlot: currentAppt.timeSlot,
     appointmentType: "follow_up",
@@ -608,15 +475,13 @@ const scheduleFollowUp = asyncHandler(async (req, res) => {
   currentAppt.followUpDate = futureDate;
   await currentAppt.save();
 
-  return res
-    .status(201)
-    .json(
-      new ApiResponse(
-        201,
-        followUpAppt,
-        `Follow-up Serial #${newFollowUpSerial} booked for ${followUpDate}`,
-      ),
-    );
+  return res.status(201).json(
+    new ApiResponse(
+      201,
+      followUpAppt,
+      `Follow-up Serial #${newFollowUpSerial} booked for ${followUpDate}`
+    )
+  );
 });
 
 const checkInPatient = asyncHandler(async (req, res) => {

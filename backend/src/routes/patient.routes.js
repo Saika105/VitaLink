@@ -10,7 +10,10 @@ import {
   getAllDoctors,
   getPatientAppointments,
   cancelAppointment,
+  getAssistantContactForReschedule,
   bulkDeleteAppointments,
+  getBillingOverview,
+  payBillOnline
 } from "../controllers/patient.controller.js";
 import{ 
   addPatientPrescription, 
@@ -47,6 +50,7 @@ router.route("/change-password").post(verifyJWT, isPatient, changeCurrentPasswor
 router.route("/doctors").get(verifyJWT, isPatient, getAllDoctors);
 router.route("/my-appointments").get(verifyJWT, isPatient, getPatientAppointments);
 router.route("/cancel-appointment/:appointmentId").patch(verifyJWT, isPatient, cancelAppointment);
+router.route("/reschedule-info/:appointmentId").get(verifyJWT, isPatient, getAssistantContactForReschedule);
 router.route("/delete-appointments").delete(verifyJWT, isPatient, bulkDeleteAppointments);
 
 //from prescription.controller.js
@@ -70,6 +74,12 @@ router.route("/lab-reports/add").post(
 );
 router.route("/lab-reports/delete/:id").delete(verifyJWT, isPatient, deletePatientLabReport);
 router.route("/lab-reports").get(verifyJWT, isPatient, getPatientLabReports);
+
+
+// src/routes/patient.routes.js
+
+router.route("/billing-overview").get(verifyJWT, isPatient, getBillingOverview);
+router.route("/pay-online").post(verifyJWT, isPatient, payBillOnline);
 
 export default router;
 
