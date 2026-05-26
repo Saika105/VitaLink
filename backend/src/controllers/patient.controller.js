@@ -610,8 +610,7 @@ const getBillingOverview = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 })
     .populate("hospital", "name");
 
-  if (!bills || bills.length === 0) 
-    {
+  if (!bills || bills.length === 0) {
     return res.status(200).json(
       new ApiResponse(
         200,
@@ -711,20 +710,21 @@ const initiateBillPayment = asyncHandler(async (req, res) => {
   // 1. Fetch the target bill and verify it exists and is unpaid
   const bill = await Bill.findById(billId);
   if (!bill) throw new ApiError(404, "Target invoice reference does not exist");
-  if (bill.paymentStatus === "paid") throw new ApiError(400, "This invoice is already fully cleared");
+  if (bill.paymentStatus === "paid")
+    throw new ApiError(400, "This invoice is already fully cleared");
 
   // 2. Fetch patient details for SSLCommerz customer profile mapping
   const patient = await Patient.findById(req.user._id);
   if (!patient) throw new ApiError(404, "Patient profile data untraceable");
 
   const hostname = `${req.protocol}://${req.get("host")}`;
-  
+
   // Outstanding due calculation safely converted to a floating number
-  const paymentAmount = Number(bill.balanceDue || (bill.totalAmount - bill.amountPaid));
+  const paymentAmount = (Number(bill.balanceDue || (bill.totalAmount - bill.amountPaid)) || 10).toFixed(2);
 
   // 3. Construct SSLCommerz data payload using your new credentials
   const data = {
-    total_amount: paymentAmount, 
+    total_amount: paymentAmount,
     currency: "BDT",
     tran_id: bill._id.toString(), // Use the Unique Mongoose Bill Object ID
     success_url: `${hostname}/api/v1/patients/payment-callback/success/${bill._id}`,
@@ -732,7 +732,8 @@ const initiateBillPayment = asyncHandler(async (req, res) => {
     cancel_url: `${hostname}/api/v1/patients/payment-callback/cancel/${bill._id}`,
     ipn_url: `${hostname}/api/v1/patients/payment-callback/ipn/${bill._id}`,
     shipping_method: "No",
-    product_name: bill.items?.map((i) => i.description).join(", ") || "Medical Services",
+    product_name:
+      bill.items?.map((i) => i.description).join(", ") || "Medical Services",
     product_category: "Medical",
     product_profile: "general",
     cus_name: patient.fullName || "Patient Member",
@@ -757,14 +758,24 @@ const initiateBillPayment = asyncHandler(async (req, res) => {
   // 4. Fire the SDK configuration process
   // Explicitly passing false when sandbox is true, true when production live.
   const isLive = process.env.IS_SANDBOX === "true" ? false : true;
-  const sslcz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, isLive);
-  
+  const sslcz = new SSLCommerzPayment(
+    process.env.STORE_ID,
+    process.env.STORE_PASSWORD,
+    isLive,
+  );
+
   const apiResponse = await sslcz.init(data);
-  
+
   if (apiResponse && apiResponse.GatewayPageURL) {
-    return res.status(200).json({ success: true, url: apiResponse.GatewayPageURL });
+    return res
+      .status(200)
+      .json({ success: true, url: apiResponse.GatewayPageURL });
   } else {
-    throw new ApiError(500, apiResponse?.failedreason || "SSLCommerz session token configuration rejected");
+    throw new ApiError(
+      500,
+      apiResponse?.failedreason ||
+        "SSLCommerz session token configuration rejected",
+    );
   }
 });
 
@@ -774,19 +785,30 @@ const paymentSuccessCallback = asyncHandler(async (req, res) => {
   const paymentDetails = req.body; // SSLCommerz triggers an HTTP POST form webhook containing data
 
   if (!paymentDetails || !paymentDetails.val_id) {
-    throw new ApiError(400, "Missing Validation Token (val_id) from gateway response");
+    throw new ApiError(
+      400,
+      "Missing Validation Token (val_id) from gateway response",
+    );
   }
 
   // Double-check transaction validity via the official validation API engine
   const isLive = process.env.IS_SANDBOX === "true" ? false : true;
-  const sslcz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, isLive);
-  
-  const validationResponse = await sslcz.validate({ val_id: paymentDetails.val_id });
+  const sslcz = new SSLCommerzPayment(
+    process.env.STORE_ID,
+    process.env.STORE_PASSWORD,
+    isLive,
+  );
 
-  // Standardize response validation keys
+  const validationResponse = await sslcz.validate({
+    val_id: paymentDetails.val_id,
+  });
+
   const statusCheck = validationResponse?.status?.toUpperCase();
   if (statusCheck !== "VALID" && statusCheck !== "VALIDATED") {
-    throw new ApiError(400, "Transaction verification failed or fraudulent request detected");
+    throw new ApiError(
+      400,
+      "Transaction verification failed or fraudulent request detected",
+    );
   }
 
   // Locate the target bill document
@@ -795,8 +817,13 @@ const paymentSuccessCallback = asyncHandler(async (req, res) => {
 
   // Register payment payload segment to fire your internal pre-validate schema code automatically
   bill.payments.push({
-    amount: Number(validationResponse.amount || paymentDetails.amount || bill.balanceDue),
-    method: validationResponse.card_type || paymentDetails.card_type || "online_gateway",
+    amount: Number(
+      validationResponse.amount || paymentDetails.amount || bill.balanceDue,
+    ),
+    method:
+      validationResponse.card_type ||
+      paymentDetails.card_type ||
+      "online_gateway",
     paidAt: new Date(),
     transactionId: validationResponse.tran_id || paymentDetails.tran_id,
   });
@@ -804,20 +831,22 @@ const paymentSuccessCallback = asyncHandler(async (req, res) => {
   await bill.save(); // Triggers status updates ("paid") and updates LabReports dynamically via schema pre/post save hooks!
 
   // Redirect browser shell back to your application base domain context
-  const clientRedirect = process.env.NODE_ENV === "production" 
-    ? "https://vita-link-mu.vercel.app" 
-    : "http://localhost:5173";
+  const clientRedirect =
+    process.env.NODE_ENV === "production"
+      ? "https://vita-link-mu.vercel.app"
+      : "http://localhost:5173";
 
-  return res.redirect(`${clientRedirect}/patient-dashboard`); 
+  return res.redirect(`${clientRedirect}/patient-dashboard`);
 });
 
 // ********************* Callback Hooks: Failure / Cancellation ************* */
 const paymentFailureCallback = asyncHandler(async (req, res) => {
-  const clientRedirect = process.env.NODE_ENV === "production" 
-    ? "https://vita-link-mu.vercel.app" 
-    : "http://localhost:5173";
-  
-  return res.redirect(`${clientRedirect}/patient-dashboard`); 
+  const clientRedirect =
+    process.env.NODE_ENV === "production"
+      ? "https://vita-link-mu.vercel.app"
+      : "http://localhost:5173";
+
+  return res.redirect(`${clientRedirect}/patient-dashboard`);
 });
 
 export {
