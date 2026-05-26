@@ -719,8 +719,9 @@ const initiateBillPayment = asyncHandler(async (req, res) => {
 
   const hostname = `${req.protocol}://${req.get("host")}`;
 
-  // Outstanding due calculation safely converted to a floating number
-  const paymentAmount = (Number(bill.balanceDue || (bill.totalAmount - bill.amountPaid)) || 10).toFixed(2);
+  // Fix: Calculate amount as a strict float Number. SSLCommerz crashes on raw string formats.
+  const rawAmount = Number(bill.balanceDue || (bill.totalAmount - bill.amountPaid)) || 10;
+  const paymentAmount = parseFloat(rawAmount.toFixed(2));
 
   // 3. Construct SSLCommerz data payload using your new credentials
   const data = {
