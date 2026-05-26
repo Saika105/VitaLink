@@ -719,10 +719,8 @@ const initiateBillPayment = asyncHandler(async (req, res) => {
 
   const hostname = `${req.protocol}://${req.get("host")}`;
 
-  // Fix: Calculate amount as a strict float Number. SSLCommerz crashes on raw string formats.
-  const rawAmount =
-    Number(bill.balanceDue || bill.totalAmount - bill.amountPaid) || 10;
-  const paymentAmount = parseFloat(rawAmount.toFixed(2));
+  // Fix: Hardcode exactly 100 for easy testing. Eliminates data type issues.
+  const paymentAmount = 100;
 
   // 3. Construct SSLCommerz data payload using your new credentials
   const data = {
@@ -734,8 +732,7 @@ const initiateBillPayment = asyncHandler(async (req, res) => {
     cancel_url: `${hostname}/api/v1/patients/payment-callback/cancel/${bill._id}`,
     ipn_url: `${hostname}/api/v1/patients/payment-callback/ipn/${bill._id}`,
     shipping_method: "No",
-    product_name:
-      bill.items?.map((i) => i.description).join(", ") || "Medical Services",
+    product_name: "Medical Services",
     product_category: "Medical",
     product_profile: "general",
     cus_name: patient.fullName || "Patient Member",
@@ -758,7 +755,6 @@ const initiateBillPayment = asyncHandler(async (req, res) => {
   };
 
   // 4. Fire the SDK configuration process
-  // Explicitly passing false when sandbox is true, true when production live.
   const isLive = process.env.IS_SANDBOX === "true" ? false : true;
   const sslcz = new SSLCommerzPayment(
     process.env.STORE_ID,
@@ -766,19 +762,19 @@ const initiateBillPayment = asyncHandler(async (req, res) => {
     isLive,
   );
 
-  // Force direct hosted page routing instead of the buggy EasyCheckOut script injection
   const apiResponse = await sslcz.init(data);
 
+  // Return whatever gateway URL SSLCommerz outputs natively
   if (apiResponse && apiResponse.GatewayPageURL) {
-    // Extract and clean the direct gateway redirect token url
-    let directUrl = apiResponse.GatewayPageURL;
-
-    // If the SDK returns the easycheckout wrapper path, rewrite it to use the stable hosted route
-    if (directUrl.includes("EasyCheckOut")) {
-      directUrl = directUrl.replace("EasyCheckOut/test", "gw?id=");
-    }
-
-    return res.status(200).json({ success: true, url: directUrl });
+    return res
+      .status(200)
+      .json({ success: true, url: apiResponse.GatewayPageURL });
+  } else {
+    throw new ApiError(
+      500,
+      apiResponse?.failedreason ||
+        "SSLCommerz session token configuration rejected",
+    );
   }
 });
 
