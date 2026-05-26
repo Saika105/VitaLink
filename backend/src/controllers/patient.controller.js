@@ -778,90 +778,82 @@ const initiateBillPayment = asyncHandler(async (req, res) => {
   }
 });
 
-// ********************* Callback Hook: Payment Success ************* */
-// const paymentSuccessCallback = asyncHandler(async (req, res) => {
-//   const { billId } = req.params;
-//   const paymentDetails = req.body; // SSLCommerz triggers an HTTP POST form webhook containing data
-
-//   if (!paymentDetails || !paymentDetails.val_id) {
-//     throw new ApiError(
-//       400,
-//       "Missing Validation Token (val_id) from gateway response",
-//     );
-//   }
-
-//   // Double-check transaction validity via the official validation API engine
-//   const isLive = process.env.IS_SANDBOX === "true" ? false : true;
-//   const sslcz = new SSLCommerzPayment(
-//     process.env.STORE_ID,
-//     process.env.STORE_PASSWORD,
-//     isLive,
-//   );
-
-//   const validationResponse = await sslcz.validate({
-//     val_id: paymentDetails.val_id,
-//   });
-
-//   const statusCheck = validationResponse?.status?.toUpperCase();
-//   if (statusCheck !== "VALID" && statusCheck !== "VALIDATED") {
-//     throw new ApiError(
-//       400,
-//       "Transaction verification failed or fraudulent request detected",
-//     );
-//   }
-
-//   // Locate the target bill document
-//   const bill = await Bill.findById(billId);
-//   if (!bill) throw new ApiError(404, "Target system invoice records missing");
-
-//   // === FIX SECTION: Clean up the 'BKASH-BKash' string before pushing to DB ===
-//   const rawMethod = validationResponse?.card_type || paymentDetails?.card_type || "online_gateway";
-//   let cleanMethod = "online_gateway";
-  
-//   if (rawMethod.toLowerCase().includes("bkash")) {
-//     cleanMethod = "bkash"; 
-//   } else if (rawMethod.toLowerCase().includes("nagad")) {
-//     cleanMethod = "nagad"; 
-//   } else if (rawMethod.toLowerCase().includes("visa") || rawMethod.toLowerCase().includes("master")) {
-//     cleanMethod = "card";  
-//   }
-
-//   // Register payment payload segment safely matching your mongoose enum strings
-//   bill.payments.push({
-//     amount: Number(validationResponse?.amount || paymentDetails?.amount || 100),
-//     method: cleanMethod, 
-//     paidAt: new Date(),
-//     transactionId: validationResponse?.tran_id || paymentDetails?.tran_id || "MOCK_TXN_ID",
-//   });
-
-//   // If your Bill schema has a top-level paymentMethod field, update that too
-//   if (bill.paymentMethod !== undefined) {
-//     bill.paymentMethod = cleanMethod;
-//   }
-
-//   bill.paymentStatus = "paid"; 
-//   await bill.save(); // Triggers status updates ("paid") and updates LabReports dynamically via schema pre/post save hooks!
-
-//   // Redirect browser shell back to your application base domain context
-//   const clientRedirect =
-//     process.env.NODE_ENV === "production"
-//       ? "https://vita-link-mu.vercel.app"
-//       : "http://localhost:5173";
-
-//   return res.redirect(`${clientRedirect}/patient-dashboard`);
-// });
-
-// ********************* Callback Hook: Payment Success (BYPASS MODE) ************* */
 const paymentSuccessCallback = asyncHandler(async (req, res) => {
-  console.log("Payment success callback triggered. Bypassing database validation restrictions...");
+  const { billId } = req.params;
+  const paymentDetails = req.body;
 
-  // Redirect browser shell IMMEDIATELY back to your application frontend dashboard
+  console.log("SUCCESS CALLBACK BODY:", paymentDetails);
+
   const clientRedirect =
     process.env.NODE_ENV === "production"
       ? "https://vita-link-mu.vercel.app"
       : "http://localhost:5173";
 
-  return res.redirect(`${clientRedirect}/patient-dashboard`);
+  if (!paymentDetails || !paymentDetails.val_id) {
+    return res.redirect(`${clientRedirect}/patient-dashboard`);
+  }
+
+  try {
+    const isLive = process.env.IS_SANDBOX === "true" ? false : true;
+    const sslcz = new SSLCommerzPayment(
+      process.env.STORE_ID,
+      process.env.STORE_PASSWORD,
+      isLive
+    );
+
+    const validationResponse = await sslcz.validate({
+      val_id: paymentDetails.val_id,
+    });
+
+    console.log("VALIDATION RESPONSE:", JSON.stringify(validationResponse));
+
+    const statusCheck = validationResponse?.status?.toUpperCase();
+
+    if (statusCheck !== "VALID" && statusCheck !== "VALIDATED") {
+      return res.redirect(`${clientRedirect}/patient-dashboard`);
+    }
+
+    const bill = await Bill.findById(billId);
+    if (!bill) return res.redirect(`${clientRedirect}/patient-dashboard`);
+
+    const rawMethod =
+      validationResponse?.card_type ||
+      paymentDetails?.card_type ||
+      "online_gateway";
+
+    let cleanMethod = "online_gateway";
+    if (rawMethod.toLowerCase().includes("bkash")) cleanMethod = "bkash";
+    else if (rawMethod.toLowerCase().includes("nagad")) cleanMethod = "nagad";
+    else if (
+      rawMethod.toLowerCase().includes("visa") ||
+      rawMethod.toLowerCase().includes("master")
+    )
+      cleanMethod = "card";
+
+    bill.payments.push({
+      amount: Number(
+        validationResponse?.amount || paymentDetails?.amount || 100
+      ),
+      method: cleanMethod,
+      paidAt: new Date(),
+      transactionId:
+        validationResponse?.tran_id ||
+        paymentDetails?.tran_id ||
+        "MOCK_TXN_ID",
+    });
+
+    if (bill.paymentMethod !== undefined) {
+      bill.paymentMethod = cleanMethod;
+    }
+
+    bill.paymentStatus = "paid";
+    await bill.save();
+
+    return res.redirect(`${clientRedirect}/patient-dashboard`);
+  } catch (error) {
+    console.error("PAYMENT CALLBACK ERROR:", error);
+    return res.redirect(`${clientRedirect}/patient-dashboard`);
+  }
 });
 
 // ********************* Callback Hooks: Failure / Cancellation ************* */

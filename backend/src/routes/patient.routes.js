@@ -1,4 +1,5 @@
 import { Router } from "express";
+import cors from "cors";
 import {
   initializeRegistration,
   finalizeRegistration,
@@ -35,9 +36,7 @@ import { verifyJWT , isPatient} from "../middlewares/auth.middleware.js";
 const router = Router();
 
 //from patient.controller.js
-router
-  .route("/initialize-registration")
-  .post(upload.none(), initializeRegistration);
+router.route("/initialize-registration").post(upload.none(), initializeRegistration);
 router.route("/finalize-registration").post(finalizeRegistration);
 router.route("/login").post(loginPatient);
 
@@ -46,7 +45,7 @@ router.route("/profile").get(verifyJWT, isPatient, getPatientProfile);
 router.route("/update-profile").patch(
     verifyJWT, 
     isPatient,
-    upload.single("profilePhoto"), // 'profilePhoto' must match the frontend name
+    upload.single("profilePhoto"),
     updatePatientProfile
 );
 router.route("/change-password").post(verifyJWT, isPatient, changeCurrentPassword);
@@ -65,8 +64,6 @@ router.route("/prescriptions/add").post(
 );
 router.route("/prescriptions/delete/:id").delete(verifyJWT, isPatient, deletePrescription);
 router.route("/prescriptions").get(verifyJWT, isPatient, getPatientPrescriptions);
-// router.route("/prescriptions/get/:patientId").get(verifyJWT, isPatient, getPatientPrescriptions);
-
 
 //from labReport.controller.js
 router.route("/lab-reports/add").post(
@@ -78,16 +75,13 @@ router.route("/lab-reports/add").post(
 router.route("/lab-reports/delete/:id").delete(verifyJWT, isPatient, deletePatientLabReport);
 router.route("/lab-reports").get(verifyJWT, isPatient, getPatientLabReports);
 
-
-// src/routes/patient.routes.js
-
 router.route("/billing-overview").get(verifyJWT, isPatient, getBillingOverview);
 router.route("/pay-online").post(verifyJWT, isPatient, payBillOnline);
 router.route("/initiate-payment").post(verifyJWT, initiateBillPayment);
-router.route("/payment-callback/success/:billId").post(paymentSuccessCallback);
-router.route("/payment-callback/fail/:billId").post(paymentFailureCallback);
-router.route("/payment-callback/cancel/:billId").post(paymentFailureCallback);
+
+// SSLCommerz callback routes — cors() allows POST from SSLCommerz servers
+router.route("/payment-callback/success/:billId").post(cors(), paymentSuccessCallback);
+router.route("/payment-callback/fail/:billId").post(cors(), paymentFailureCallback);
+router.route("/payment-callback/cancel/:billId").post(cors(), paymentFailureCallback);
 
 export default router;
-
-
