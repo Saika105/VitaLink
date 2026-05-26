@@ -720,7 +720,8 @@ const initiateBillPayment = asyncHandler(async (req, res) => {
   const hostname = `${req.protocol}://${req.get("host")}`;
 
   // Fix: Calculate amount as a strict float Number. SSLCommerz crashes on raw string formats.
-  const rawAmount = Number(bill.balanceDue || (bill.totalAmount - bill.amountPaid)) || 10;
+  const rawAmount =
+    Number(bill.balanceDue || bill.totalAmount - bill.amountPaid) || 10;
   const paymentAmount = parseFloat(rawAmount.toFixed(2));
 
   // 3. Construct SSLCommerz data payload using your new credentials
@@ -765,18 +766,19 @@ const initiateBillPayment = asyncHandler(async (req, res) => {
     isLive,
   );
 
+  // Force direct hosted page routing instead of the buggy EasyCheckOut script injection
   const apiResponse = await sslcz.init(data);
 
   if (apiResponse && apiResponse.GatewayPageURL) {
-    return res
-      .status(200)
-      .json({ success: true, url: apiResponse.GatewayPageURL });
-  } else {
-    throw new ApiError(
-      500,
-      apiResponse?.failedreason ||
-        "SSLCommerz session token configuration rejected",
-    );
+    // Extract and clean the direct gateway redirect token url
+    let directUrl = apiResponse.GatewayPageURL;
+
+    // If the SDK returns the easycheckout wrapper path, rewrite it to use the stable hosted route
+    if (directUrl.includes("EasyCheckOut")) {
+      directUrl = directUrl.replace("EasyCheckOut/test", "gw?id=");
+    }
+
+    return res.status(200).json({ success: true, url: directUrl });
   }
 });
 
