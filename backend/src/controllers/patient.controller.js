@@ -798,7 +798,7 @@ const paymentSuccessCallback = asyncHandler(async (req, res) => {
     const sslcz = new SSLCommerzPayment(
       process.env.STORE_ID,
       process.env.STORE_PASSWORD,
-      isLive
+      isLive,
     );
 
     const validationResponse = await sslcz.validate({
@@ -821,8 +821,8 @@ const paymentSuccessCallback = asyncHandler(async (req, res) => {
       paymentDetails?.card_type ||
       "online_gateway";
 
-    let cleanMethod = "online_gateway";
-    if (rawMethod.toLowerCase().includes("bkash")) cleanMethod = "bkash";
+    let cleanMethod = "other";
+    if (rawMethod.toLowerCase().includes("bkash")) cleanMethod = "bKash";
     else if (rawMethod.toLowerCase().includes("nagad")) cleanMethod = "nagad";
     else if (
       rawMethod.toLowerCase().includes("visa") ||
@@ -832,14 +832,12 @@ const paymentSuccessCallback = asyncHandler(async (req, res) => {
 
     bill.payments.push({
       amount: Number(
-        validationResponse?.amount || paymentDetails?.amount || 100
+        validationResponse?.amount || paymentDetails?.amount || 100,
       ),
       method: cleanMethod,
       paidAt: new Date(),
       transactionId:
-        validationResponse?.tran_id ||
-        paymentDetails?.tran_id ||
-        "MOCK_TXN_ID",
+        validationResponse?.tran_id || paymentDetails?.tran_id || "MOCK_TXN_ID",
     });
 
     if (bill.paymentMethod !== undefined) {
