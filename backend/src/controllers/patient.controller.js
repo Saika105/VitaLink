@@ -719,8 +719,7 @@ const initiateBillPayment = asyncHandler(async (req, res) => {
 
   const hostname = `${req.protocol}://${req.get("host")}`;
 
-  // Fix: Hardcode exactly 100 for easy testing. Eliminates data type issues.
-  const paymentAmount = 100;
+  const paymentAmount = bill.totalAmount;
 
   // 3. Construct SSLCommerz data payload using your new credentials
   const data = {
