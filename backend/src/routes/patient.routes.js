@@ -13,7 +13,10 @@ import {
   getAssistantContactForReschedule,
   bulkDeleteAppointments,
   getBillingOverview,
-  payBillOnline
+  payBillOnline,
+  initiateBillPayment,
+  paymentSuccessCallback,
+  paymentFailureCallback
 } from "../controllers/patient.controller.js";
 import{ 
   addPatientPrescription, 
@@ -80,6 +83,10 @@ router.route("/lab-reports").get(verifyJWT, isPatient, getPatientLabReports);
 
 router.route("/billing-overview").get(verifyJWT, isPatient, getBillingOverview);
 router.route("/pay-online").post(verifyJWT, isPatient, payBillOnline);
+router.route("/initiate-payment").post(verifyJWT, initiateBillPayment);
+router.route("/payment-callback/success/:billId").post(paymentSuccessCallback);
+router.route("/payment-callback/fail/:billId").post(paymentFailureCallback);
+router.route("/payment-callback/cancel/:billId").post(paymentFailureCallback);
 
 export default router;
 

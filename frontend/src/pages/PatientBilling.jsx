@@ -32,7 +32,7 @@ const PatientBilling = () => {
                   ? 'Partial'
                   : 'Due',
             hospitalName:
-             bill.hospital?.name || 'VitaLink Medical',
+              bill.hospital?.name || 'VitaLink Medical',
             date: new Date(bill.createdAt).toLocaleDateString(),
             reason:
               bill.items?.map(i => i.description).join(', ') ||
@@ -53,8 +53,34 @@ const PatientBilling = () => {
     fetchBilling();
   }, []);
 
-  const handlePayDue = (invoiceNumber, amount) => {
-    alert(`Redirecting to payment gateway for Invoice: ${invoiceNumber}`);
+  // const handlePayDue = (invoiceNumber, amount) => {
+  //   alert(`Redirecting to payment gateway for Invoice: ${invoiceNumber}`);
+  // };
+
+  const handlePayDue = async (billMongoId, balanceDue) => {
+    try {
+      setIsLoading(true);
+      const response = await protectedFetch('/api/v1/patients/initiate-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ billId: billMongoId })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to configure payment link session parameters");
+      }
+
+      const result = await response.json();
+      if (result.url) {
+        window.location.replace(result.url);
+      } else {
+        alert("Payment initialization failed to return a gateway URL.");
+      }
+    } catch (err) {
+      alert("Error reaching verification gateway framework: " + err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -106,13 +132,12 @@ const PatientBilling = () => {
                       {bill.invoiceNumber}
                     </span>
                     <span
-                      className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-xl font-inter ${
-                        bill.status === 'Paid'
+                      className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-xl font-inter ${bill.status === 'Paid'
                           ? 'bg-green-100 text-green-700'
                           : bill.status === 'Partial'
                             ? 'bg-yellow-100 text-yellow-700'
                             : 'bg-red-100 text-red-700'
-                      }`}
+                        }`}
                     >
                       {bill.status}
                     </span>
@@ -159,7 +184,7 @@ const PatientBilling = () => {
                       </div>
                       <button
                         onClick={() =>
-                          handlePayDue(bill.invoiceNumber, bill.balanceDue)
+                          handlePayDue(bill.mongoId, bill.balanceDue)//here changed bill.invoiceNumber, bill.balanceDue
                         }
                         className='w-full bg-[#3B82F6] hover:bg-[#1E40AF] text-white font-bold py-3.5 rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest text-[10px] font-inter'
                       >
