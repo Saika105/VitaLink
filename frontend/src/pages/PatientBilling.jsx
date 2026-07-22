@@ -60,13 +60,11 @@ const PatientBilling = () => {
     setPayingId(mongoId);
     try {
       const response = await protectedFetch(
-        '/api/v1/patients/pay-bill-online',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ invoiceId: mongoId, paymentMethod: 'online' }),
-        },
-      );
+        '/api/v1/patients/pay-online', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId: mongoId, paymentMethod: 'online' }),
+      });
 
       if (!response.ok) {
         const errData = await response.json().catch(() => null);
