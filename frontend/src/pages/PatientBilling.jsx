@@ -10,51 +10,75 @@ const PatientBilling = () => {
   const [billingHistory, setBillingHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchBilling = async () => {
-      try {
-        const response = await protectedFetch(
-          '/api/v1/patients/billing-overview',
-        );
+  const fetchBilling = async () => {
+    try {
+      const response = await protectedFetch(
+        '/api/v1/patients/billing-overview',
+      );
 
-        if (response.ok) {
-          const result = await response.json();
-          const allBills = [
-            ...(result.data?.pendingDues || []),
-            ...(result.data?.transactionHistory || []),
-          ];
-          const mappedData = allBills.map(bill => ({
-            invoiceNumber: bill.invoiceNumber,
-            status:
-              bill.paymentStatus === 'paid'
-                ? 'Paid'
-                : bill.paymentStatus === 'partially_paid'
-                  ? 'Partial'
-                  : 'Due',
-            hospitalName:
-             bill.hospital?.name || 'VitaLink Medical',
-            date: new Date(bill.createdAt).toLocaleDateString(),
-            reason:
-              bill.items?.map(i => i.description).join(', ') ||
-              'Medical Services',
-            totalAmount: bill.totalAmount,
-            balanceDue: bill.balanceDue,
-            mongoId: bill._id,
-          }));
-          setBillingHistory(mappedData);
-        }
-      } catch (err) {
-        console.error('Failed to connect to billing server');
-      } finally {
-        setIsLoading(false);
+      if (response.ok) {
+        const result = await response.json();
+        const allBills = [
+          ...(result.data?.pendingDues || []),
+          ...(result.data?.transactionHistory || []),
+        ];
+        const mappedData = allBills.map(bill => ({
+          invoiceNumber: bill.invoiceNumber,
+          status:
+            bill.paymentStatus === 'paid'
+              ? 'Paid'
+              : bill.paymentStatus === 'partially_paid'
+                ? 'Partial'
+                : 'Due',
+          hospitalName: bill.hospital?.name || 'VitaLink Medical',
+          date: new Date(bill.createdAt).toLocaleDateString(),
+          reason:
+            bill.items?.map(i => i.description).join(', ') ||
+            'Medical Services',
+          totalAmount: bill.totalAmount,
+          balanceDue: bill.balanceDue,
+          mongoId: bill._id,
+        }));
+        setBillingHistory(mappedData);
       }
-    };
+    } catch (err) {
+      console.error('Failed to connect to billing server');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchBilling();
   }, []);
 
-  const handlePayDue = (invoiceNumber, amount) => {
-    alert(`Redirecting to payment gateway for Invoice: ${invoiceNumber}`);
+  const [payingId, setPayingId] = useState(null);
+
+  const handlePayDue = async (mongoId, invoiceNumber) => {
+    if (payingId) return; 
+
+    setPayingId(mongoId);
+    try {
+      const response = await protectedFetch(
+        '/api/v1/patients/pay-bill-online',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invoiceId: mongoId, paymentMethod: 'online' }),
+        },
+      );
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null);
+        throw new Error(errData?.message || 'Payment failed');
+      }
+      await fetchBilling();
+    } catch (err) {
+      console.error('Payment Error:', err);
+      alert(`Payment failed for Invoice: ${invoiceNumber}. Please try again.`);
+    } finally {
+      setPayingId(null);
+    }
   };
 
   const handleLogout = async () => {
@@ -159,11 +183,14 @@ const PatientBilling = () => {
                       </div>
                       <button
                         onClick={() =>
-                          handlePayDue(bill.invoiceNumber, bill.balanceDue)
+                          handlePayDue(bill.mongoId, bill.invoiceNumber)
                         }
-                        className='w-full bg-[#3B82F6] hover:bg-[#1E40AF] text-white font-bold py-3.5 rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest text-[10px] font-inter'
+                        disabled={payingId === bill.mongoId}
+                        className='w-full bg-[#3B82F6] hover:bg-[#1E40AF] text-white font-bold py-3.5 rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest text-[10px] font-inter disabled:opacity-50 disabled:cursor-not-allowed'
                       >
-                        Pay Now
+                        {payingId === bill.mongoId
+                          ? 'Processing...'
+                          : 'Pay Now'}
                       </button>
                     </div>
                   ) : (
