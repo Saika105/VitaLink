@@ -721,9 +721,8 @@ const payBillOnline = asyncHandler(async (req, res) => {
 
   bill.payments.push({
     amount: dueAmount,
-    method: paymentMethod || "Online Portal",
+    method: paymentMethod || "other",
     paidAt: new Date(),
-    transactionId: "MANUAL_ONLINE_" + Date.now(),
   });
 
   // paymentStatus, paymentMethod, amountPaid, balanceDue, paidAt
