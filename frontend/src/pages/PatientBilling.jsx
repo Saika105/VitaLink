@@ -55,31 +55,35 @@ const PatientBilling = () => {
 
   const [payingId, setPayingId] = useState(null);
 
-  const handlePayDue = async (mongoId, invoiceNumber) => {
-    if (payingId) return; 
+const handlePayDue = async (mongoId, invoiceNumber) => {
+  if (payingId) return;
 
-    setPayingId(mongoId);
-    try {
-      const response = await protectedFetch(
-        '/api/v1/patients/pay-online', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId: mongoId, paymentMethod: 'online' }),
-      });
+  setPayingId(mongoId);
+  try {
+    const response = await protectedFetch('/api/v1/patients/pay-online', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ billId: mongoId }),
+    });
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => null);
-        throw new Error(errData?.message || 'Payment failed');
-      }
-      await fetchBilling();
-    } catch (err) {
-      console.error('Payment Error:', err);
-      alert(`Payment failed for Invoice: ${invoiceNumber}. Please try again.`);
-    } finally {
-      setPayingId(null);
+    const resData = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(resData?.message || 'Payment failed');
     }
-  };
 
+
+    alert(`Payment successful for Invoice: ${invoiceNumber}`);
+    fetchBilling();
+  } catch (err) {
+    console.error('Payment Error:', err);
+    alert(
+      `Payment failed for Invoice: ${invoiceNumber}. ${err.message || 'Please try again.'}`,
+    );
+  } finally {
+    setPayingId(null);
+  }
+};
   const handleLogout = async () => {
     try {
       await protectedFetch('/api/v1/patients/logout', {
