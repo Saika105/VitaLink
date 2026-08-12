@@ -205,6 +205,7 @@ const PatientBilling = () => {
           </div>
         )}
 
+        
         {!isLoading && billingHistory.length === 0 && (
           <div className='p-32 text-center text-slate-600 uppercase font-black text-[12px] tracking-[0.3em] border-2 border-dashed border-slate-200 rounded-4xl font-inter'>
             No Records Found
