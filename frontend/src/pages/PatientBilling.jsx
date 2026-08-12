@@ -192,7 +192,7 @@ const handlePayDue = async (mongoId, invoiceNumber) => {
                           handlePayDue(bill.mongoId, bill.invoiceNumber)
                         }
                         disabled={payingId === bill.mongoId}
-                        className='w-full bg-[#3B82F6] hover:bg-[#1E40AF] text-white font-bold py-3.5 rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest text-[10px] font-inter disabled:opacity-50 disabled:cursor-not-allowed'
+                        className='w-full bg-[#3B82F6] hover:bg-[#1E40AF] text-white font-bold py-3.5 rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest text-[11px] font-inter disabled:opacity-50 disabled:cursor-not-allowed'
                       >
                         {payingId === bill.mongoId
                           ? 'Processing...'
