@@ -710,8 +710,18 @@ const initiateBillPayment = asyncHandler(async (req, res) => {
   // 1. Fetch the target bill and verify it exists and is unpaid
   const bill = await Bill.findById(billId);
   if (!bill) throw new ApiError(404, "Target invoice reference does not exist");
-  if (bill.paymentStatus === "paid")
+  
+  // Compute true remaining due amount
+  const paidSoFar = Array.isArray(bill.payments)
+    ? bill.payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
+    : 0;
+  const currentDue = bill.balanceDue !== undefined 
+    ? bill.balanceDue 
+    : (bill.totalAmount - paidSoFar);
+
+  if (bill.paymentStatus === "paid" || currentDue <= 0) {
     throw new ApiError(400, "This invoice is already fully cleared");
+  }
 
   // 2. Fetch patient details for SSLCommerz customer profile mapping
   const patient = await Patient.findById(req.user._id);
@@ -719,13 +729,14 @@ const initiateBillPayment = asyncHandler(async (req, res) => {
 
   const hostname = `${req.protocol}://${req.get("host")}`;
 
-  const paymentAmount = bill.totalAmount;
+  // FIX 1: Charge the CURRENT DUE amount instead of totalAmount
+  const paymentAmount = currentDue;
 
-  // 3. Construct SSLCommerz data payload using your new credentials
+  // 3. Construct SSLCommerz data payload
   const data = {
     total_amount: paymentAmount,
     currency: "BDT",
-    tran_id: bill._id.toString(), // Use the Unique Mongoose Bill Object ID
+    tran_id: bill._id.toString(),
     success_url: `${hostname}/api/v1/patients/payment-callback/success/${bill._id}`,
     fail_url: `${hostname}/api/v1/patients/payment-callback/fail/${bill._id}`,
     cancel_url: `${hostname}/api/v1/patients/payment-callback/cancel/${bill._id}`,
@@ -763,7 +774,6 @@ const initiateBillPayment = asyncHandler(async (req, res) => {
 
   const apiResponse = await sslcz.init(data);
 
-  // Return whatever gateway URL SSLCommerz outputs natively
   if (apiResponse && apiResponse.GatewayPageURL) {
     return res
       .status(200)
@@ -777,82 +787,7 @@ const initiateBillPayment = asyncHandler(async (req, res) => {
   }
 });
 
-// const paymentSuccessCallback = asyncHandler(async (req, res) => {
-//   const { billId } = req.params;
-//   const paymentDetails = req.body;
-
-//   console.log("SUCCESS CALLBACK BODY:", paymentDetails);
-
-//   const clientRedirect =
-//     process.env.NODE_ENV === "production"
-//       ? "https://vita-link-mu.vercel.app"
-//       : "http://localhost:5173";
-
-//   if (!paymentDetails || !paymentDetails.val_id) {
-//     return res.redirect(`${clientRedirect}/patient-dashboard`);
-//   }
-
-//   try {
-//     const isLive = process.env.IS_SANDBOX === "true" ? false : true;
-//     const sslcz = new SSLCommerzPayment(
-//       process.env.STORE_ID,
-//       process.env.STORE_PASSWORD,
-//       isLive,
-//     );
-
-//     const validationResponse = await sslcz.validate({
-//       val_id: paymentDetails.val_id,
-//     });
-
-//     console.log("VALIDATION RESPONSE:", JSON.stringify(validationResponse));
-
-//     const statusCheck = validationResponse?.status?.toUpperCase();
-
-//     if (statusCheck !== "VALID" && statusCheck !== "VALIDATED") {
-//       return res.redirect(`${clientRedirect}/patient-dashboard`);
-//     }
-
-//     const bill = await Bill.findById(billId);
-//     if (!bill) return res.redirect(`${clientRedirect}/patient-dashboard`);
-
-//     const rawMethod =
-//       validationResponse?.card_type ||
-//       paymentDetails?.card_type ||
-//       "online_gateway";
-
-//     let cleanMethod = "other";
-//     if (rawMethod.toLowerCase().includes("bkash")) cleanMethod = "bKash";
-//     else if (rawMethod.toLowerCase().includes("nagad")) cleanMethod = "nagad";
-//     else if (
-//       rawMethod.toLowerCase().includes("visa") ||
-//       rawMethod.toLowerCase().includes("master")
-//     )
-//       cleanMethod = "card";
-
-//     bill.payments.push({
-//       amount: Number(
-//         validationResponse?.amount || paymentDetails?.amount || 100,
-//       ),
-//       method: cleanMethod,
-//       paidAt: new Date(),
-//       transactionId:
-//         validationResponse?.tran_id || paymentDetails?.tran_id || "MOCK_TXN_ID",
-//     });
-
-//     if (bill.paymentMethod !== undefined) {
-//       bill.paymentMethod = cleanMethod;
-//     }
-
-//     bill.paymentStatus = "paid";
-//     await bill.save();
-
-//     return res.redirect(`${clientRedirect}/patient-dashboard`);
-//   } catch (error) {
-//     console.error("PAYMENT CALLBACK ERROR:", error);
-//     return res.redirect(`${clientRedirect}/patient-dashboard`);
-//   }
-// });
-
+// ********************* Callback Hook: Payment Success ************* */
 const paymentSuccessCallback = asyncHandler(async (req, res) => {
   const { billId } = req.params;
   const paymentDetails = req.body;
@@ -865,7 +800,7 @@ const paymentSuccessCallback = asyncHandler(async (req, res) => {
       : "http://localhost:5173";
 
   if (!paymentDetails || !paymentDetails.val_id) {
-    return res.redirect(`${clientRedirect}/patient-dashboard`);
+    return res.redirect(`${clientRedirect}/billing`);
   }
 
   try {
@@ -885,44 +820,46 @@ const paymentSuccessCallback = asyncHandler(async (req, res) => {
     const statusCheck = validationResponse?.status?.toUpperCase();
 
     if (statusCheck !== "VALID" && statusCheck !== "VALIDATED") {
-      return res.redirect(`${clientRedirect}/patient-dashboard`);
+      return res.redirect(`${clientRedirect}/billing`);
     }
 
     const bill = await Bill.findById(billId);
-    if (!bill) return res.redirect(`${clientRedirect}/patient-dashboard`);
+    if (!bill) return res.redirect(`${clientRedirect}/billing`);
 
     const rawMethod =
       validationResponse?.card_type ||
       paymentDetails?.card_type ||
       "online_gateway";
 
-    let cleanMethod = "other";
+    let cleanMethod = "card";
     if (rawMethod.toLowerCase().includes("bkash")) cleanMethod = "bKash";
     else if (rawMethod.toLowerCase().includes("nagad")) cleanMethod = "nagad";
-    else if (
-      rawMethod.toLowerCase().includes("visa") ||
-      rawMethod.toLowerCase().includes("master")
-    )
-      cleanMethod = "card";
 
+    const paidAmount = Number(
+      validationResponse?.amount || paymentDetails?.amount || bill.balanceDue || bill.totalAmount
+    );
+
+    // FIX 2: Push payment subdocument supporting both schema naming conventions
     bill.payments.push({
-      amount: Number(
-        validationResponse?.amount || paymentDetails?.amount || bill.balanceDue,
-      ),
+      amount: paidAmount,
       method: cleanMethod,
       paidAt: new Date(),
-      reference:
-        validationResponse?.tran_id || paymentDetails?.tran_id || "MOCK_TXN_ID",
+      transactionId: validationResponse?.tran_id || paymentDetails?.tran_id || "MOCK_TXN_ID",
+      reference: validationResponse?.tran_id || paymentDetails?.tran_id || "MOCK_TXN_ID",
     });
 
-    // paymentStatus, paymentMethod, balanceDue, paidAt are recalculated
-    // automatically by the pre("validate") hook on Bill.
+    // Explicitly update all fields to prevent hook bypass failures
+    bill.paymentMethod = cleanMethod;
+    bill.paymentStatus = "paid";
+    bill.balanceDue = 0;
+
     await bill.save();
 
-    return res.redirect(`${clientRedirect}/patient-dashboard`);
+    // Redirect to /billing (where the user initiated payment)
+    return res.redirect(`${clientRedirect}/billing`);
   } catch (error) {
     console.error("PAYMENT CALLBACK ERROR:", error);
-    return res.redirect(`${clientRedirect}/patient-dashboard`);
+    return res.redirect(`${clientRedirect}/billing`);
   }
 });
 
