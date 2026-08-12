@@ -664,30 +664,76 @@ const getBillingOverview = asyncHandler(async (req, res) => {
 });
 
 // ********************* Pay Bills Online (Simulated Portal) ************* */
-const payBillOnline = asyncHandler(async (req, res) => {
-  const { invoiceId, paymentMethod } = req.body;
+// const payBillOnline = asyncHandler(async (req, res) => {
+//   const { invoiceId, paymentMethod } = req.body;
 
-  if (!invoiceId) {
+//   if (!invoiceId) {
+//     throw new ApiError(400, "Invoice ID is required");
+//   }
+
+//   const invoice = await Invoice.findById(invoiceId);
+//   if (!invoice) throw new ApiError(404, "Invoice not found");
+
+//   if (invoice.isPaid) {
+//     throw new ApiError(400, "This invoice is already paid");
+//   }
+
+//   invoice.paidAmount = invoice.totalAmount;
+//   invoice.isPaid = true;
+//   invoice.status = "paid";
+//   invoice.paymentMethod = paymentMethod || "Online Portal";
+
+//   await invoice.save();
+
+//   if (invoice.labReports && invoice.labReports.length > 0) {
+//     await LabReport.updateMany(
+//       { _id: { $in: invoice.labReports } },
+//       { $set: { isPaid: true } },
+//     );
+//   }
+
+//   return res
+//     .status(200)
+//     .json(
+//       new ApiResponse(
+//         200,
+//         invoice,
+//         "Payment successful! Your reports are now unlocked.",
+//       ),
+//     );
+// });
+
+const payBillOnline = asyncHandler(async (req, res) => {
+  const { billId, paymentMethod } = req.body;
+
+  if (!billId) {
     throw new ApiError(400, "Invoice ID is required");
   }
 
-  const invoice = await Invoice.findById(invoiceId);
-  if (!invoice) throw new ApiError(404, "Invoice not found");
+  const bill = await Bill.findById(billId);
+  if (!bill) throw new ApiError(404, "Invoice not found");
 
-  if (invoice.isPaid) {
+  if (bill.paymentStatus === "paid") {
     throw new ApiError(400, "This invoice is already paid");
   }
 
-  invoice.paidAmount = invoice.totalAmount;
-  invoice.isPaid = true;
-  invoice.status = "paid";
-  invoice.paymentMethod = paymentMethod || "Online Portal";
+  const dueAmount = bill.totalAmount - (bill.paidAmount || 0);
 
-  await invoice.save();
+  bill.payments.push({
+    amount: dueAmount,
+    method: paymentMethod || "Online Portal",
+    paidAt: new Date(),
+    transactionId: "MANUAL_ONLINE_" + Date.now(),
+  });
 
-  if (invoice.labReports && invoice.labReports.length > 0) {
+  bill.paymentMethod = paymentMethod || "Online Portal";
+  bill.paymentStatus = "paid";
+
+  await bill.save();
+
+  if (bill.labReports && bill.labReports.length > 0) {
     await LabReport.updateMany(
-      { _id: { $in: invoice.labReports } },
+      { _id: { $in: bill.labReports } },
       { $set: { isPaid: true } },
     );
   }
@@ -697,7 +743,7 @@ const payBillOnline = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        invoice,
+        bill,
         "Payment successful! Your reports are now unlocked.",
       ),
     );
