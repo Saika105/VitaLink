@@ -717,7 +717,7 @@ const payBillOnline = asyncHandler(async (req, res) => {
     throw new ApiError(400, "This invoice is already paid");
   }
 
-  const dueAmount = bill.totalAmount - (bill.paidAmount || 0);
+  const dueAmount = bill.totalAmount - bill.amountPaid;
 
   bill.payments.push({
     amount: dueAmount,
@@ -726,17 +726,10 @@ const payBillOnline = asyncHandler(async (req, res) => {
     transactionId: "MANUAL_ONLINE_" + Date.now(),
   });
 
-  bill.paymentMethod = paymentMethod || "Online Portal";
-  bill.paymentStatus = "paid";
-
+  // paymentStatus, paymentMethod, amountPaid, balanceDue, paidAt
+  // are all recalculated automatically by the pre("validate") hook,
+  // and labReports get marked paid by the post("save") hook.
   await bill.save();
-
-  if (bill.labReports && bill.labReports.length > 0) {
-    await LabReport.updateMany(
-      { _id: { $in: bill.labReports } },
-      { $set: { isPaid: true } },
-    );
-  }
 
   return res
     .status(200)
