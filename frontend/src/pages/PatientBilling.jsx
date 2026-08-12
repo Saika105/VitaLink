@@ -47,6 +47,7 @@ const PatientBilling = () => {
       setIsLoading(false);
     }
   };
+  
 
   useEffect(() => {
     fetchBilling();
