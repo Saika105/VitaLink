@@ -703,8 +703,6 @@ const payBillOnline = asyncHandler(async (req, res) => {
     );
 });
 
-
-
 // ********************* Initialize Gateway Session ************* */
 const initiateBillPayment = asyncHandler(async (req, res) => {
   const { billId } = req.body;

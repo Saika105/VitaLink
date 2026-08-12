@@ -76,7 +76,7 @@ router.route("/lab-reports/delete/:id").delete(verifyJWT, isPatient, deletePatie
 router.route("/lab-reports").get(verifyJWT, isPatient, getPatientLabReports);
 
 router.route("/billing-overview").get(verifyJWT, isPatient, getBillingOverview);
-router.route("/pay-online").post(verifyJWT, isPatient, payBillOnline);
+// router.route("/pay-online").post(verifyJWT, isPatient, payBillOnline);
 router.route("/initiate-payment").post(verifyJWT, initiateBillPayment);
 
 // SSLCommerz callback routes — cors() allows POST from SSLCommerz servers
