@@ -60,7 +60,7 @@ const handlePayDue = async (mongoId, invoiceNumber) => {
 
   setPayingId(mongoId);
   try {
-    const response = await protectedFetch('/api/v1/patients/pay-online', {
+    const response = await protectedFetch('/api/v1/patients/initiate-payment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ billId: mongoId }),
@@ -68,22 +68,19 @@ const handlePayDue = async (mongoId, invoiceNumber) => {
 
     const resData = await response.json().catch(() => null);
 
-    if (!response.ok) {
-      throw new Error(resData?.message || 'Payment failed');
+    if (!response.ok || !resData?.url) {
+      throw new Error(resData?.message || 'Could not start payment');
     }
-
-
-    alert(`Payment successful for Invoice: ${invoiceNumber}`);
-    fetchBilling();
+    window.location.href = resData.url;
   } catch (err) {
     console.error('Payment Error:', err);
     alert(
       `Payment failed for Invoice: ${invoiceNumber}. ${err.message || 'Please try again.'}`,
     );
-  } finally {
     setPayingId(null);
   }
-};
+  };
+  
   const handleLogout = async () => {
     try {
       await protectedFetch('/api/v1/patients/logout', {
