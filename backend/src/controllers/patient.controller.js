@@ -664,82 +664,46 @@ const getBillingOverview = asyncHandler(async (req, res) => {
 });
 
 // ********************* Pay Bills Online (Simulated Portal) ************* */
-// const payBillOnline = asyncHandler(async (req, res) => {
-//   const { invoiceId, paymentMethod } = req.body;
-
-//   if (!invoiceId) {
-//     throw new ApiError(400, "Invoice ID is required");
-//   }
-
-//   const invoice = await Invoice.findById(invoiceId);
-//   if (!invoice) throw new ApiError(404, "Invoice not found");
-
-//   if (invoice.isPaid) {
-//     throw new ApiError(400, "This invoice is already paid");
-//   }
-
-//   invoice.paidAmount = invoice.totalAmount;
-//   invoice.isPaid = true;
-//   invoice.status = "paid";
-//   invoice.paymentMethod = paymentMethod || "Online Portal";
-
-//   await invoice.save();
-
-//   if (invoice.labReports && invoice.labReports.length > 0) {
-//     await LabReport.updateMany(
-//       { _id: { $in: invoice.labReports } },
-//       { $set: { isPaid: true } },
-//     );
-//   }
-
-//   return res
-//     .status(200)
-//     .json(
-//       new ApiResponse(
-//         200,
-//         invoice,
-//         "Payment successful! Your reports are now unlocked.",
-//       ),
-//     );
-// });
-
 const payBillOnline = asyncHandler(async (req, res) => {
-  const { billId, paymentMethod } = req.body;
+  const { invoiceId, paymentMethod } = req.body;
 
-  if (!billId) {
+  if (!invoiceId) {
     throw new ApiError(400, "Invoice ID is required");
   }
 
-  const bill = await Bill.findById(billId);
-  if (!bill) throw new ApiError(404, "Invoice not found");
+  const invoice = await Invoice.findById(invoiceId);
+  if (!invoice) throw new ApiError(404, "Invoice not found");
 
-  if (bill.paymentStatus === "paid") {
+  if (invoice.isPaid) {
     throw new ApiError(400, "This invoice is already paid");
   }
 
-  const dueAmount = bill.totalAmount - bill.amountPaid;
+  invoice.paidAmount = invoice.totalAmount;
+  invoice.isPaid = true;
+  invoice.status = "paid";
+  invoice.paymentMethod = paymentMethod || "Online Portal";
 
-  bill.payments.push({
-    amount: dueAmount,
-    method: paymentMethod || "other",
-    paidAt: new Date(),
-  });
+  await invoice.save();
 
-  // paymentStatus, paymentMethod, amountPaid, balanceDue, paidAt
-  // are all recalculated automatically by the pre("validate") hook,
-  // and labReports get marked paid by the post("save") hook.
-  await bill.save();
+  if (invoice.labReports && invoice.labReports.length > 0) {
+    await LabReport.updateMany(
+      { _id: { $in: invoice.labReports } },
+      { $set: { isPaid: true } },
+    );
+  }
 
   return res
     .status(200)
     .json(
       new ApiResponse(
         200,
-        bill,
+        invoice,
         "Payment successful! Your reports are now unlocked.",
       ),
     );
 });
+
+
 
 // ********************* Initialize Gateway Session ************* */
 const initiateBillPayment = asyncHandler(async (req, res) => {
@@ -815,6 +779,82 @@ const initiateBillPayment = asyncHandler(async (req, res) => {
   }
 });
 
+// const paymentSuccessCallback = asyncHandler(async (req, res) => {
+//   const { billId } = req.params;
+//   const paymentDetails = req.body;
+
+//   console.log("SUCCESS CALLBACK BODY:", paymentDetails);
+
+//   const clientRedirect =
+//     process.env.NODE_ENV === "production"
+//       ? "https://vita-link-mu.vercel.app"
+//       : "http://localhost:5173";
+
+//   if (!paymentDetails || !paymentDetails.val_id) {
+//     return res.redirect(`${clientRedirect}/patient-dashboard`);
+//   }
+
+//   try {
+//     const isLive = process.env.IS_SANDBOX === "true" ? false : true;
+//     const sslcz = new SSLCommerzPayment(
+//       process.env.STORE_ID,
+//       process.env.STORE_PASSWORD,
+//       isLive,
+//     );
+
+//     const validationResponse = await sslcz.validate({
+//       val_id: paymentDetails.val_id,
+//     });
+
+//     console.log("VALIDATION RESPONSE:", JSON.stringify(validationResponse));
+
+//     const statusCheck = validationResponse?.status?.toUpperCase();
+
+//     if (statusCheck !== "VALID" && statusCheck !== "VALIDATED") {
+//       return res.redirect(`${clientRedirect}/patient-dashboard`);
+//     }
+
+//     const bill = await Bill.findById(billId);
+//     if (!bill) return res.redirect(`${clientRedirect}/patient-dashboard`);
+
+//     const rawMethod =
+//       validationResponse?.card_type ||
+//       paymentDetails?.card_type ||
+//       "online_gateway";
+
+//     let cleanMethod = "other";
+//     if (rawMethod.toLowerCase().includes("bkash")) cleanMethod = "bKash";
+//     else if (rawMethod.toLowerCase().includes("nagad")) cleanMethod = "nagad";
+//     else if (
+//       rawMethod.toLowerCase().includes("visa") ||
+//       rawMethod.toLowerCase().includes("master")
+//     )
+//       cleanMethod = "card";
+
+//     bill.payments.push({
+//       amount: Number(
+//         validationResponse?.amount || paymentDetails?.amount || 100,
+//       ),
+//       method: cleanMethod,
+//       paidAt: new Date(),
+//       transactionId:
+//         validationResponse?.tran_id || paymentDetails?.tran_id || "MOCK_TXN_ID",
+//     });
+
+//     if (bill.paymentMethod !== undefined) {
+//       bill.paymentMethod = cleanMethod;
+//     }
+
+//     bill.paymentStatus = "paid";
+//     await bill.save();
+
+//     return res.redirect(`${clientRedirect}/patient-dashboard`);
+//   } catch (error) {
+//     console.error("PAYMENT CALLBACK ERROR:", error);
+//     return res.redirect(`${clientRedirect}/patient-dashboard`);
+//   }
+// });
+
 const paymentSuccessCallback = asyncHandler(async (req, res) => {
   const { billId } = req.params;
   const paymentDetails = req.body;
@@ -869,19 +909,16 @@ const paymentSuccessCallback = asyncHandler(async (req, res) => {
 
     bill.payments.push({
       amount: Number(
-        validationResponse?.amount || paymentDetails?.amount || 100,
+        validationResponse?.amount || paymentDetails?.amount || bill.balanceDue,
       ),
       method: cleanMethod,
       paidAt: new Date(),
-      transactionId:
+      reference:
         validationResponse?.tran_id || paymentDetails?.tran_id || "MOCK_TXN_ID",
     });
 
-    if (bill.paymentMethod !== undefined) {
-      bill.paymentMethod = cleanMethod;
-    }
-
-    bill.paymentStatus = "paid";
+    // paymentStatus, paymentMethod, balanceDue, paidAt are recalculated
+    // automatically by the pre("validate") hook on Bill.
     await bill.save();
 
     return res.redirect(`${clientRedirect}/patient-dashboard`);

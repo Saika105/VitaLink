@@ -83,5 +83,6 @@ router.route("/initiate-payment").post(verifyJWT, initiateBillPayment);
 router.route("/payment-callback/success/:billId").post(cors(), paymentSuccessCallback);
 router.route("/payment-callback/fail/:billId").post(cors(), paymentFailureCallback);
 router.route("/payment-callback/cancel/:billId").post(cors(), paymentFailureCallback);
+router.post("/payment-callback/ipn/:billId", paymentFailureCallback);
 
 export default router;
